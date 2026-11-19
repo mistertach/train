@@ -186,6 +186,8 @@
   #hud { position: fixed; left: 50%; top: calc(150px + env(safe-area-inset-top)); transform: translateX(-50%); display: none; z-index: 6; background: rgba(255,248,232,.93);
     border-radius: 16px; padding: 6px 16px; font-size: 21px; font-weight: 800; box-shadow: 0 3px 10px rgba(0,0,0,.18); white-space: pre; }
   body.playing #hud.show { display: block; }
+  #hud.bump { animation: hudbump .45s ease-out; }
+  @keyframes hudbump { 0% { transform: translateX(-50%) scale(1); } 40% { transform: translateX(-50%) scale(1.25); } 100% { transform: translateX(-50%) scale(1); } }
   body.night.cab { background: linear-gradient(#060b26 0%, #1c2a5c 38%, #1d3b25 38%); }
   #toast { position: fixed; left: 50%; top: 24%; transform: translate(-50%, -50%) scale(.5); font-size: 84px; opacity: 0; pointer-events: none; z-index: 40;
     transition: opacity .25s, transform .25s; text-shadow: 0 4px 10px rgba(0,0,0,.3); white-space: nowrap; }
@@ -3310,18 +3312,35 @@ function stationStop(tr, p) {
   const off = tr.load.filter(o => o !== p.id).length;
   tr.load = tr.load.filter(o => o === p.id);
   for (let i = 0; i < off; i++) hop(em, qx, qy, s.x + s.nx * (fr ? -110 : 110) + rnd(-40, 40), s.y + s.ny * (fr ? -110 : 110) + rnd(-40, 40), i * .15);
-  if (off) { delivered[fr ? "box" : "pax"] += off; setTimeout(() => { burst(s.x, s.y - 30, ["⭐"], Math.min(6, off)); sfx.ding(); }, 300); }
+  if (off) { delivered[fr ? "box" : "pax"] += off; pay(off * (fr ? 2 : 1), s.x, s.y); }
   const key = fr ? "box" : "pax", wait = p[key] || 0, on = Math.min(wait, capOf(tr) - tr.load.length);
   for (let i = 0; i < on; i++) { tr.load.push(p.id); hop(fr ? (i % 2 ? "🪵" : "📦") : "🧍", s.x + s.nx * (fr ? -58 : 58), s.y + s.ny * (fr ? -58 : 58), qx, qy, i * .15 + off * .1); }
   p[key] = wait - on; drawWaiting(p);
   if (off || on) { tr.wait = 1.6 + .3 * (off + on); updateHud(); }
   const tot = delivered.pax + delivered.box;
-  if (off && tot && Math.floor(tot / 10) !== Math.floor((tot - off) / 10)) speak(LX(`¡Ya has llevado ${delivered.pax} pasajeros y ${delivered.box} cajas!`, `You've carried ${delivered.pax} passengers and ${delivered.box} boxes!`, `Tu as transporté ${delivered.pax} voyageurs et ${delivered.box} caisses !`));
+  if (off && tot && Math.floor(tot / 10) !== Math.floor((tot - off) / 10)) speak(LX(`¡Ya has llevado ${delivered.pax} pasajeros y ${delivered.box} cajas! Tienes ${wallet()} monedas.`, `You've carried ${delivered.pax} passengers and ${delivered.box} boxes! You have ${wallet()} coins.`, `Tu as transporté ${delivered.pax} voyageurs et ${delivered.box} caisses ! Tu as ${wallet()} pièces.`));
+}
+// 🪙 money: 1 coin for each passenger, 2 for each box; the purse is kept between visits
+let coins = null;
+const wallet = () => coins == null ? (coins = Math.max(0, +(sget(KEY + "-coins") || 0) | 0)) : coins;
+function pay(n, x, y) {
+  coins = wallet() + n; sset(KEY + "-coins", coins);
+  setTimeout(() => {
+    tone([1319, 1568, 2093], "triangle", .07, .16, .1); // ka-ching
+    for (let i = 0; i < Math.min(n, 6); i++) {
+      const c = el("text", { x: x + rnd(-30, 30), y: y - 20, "font-size": 34, "text-anchor": "middle", "dominant-baseline": "central" }, L.fx); c.textContent = "🪙";
+      const dx = rnd(-40, 40), d0 = i * .08;
+      addFx(c, 1.1 + d0, (k, e) => { const u = clamp((k * (1.1 + d0) - d0) / 1.1, 0, 1); e.setAttribute("opacity", u <= 0 ? 0 : 1 - u * u); e.setAttribute("x", x + dx * u); e.setAttribute("y", y - 20 - 130 * u + 40 * Math.sin(Math.PI * u * 2) * (1 - u)); });
+    }
+    const t = el("text", { x, y: y - 70, "font-size": 40, "font-weight": 900, fill: "#f5b301", stroke: "#fff", "stroke-width": 6, "paint-order": "stroke", "text-anchor": "middle" }, L.fx); t.textContent = "+" + n;
+    addFx(t, 1.4, (k, e) => { e.setAttribute("y", y - 70 - 60 * k); e.setAttribute("opacity", k > .6 ? (1 - k) / .4 : 1); });
+    updateHud(); hud.classList.remove("bump"); void hud.offsetWidth; hud.classList.add("bump");
+  }, 300);
 }
 function updateHud() {
   const t = delivered.pax + delivered.box;
-  hud.classList.toggle("show", t > 0 || [...pieces.values()].some(p => p.pax || p.box));
-  hud.textContent = `🧍 ${delivered.pax}   📦 ${delivered.box}`;
+  hud.classList.toggle("show", t > 0 || wallet() > 0 || [...pieces.values()].some(p => p.pax || p.box));
+  hud.textContent = `🪙 ${wallet()}   🧍 ${delivered.pax}   📦 ${delivered.box}`;
 }
 function stationTick(dt) {
   if (!running || lvl) return;
