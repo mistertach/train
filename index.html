@@ -137,6 +137,7 @@
   #fixbar .big { font-size: 40px; } #fixbar .tx { flex: 1 1 260px; font-size: 17px; line-height: 1.35; }
   #fixbar .row { display: flex; gap: 8px; } #fixbar .b { width: auto; padding: 0 14px; font-size: 18px; }
   #fixbar .b.go { background: #6fd36f; border-color: #2f8f2f; }
+  #fixbar .row.opts { flex: 1 1 100%; justify-content: center; } #fixbar .b.opt { opacity: .6; } #fixbar .b.opt.on { opacity: 1; background: #fff3b0; border-color: #e0b000; }
   body.noflo #floorBox { display: none !important; }
   #sideview { position: fixed; left: calc(10px + env(safe-area-inset-left)); width: min(900px, calc(100vw - 90px)); z-index: 7; background: rgba(255,248,232,.97);
     border: 5px solid #a8743d; border-radius: 22px; box-shadow: 0 6px 18px rgba(0,0,0,.3); overflow: hidden; }
@@ -1480,114 +1481,276 @@ function looseEnds() {
   return out;
 }
 // the pieces that can be laid from a square entered through edge e at height z
+const FIX_TYPES = [["corta", 1], ["curva", 1.15], ["subeI", 2.3], ["subeD", 2.3], ["rampa", 2.6]];
+const FIX_REL = {}; FIX_TYPES.forEach(([t]) => FIX_REL[t] = [0, 1, 2, 3].map(rot => portsFor(t, 0, 0, rot, 0)));
 function fixMoves(s) {
   const { c, r, e: ein, z } = s, out = [];
-  { const rot = ein % 2 === 1 ? 0 : 1, eo = opp(ein); if (fits("corta", c, r, rot, z)) out.push({ type: "corta", c, r, rot, h: z, nc: c + DX[eo], nr: r + DY[eo], ne: opp(eo), nz: z, cost: 1 }); }
-  [1, 3].forEach(d => { const eo = (ein + d) % 4, sp = pieceForEdges(ein, eo); if (sp.type === "curva" && fits("curva", c, r, sp.rot, z)) out.push({ type: "curva", c, r, rot: sp.rot, h: z, nc: c + DX[eo], nr: r + DY[eo], ne: opp(eo), nz: z, cost: 1.15 }); });
-  { const k = (ein + 1) % 4, [ox, oy] = rotP(1, 0, k), eo = (1 + k) % 4;
-    if (fits("rampa", c, r, k, z)) out.push({ type: "rampa", c, r, rot: k, h: z, nc: c + ox + DX[eo], nr: r + oy + DY[eo], ne: opp(eo), nz: z + 1, cost: 2.6 }); }
-  { const k = (ein + 3) % 4, [ox, oy] = rotP(1, 0, k), ac = c - ox, ar = r - oy, eo = (3 + k) % 4;
-    if (fits("rampa", ac, ar, k, z - 1)) out.push({ type: "rampa", c: ac, r: ar, rot: k, h: z - 1, nc: ac + DX[eo], nr: ar + DY[eo], ne: opp(eo), nz: z - 1, cost: 2.6 }); }
+  for (const [type, cost] of FIX_TYPES) for (let rot = 0; rot < 4; rot++) {
+    if (type === "corta" && rot > 1) continue;
+    const P = FIX_REL[type][rot];
+    for (let j = 0; j < P.length; j++) {
+      if (P[j].e !== ein) continue;
+      const ac = c - P[j].c, ar = r - P[j].r, h = z - P[j].z, q = P[1 - j];
+      if (h < -UG || h >= LV - (type === "corta" || type === "curva" ? 0 : 1) || !fits(type, ac, ar, rot, h)) continue;
+      out.push({ type, c: ac, r: ar, rot, h, nc: ac + q.c + DX[q.e], nr: ar + q.r + DY[q.e], ne: opp(q.e), nz: h + q.z, cost });
+    }
+  }
   return out;
 }
 // cheapest track from loose end S to any of the other loose ends (A* on squares, sides and floors)
-function fixSearch(S, targets) {
+function fixSearch(S, targets, lim) {
   const key = (c, r, e, z) => c + "," + r + "," + e + "," + z;
   const goals = new Map(); targets.forEach(t => goals.set(key(t.pt.c, t.pt.r, t.pt.e, t.pt.z), t));
   const st = { c: S.pt.c + DX[S.pt.e], r: S.pt.r + DY[S.pt.e], e: opp(S.pt.e), z: S.pt.z };
   if (!inB(st.c, st.r) || !targets.length) return null;
-  const hfun = n => Math.min(...targets.map(t => Math.abs(n.c - t.pt.c) + Math.abs(n.r - t.pt.r) + Math.abs(n.z - t.pt.z) * 1.5));
+  const R = (lim && lim.r) || 18, N = (lim && lim.n) || 9000;
+  const near = targets.filter(t => Math.abs(t.pt.c - st.c) + Math.abs(t.pt.r - st.r) <= 2 * R);
+  if (!near.length) return null;
+  const hfun = n => Math.min(...near.map(t => Math.abs(n.c - t.pt.c) + Math.abs(n.r - t.pt.r) + Math.abs(n.z - t.pt.z) * 1.6));
   const heap = [], push = n => { heap.push(n); let i = heap.length - 1; while (i) { const j = (i - 1) >> 1; if (heap[j].f <= heap[i].f) break; [heap[i], heap[j]] = [heap[j], heap[i]]; i = j; } };
   const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const a = 2 * i + 1, b = a + 1; let m = i; if (a < heap.length && heap[a].f < heap[m].f) m = a; if (b < heap.length && heap[b].f < heap[m].f) m = b; if (m === i) break; [heap[i], heap[m]] = [heap[m], heap[i]]; i = m; } } return top; };
   const best = new Map();
   push(Object.assign({ g: 0, f: hfun(st), parent: null, mv: null }, st));
-  for (let it = 0; heap.length && it < 9000; it++) {
+  for (let it = 0; heap.length && it < N; it++) {
     const n = pop(), k = key(n.c, n.r, n.e, n.z);
     if (best.has(k) && best.get(k) <= n.g) continue;
     best.set(k, n.g);
-    if (Math.abs(n.c - st.c) + Math.abs(n.r - st.r) > 16) continue;
+    if (Math.abs(n.c - st.c) + Math.abs(n.r - st.r) > R) continue;
     for (const mv of fixMoves(n)) {
       const g = n.g + mv.cost, nk = key(mv.nc, mv.nr, mv.ne, mv.nz);
       const node = { c: mv.nc, r: mv.nr, e: mv.ne, z: mv.nz, g, parent: n, mv };
-      if (goals.has(nk)) { const path = []; for (let q = node; q && q.mv; q = q.parent) path.unshift(q.mv); return { cost: g, path, T: goals.get(nk) }; }
+      if (goals.has(nk)) { const path = []; for (let q = node; q && q.mv; q = q.parent) path.unshift(q.mv); if (pathSelfOk(path)) return { cost: g, path, T: goals.get(nk) }; continue; }
       if (!inB(mv.nc, mv.nr) || mv.nz < -UG || mv.nz >= LV) continue;
       node.f = g + hfun(node); push(node);
     }
   }
   return null;
 }
+// a found route must not run into itself (A* only checks the board, not its own new pieces)
+function pathSelfOk(path) {
+  const placed = [];
+  try { for (const mv of path) { const p = addPiece(mv.type, mv.c, mv.r, mv.rot, mv.h, 0); if (!p) return false; placed.push(p); } return true; }
+  finally { placed.forEach(removePiece); }
+}
 function markProposed(p) { p.proposed = true; (p.els || []).forEach(e => e.setAttribute("opacity", .55)); }
-function planFix() {
-  if (fixPlan) cancelFix();
-  if (running) setRunning(false);
-  const snap = snapshot(), added = [];
-  let joined = 0, guard = 0;
-  const tried = new Set();
-  let ends = looseEnds();
-  const before = ends.length;
-  while (ends.length >= 2 && guard++ < 10) {
+
+// --- planning works on the real board without drawing, with a journal to take steps back
+let fixJ = [];
+const fixSpec = p => [p.type, p.c, p.r, p.rot, p.h, p.state | 0];
+function jAdd(type, c, r, rot, h) { const p = addPiece(type, c, r, rot, h, 0); if (p) fixJ.push({ a: p }); return p; }
+function jDel(p) { if (!pieces.has(p.id)) return; fixJ.push({ d: p }); removePiece(p); }
+function jBack(m) { // undo planning steps, putting back the very same piece objects
+  while (fixJ.length > m) {
+    const x = fixJ.pop();
+    if (x.a) { if (pieces.has(x.a.id)) removePiece(x.a); }
+    else { const p = x.d; p.geo.cells.forEach(([cx, cy]) => cellP[cy * COLS + cx].push(p)); pieces.set(p.id, p); if (!noDraw) drawPiece(p); }
+  }
+}
+const FIX_OK = new Set(["corta", "curva", "rampa", "subeI", "subeD", "recta", "curvaG", "curvaL", "tope"]);
+let fixTrainAt = new Set();
+const fixKey = p => p.type + "," + p.c + "," + p.r + "," + p.h;
+const fixable = p => !p.fixed && FIX_OK.has(p.type) && !fixTrainAt.has(fixKey(p));
+const nLoose = () => looseEnds().length;
+const linkedAt = pt => !!connectAt(pt.c + DX[pt.e], pt.r + DY[pt.e], opp(pt.e), pt.z);
+// 1) swap a piece at a loose end for another shape that keeps its joined side and closes the gap
+function fixRepair(st) {
+  for (let round = 0; round < 12; round++) {
+    let best = null;
+    const base = nLoose();
+    for (const S of looseEnds()) {
+      const P = S.p; if (!fixable(P) || P.type === "tope") continue;
+      const keep = P.geo.ports.filter(pt => pt !== S.pt && linkedAt(pt));
+      if (keep.length !== 1) continue;
+      const K = keep[0];
+      for (const [type] of FIX_TYPES) for (let rot = 0; rot < 4; rot++) {
+        const rel = FIX_REL[type][rot];
+        for (let j = 0; j < 2; j++) {
+          if (rel[j].e !== K.e) continue;
+          const ac = K.c - rel[j].c, ar = K.r - rel[j].r, h = K.z - rel[j].z, q = rel[1 - j];
+          if (type === P.type && ac === P.c && ar === P.r && rot === P.rot && h === P.h) continue;
+          const Q = { c: ac + q.c, r: ar + q.r, e: q.e, z: h + q.z };
+          if (!linkedAt(Q)) continue; // only shapes whose other end meets track
+          const conf = conflictsFor(type, ac, ar, rot, h);
+          if (!conf || conf.some(x => x !== P) || !withUnlinked([P], () => fits(type, ac, ar, rot, h))) continue;
+          const m = fixJ.length; jDel(P); const np = jAdd(type, ac, ar, rot, h);
+          const sc = np ? nLoose() : 1e9; jBack(m);
+          if (sc < base && (!best || sc < best.sc)) best = { sc, P, spec: [type, ac, ar, rot, h] };
+        }
+      }
+    }
+    if (!best) return;
+    jDel(best.P); jAdd(...best.spec); st.changed++;
+  }
+}
+// 2) lay new track between pairs of loose ends
+function fixJoin(st, lim, maxJoins) {
+  const tried = new Set(); let n = 0;
+  for (let guard = 0; guard < 14 && n < (maxJoins || 99); guard++) {
+    const ends = looseEnds(); if (ends.length < 2) return n;
     let best = null;
     ends.forEach(S => {
       const others = ends.filter(t => t.p !== S.p && !tried.has(S.p.id + ":" + t.p.id));
-      const res = fixSearch(S, others);
+      const res = fixSearch(S, others, lim);
       if (res && (!best || res.cost < best.cost)) best = Object.assign({ S }, res);
     });
-    if (!best) break;
-    const placed = [];
-    let ok = true;
-    for (const mv of best.path) { const p = addPiece(mv.type, mv.c, mv.r, mv.rot, mv.h, 0); if (!p) { ok = false; break; } placed.push(p); }
-    if (!ok || !placed.length) { placed.forEach(removePiece); tried.add(best.S.p.id + ":" + best.T.p.id); continue; }
-    placed.forEach(p => { markProposed(p); added.push(p); });
-    joined++;
-    ends = looseEnds();
+    if (!best) return n;
+    const m = fixJ.length; let ok = true;
+    for (const mv of best.path) if (!jAdd(mv.type, mv.c, mv.r, mv.rot, mv.h)) { ok = false; break; }
+    if (!ok) { jBack(m); tried.add(best.S.p.id + ":" + best.T.p.id); continue; }
+    n++; st.joined++;
   }
-  // whatever cannot be joined gets a buffer stop, so the train stops instead of falling
-  let capped = 0; const stuck = [];
+  return n;
+}
+// the pieces behind a loose end, going back along the track
+function chainBack(S, k) {
+  const list = [S.p]; let p = S.p, from = S.pt;
+  while (list.length < k) {
+    const other = p.geo.ports.find(pt => pt !== from); if (!other || p.geo.ports.length !== 2) break;
+    const nx = connectAt(other.c + DX[other.e], other.r + DY[other.e], opp(other.e), other.z); if (!nx) break;
+    const q = nx.p; if (!fixable(q) || list.includes(q) || q.geo.ports.length !== 2) break;
+    list.push(q); from = q.geo.ports[nx.pi]; p = q;
+  }
+  return list;
+}
+// 3) take away a few pieces behind a stubborn loose end and lay the join again
+function fixRebuild(st, t0) {
+  for (let round = 0; round < 6; round++) {
+    const base = nLoose(); if (base < 1) return;
+    let done = false;
+    for (const S of looseEnds()) {
+      if (!pieces.has(S.p.id) || !fixable(S.p)) continue;
+      for (let k = 1; k <= 6 && !done; k++) {
+        if (performance.now() - t0 > 6000) return;
+        const list = chainBack(S, k); if (list.length < k) break;
+        const m = fixJ.length, sv = { joined: 0, changed: 0 };
+        list.forEach(jDel);
+        fixRepair(sv); fixJoin(sv, { r: 22, n: 14000 }, 2);
+        if (nLoose() < base) { st.joined += sv.joined; st.changed += sv.changed; done = true; } else jBack(m);
+      }
+      if (done) break;
+    }
+    if (!done) return;
+  }
+}
+// 4) a buffer stop at every end left, so the train stops instead of falling
+function fixTopes(st) {
   looseEnds().forEach(S => {
+    if (!pieces.has(S.p.id) || !portOpen(S.pt)) return;
     const c = S.pt.c + DX[S.pt.e], r = S.pt.r + DY[S.pt.e], ein = opp(S.pt.e), k = (ein + 1) % 4;
-    const p = inB(c, r) && fits("tope", c, r, k, S.pt.z) ? addPiece("tope", c, r, k, S.pt.z, 0) : null;
-    if (p) { markProposed(p); added.push(p); capped++; } else stuck.push(S);
+    if (inB(c, r) && fits("tope", c, r, k, S.pt.z) && jAdd("tope", c, r, k, S.pt.z)) { st.capped++; return; }
+    // no room in front: turn the end piece itself into a buffer stop
+    const P = S.p, keep = P.geo.ports.filter(pt => pt !== S.pt && linkedAt(pt));
+    if (fixable(P) && P.type !== "tope" && keep.length === 1 && P.geo.cells.length === 1 && !DEFS[P.type].span) {
+      const K = keep[0], rot = (K.e + 1) % 4;
+      const conf = conflictsFor("tope", K.c, K.r, rot, K.z);
+      if (conf && !conf.some(x => x !== P) && withUnlinked([P], () => fits("tope", K.c, K.r, rot, K.z))) {
+        const m = fixJ.length; jDel(P); if (jAdd("tope", K.c, K.r, rot, K.z)) { st.capped++; st.swapped++; return; } jBack(m);
+      }
+    }
+    st.stuck.push(S.pt);
   });
-  refreshHints();
-  if (!before) { toast("✅"); sfx.bell(); speak("¡Todo está bien! No hay vías sueltas: el tren no se caerá."); return; }
-  const marks = el("g", { "pointer-events": "none" }, L.ui);
+}
+function fixRun(kind) {
+  const st = { joined: 0, capped: 0, changed: 0, swapped: 0, stuck: [] }, t0 = performance.now();
+  fixJ = [];
+  if (kind === "join") { fixRepair(st); fixJoin(st, { r: 18, n: 9000 }); fixRebuild(st, t0); fixRepair(st); fixJoin(st, { r: 24, n: 16000 }); }
+  fixTopes(st);
+  const now = [...pieces.values()];
+  const kept = new Set(now.filter(p => p.orig).map(p => p.orig));
+  return { kind, st, add: now.filter(p => !p.orig).map(fixSpec), del: [...fixOrig.keys()].filter(k => !kept.has(k)).map(k => fixOrig.get(k)) };
+}
+let fixOrig = new Map();
+function applySnapFree(snap) { const fl = floor; loadData(JSON.parse(snap)); setFloor(fl); }
+function planFix() {
+  if (fixPlan) cancelFix();
+  if (running) setRunning(false);
+  const before = nLoose();
+  if (!before) { refreshHints(); toast("✅"); sfx.bell(); speak("¡Todo está bien! No hay vías sueltas: el tren no se caerá."); return; }
+  const snap = snapshot();
+  fixTrainAt = new Set(trains.flatMap(t => [t.start.pid, t.head && t.head.pid]).map(id => pieces.get(id)).filter(Boolean).map(fixKey));
+  toast("🔧 …");
+  setTimeout(() => {
+    // plan on the board without drawing, then put it back the way it was
+    noDraw = true; let plans;
+    try {
+      const mk = () => { fixOrig = new Map(); pieces.forEach(p => { p.orig = p.id + ""; fixOrig.set(p.orig, fixSpec(p)); }); };
+      mk(); const A = fixRun("join"); jBack(0);
+      mk(); const B = fixRun("topes"); jBack(0);
+      plans = [A]; if (A.del.length - A.st.changed - A.st.swapped > 0) plans.push(B);
+    } finally { noDraw = false; }
+    fixPlan = { snap, plans, pick: 0, before, marks: null };
+    showFixPlan(0);
+  }, 30);
+}
+function showFixPlan(i) {
+  const F = fixPlan; if (!F) return;
+  const snap = F.snap, plans = F.plans, before = F.before;
+  applySnapFree(snap); // (loadData forgets fixPlan)
+  fixPlan = F; F.pick = i;
+  const P = plans[i];
+  P.del.forEach(([t, c, r, rot, h]) => { const q = piecesIn(c, r).find(x => x.type === t && x.c === c && x.r === r && x.rot === rot && x.h === h); if (q) removePiece(q); });
+  const added = P.add.map(([t, c, r, rot, h, s]) => addPiece(t, c, r, rot, h, s)).filter(Boolean);
+  added.forEach(markProposed);
+  F.added = added;
+  if (F.marks) F.marks.remove();
+  const marks = F.marks = el("g", { "pointer-events": "none" }, L.ui);
+  P.del.forEach(([t, c, r, rot, h]) => cellsFor(t, c, r, rot).forEach(([x, y]) => {
+    el("rect", { x: x * T + 8, y: y * T + 8 - h * E, width: T - 16, height: T - 16, rx: 12, fill: "rgba(230,60,40,.18)", stroke: "#e63c28", "stroke-width": 5, "stroke-dasharray": "14 9" }, marks);
+    const tx = el("text", { x: (x + .5) * T, y: (y + .5) * T - h * E + 14, "font-size": 40, "text-anchor": "middle" }, marks); tx.textContent = "🗑️";
+  }));
   added.forEach(p => p.geo.cells.forEach(([c, r]) => el("rect", { x: c * T + 4, y: r * T + 4 - p.h * E, width: T - 8, height: T - 8, rx: 12, class: "tutCell" }, marks)));
-  stuck.forEach(S => { const [x, y] = portXY(S.pt); const t = el("text", { x, y: y - 26, "font-size": 40, "text-anchor": "middle" }, marks); t.textContent = "⚠️"; });
-  fixPlan = { added, snap, marks };
+  P.st.stuck.forEach(pt => { const [x, y] = portXY(pt); const t = el("text", { x, y: y - 26, "font-size": 40, "text-anchor": "middle" }, marks); t.textContent = "⚠️"; });
+  refreshHints();
   const bar = $("fixbar"); bar.innerHTML = ""; bar.hidden = false;
   addEl(bar, "div", "big", "🔧");
   const txt = addEl(bar, "div", "tx");
-  const parts = [];
-  if (joined) parts.push(joined > 1 ? LX(`${joined} uniones`, `${joined} joins`, `${joined} raccords`) : LX("1 unión", "1 join", "1 raccord"));
-  if (capped) parts.push(LX(`${capped} tope${capped > 1 ? "s" : ""} 🛑`, `${capped} buffer stop${capped > 1 ? "s" : ""} 🛑`, `${capped} butoir${capped > 1 ? "s" : ""} 🛑`));
-  const pl = before > 1, sp = stuck.length > 1;
+  const st = P.st, parts = [];
+  if (st.changed) parts.push(LX(`cambiar ${st.changed} pieza${st.changed > 1 ? "s" : ""}`, `change ${st.changed} piece${st.changed > 1 ? "s" : ""}`, `changer ${st.changed} pièce${st.changed > 1 ? "s" : ""}`));
+  if (st.joined) parts.push(st.joined > 1 ? LX(`${st.joined} uniones`, `${st.joined} joins`, `${st.joined} raccords`) : LX("1 unión", "1 join", "1 raccord"));
+  if (st.capped) parts.push(LX(`${st.capped} tope${st.capped > 1 ? "s" : ""} 🛑`, `${st.capped} buffer stop${st.capped > 1 ? "s" : ""} 🛑`, `${st.capped} butoir${st.capped > 1 ? "s" : ""} 🛑`));
+  const nd = P.del.length - st.changed - st.swapped;
+  if (nd > 0) parts.push(LX(`quitar ${nd} pieza${nd > 1 ? "s" : ""} 🗑️`, `remove ${nd} piece${nd > 1 ? "s" : ""} 🗑️`, `enlever ${nd} pièce${nd > 1 ? "s" : ""} 🗑️`));
+  const pl = before > 1, sp = st.stuck.length > 1;
   txt.textContent = LX(`Hay ${before} punta${pl ? "s" : ""} suelta${pl ? "s" : ""} donde el tren se caería. `, `There ${pl ? "are" : "is"} ${before} loose end${pl ? "s" : ""} where the train would fall off. `, `Il y a ${before} bout${pl ? "s" : ""} libre${pl ? "s" : ""} où le train tomberait. `) +
-    (parts.length ? LX(`Te propongo ${parts.join(" y ")} (en amarillo).`, `I suggest ${parts.join(" and ")} (in yellow).`, `Je propose ${parts.join(" et ")} (en jaune).`) : "") +
-    (stuck.length ? " ⚠️ " + LX(`${stuck.length} no sé arreglarla${sp ? "s" : ""}: está${sp ? "n" : ""} marcada${sp ? "s" : ""}.`, `${stuck.length} I can't fix: ${sp ? "they are" : "it is"} marked.`, `${stuck.length} que je ne sais pas réparer : ${sp ? "elles sont marquées" : "il est marqué"}.`) : "");
+    (parts.length ? LX(`Te propongo ${parts.join(", ")} (en amarillo).`, `I suggest: ${parts.join(", ")} (in yellow).`, `Je propose : ${parts.join(", ")} (en jaune).`) : "") +
+    (st.stuck.length ? " ⚠️ " + LX(`${st.stuck.length} no sé arreglarla${sp ? "s" : ""}: está${sp ? "n" : ""} marcada${sp ? "s" : ""}.`, `${st.stuck.length} I can't fix: ${sp ? "they are" : "it is"} marked.`, `${st.stuck.length} que je ne sais pas réparer : ${sp ? "elles sont marquées" : "il est marqué"}.`) : "");
+  if (plans.length > 1) {
+    const opt = addEl(bar, "div", "row opts");
+    [["🔗", LX("Unir la vía", "Join the track", "Relier la voie")], ["🛑", LX("Solo topes", "Only buffer stops", "Seulement des butoirs")]].forEach(([em, lb], k) => {
+      const b = mkBtn(em + " " + lb, lb, () => { sfx.click(); showFixPlan(k); });
+      b.className = "b opt" + (k === i ? " on" : ""); opt.appendChild(b);
+    });
+  }
   const row = addEl(bar, "div", "row");
-  if (added.length) row.appendChild(Object.assign(mkBtn("✔️ ¡Arréglalo!", "Aceptar el arreglo", acceptFix), { className: "b go" }));
+  if (added.length || P.del.length) row.appendChild(Object.assign(mkBtn("✔️ ¡Arréglalo!", "Aceptar el arreglo", acceptFix), { className: "b go" }));
   row.appendChild(mkBtn("✖️ No", "Quitar la propuesta", cancelFix));
-  speak(txt.textContent);
-  if (added.length) { // show the proposal
-    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
-    added.forEach(p => p.geo.cells.forEach(([c, r]) => { x0 = Math.min(x0, c * T); y0 = Math.min(y0, r * T - p.h * E); x1 = Math.max(x1, c * T + T); y1 = Math.max(y1, r * T + T); }));
-    const [vx0, vy0] = toWorld(0, 0), [vx1, vy1] = toWorld(innerWidth, innerHeight);
-    if (x0 < vx0 || x1 > vx1 || y0 < vy0 || y1 > vy1) fitAll();
+  speak(txt.textContent + (plans.length > 1 && i === 0 ? " " + LX("Si no quieres quitar piezas, elige solo topes.", "If you don't want to remove pieces, choose only buffer stops.", "Si tu ne veux pas enlever de pièces, choisis seulement des butoirs.") : ""));
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  [...added.flatMap(p => p.geo.cells.map(([c, r]) => [c, r, p.h])), ...P.del.flatMap(([t, c, r, rot, h]) => cellsFor(t, c, r, rot).map(([x, y]) => [x, y, h]))].forEach(([c, r, h]) => {
+    x0 = Math.min(x0, c * T); y0 = Math.min(y0, r * T - h * E); x1 = Math.max(x1, c * T + T); y1 = Math.max(y1, r * T + T); });
+  if (x0 < 1e9) { // keep the proposal in view, between the top buttons and the fix bar
+    const top = $("top").getBoundingClientRect().bottom + 10, bot = bar.getBoundingClientRect().top - 10;
+    const room = Math.max(120, bot - top), wz = Math.min(view.z, (innerWidth - 120) / (x1 - x0 + 2 * T), room / (y1 - y0 + 2 * T));
+    if (wz < view.z) view.z = clamp(wz, minZ(), 1);
+    const sy0 = y0 * view.z + view.y, sy1 = y1 * view.z + view.y, sx0 = x0 * view.z + view.x, sx1 = x1 * view.z + view.x;
+    if (sy0 < top || sy1 > bot || sx0 < 0 || sx1 > innerWidth - 80 || wz < view.z + 1e-9) {
+      view.x = (innerWidth - 70) / 2 - (x0 + x1) / 2 * view.z; view.y = (top + bot) / 2 - (y0 + y1) / 2 * view.z;
+      userMoved = true; applyView();
+    }
   }
 }
-function endFix() { if (!fixPlan) return; fixPlan.marks.remove(); fixPlan = null; $("fixbar").hidden = true; }
+function endFix() { if (!fixPlan) return; if (fixPlan.marks) fixPlan.marks.remove(); fixPlan = null; $("fixbar").hidden = true; }
 function acceptFix() {
   if (!fixPlan) return;
   const { added, snap } = fixPlan;
-  added.forEach(p => { p.proposed = false; redrawPiece(p); });
+  (added || []).forEach(p => { p.proposed = false; redrawPiece(p); });
   undoStack.push(snap); updUndo();
   endFix(); refreshHints(); autosave(); sfx.bell(); toast("🔧✅");
   if (sideOn) refreshSide();
 }
 function cancelFix() {
   if (!fixPlan) return;
-  fixPlan.added.forEach(p => { if (pieces.has(p.id)) removePiece(p); });
-  endFix(); refreshHints(); sfx.click();
+  const snap = fixPlan.snap; endFix(); applySnapFree(snap); refreshHints(); sfx.click();
 }
 
 $("undoBtn").onclick = () => { unlockAudio(); undo(); };
@@ -2716,7 +2879,7 @@ function clearBoard() {
   setRunning(false); refreshHints();
 }
 function loadData(data) {
-  if (typeof fixPlan !== "undefined" && fixPlan) { fixPlan.marks.remove(); fixPlan = null; $("fixbar").hidden = true; }
+  if (typeof fixPlan !== "undefined" && fixPlan) { if (fixPlan.marks) fixPlan.marks.remove(); fixPlan = null; $("fixbar").hidden = true; }
   clearBoard();
   if (!data || !Array.isArray(data.pieces)) return;
   data.pieces.forEach(([t, c, r, rot, st, h]) => { if (t === "puente") t = "cruce"; if (DEFS[t]) addPiece(t, c, r, rot | 0, h | 0, st); });
@@ -2834,7 +2997,7 @@ $("helpBtn").onclick = () => openModal(card => {
    ["🚗", "Pestaña 🚗 Calles: dibuja calles, cruces y pasos a nivel y pon coches, taxis, autobuses… Andan solos, eligen camino en los cruces y esperan cuando bajan las barreras."],
    ["🏛️", "Pestaña 🏛️ Monumentos: monumentos grandes en 3D. Las vías pueden pasar por debajo de sus arcos (por ejemplo, entre las patas de la Torre Eiffel)."],
    ["🚂", "Cada tren es distinto: el bala es el más rápido y no echa humo, el de vapor hace chu-chu con humo blanco, el de mercancías es lento y pesado, el tranvía saca chispas."],
-   ["🔧", "El botón 🔧 busca las vías sueltas, donde el tren se caería, y te propone cómo unirlas (o un tope 🛑 si no se pueden unir). Acepta con ✔️ o quítalo con ✖️."],
+   ["🔧", "El botón 🔧 busca las vías sueltas, donde el tren se caería, y te propone cómo arreglarlas: cambia una pieza mal puesta, añade vía (también rampas y espirales) y, si hace falta, quita alguna pieza para rehacer la unión. Si no quieres quitar piezas, elige 🛑 Solo topes. Acepta con ✔️ o quítalo con ✖️."],
    ["💥", "Si dos trenes se tocan en el mismo piso, chocan. Si un tren llega a una vía suelta o al borde, descarrila: toca 🔄 para recolocarlo."],
    ["💾", "En 💾 hay proyectos de ciudades listos para jugar y puedes guardar tus circuitos con nombre."],
   ].forEach(([n, t]) => { const s = addEl(st, "div", "step"); addEl(s, "span", "n", n); s.appendChild(document.createTextNode(t)); });
@@ -4049,7 +4212,7 @@ const I18N_ROWS = [
 ["Pestaña 🚗 Calles: dibuja calles, cruces y pasos a nivel y pon coches, taxis, autobuses… Andan solos, eligen camino en los cruces y esperan cuando bajan las barreras.", "🚗 Streets tab: draw streets, junctions and level crossings and add cars, taxis, buses… They drive by themselves, choose their way at junctions and wait when the barriers come down.", "Onglet 🚗 Rues : dessine des rues, des carrefours et des passages à niveau et ajoute des voitures, des taxis, des bus… Ils roulent tout seuls, choisissent leur chemin aux carrefours et attendent quand les barrières baissent."],
 ["Pestaña 🏛️ Monumentos: monumentos grandes en 3D. Las vías pueden pasar por debajo de sus arcos (por ejemplo, entre las patas de la Torre Eiffel).", "🏛️ Monuments tab: big 3D monuments. Tracks can pass under their arches (for example between the legs of the Eiffel Tower).", "Onglet 🏛️ Monuments : de grands monuments en 3D. Les voies peuvent passer sous leurs arches (par exemple entre les pieds de la tour Eiffel)."],
 ["Cada tren es distinto: el bala es el más rápido y no echa humo, el de vapor hace chu-chu con humo blanco, el de mercancías es lento y pesado, el tranvía saca chispas.", "Every train is different: the bullet train is the fastest and has no smoke, the steam engine goes choo-choo with white smoke, the freight train is slow and heavy, the tram makes sparks.", "Chaque train est différent : le TGV est le plus rapide et ne fume pas, la locomotive à vapeur fait tchou-tchou avec de la fumée blanche, le train de marchandises est lent et lourd, le tram fait des étincelles."],
-["El botón 🔧 busca las vías sueltas, donde el tren se caería, y te propone cómo unirlas (o un tope 🛑 si no se pueden unir). Acepta con ✔️ o quítalo con ✖️.", "The 🔧 button finds loose ends, where the train would fall off, and suggests how to join them (or a buffer stop 🛑 if they can't be joined). Accept with ✔️ or remove it with ✖️.", "Le bouton 🔧 cherche les bouts libres, où le train tomberait, et te propose comment les relier (ou un butoir 🛑 s'ils ne peuvent pas être reliés). Accepte avec ✔️ ou enlève avec ✖️."],
+["El botón 🔧 busca las vías sueltas, donde el tren se caería, y te propone cómo arreglarlas: cambia una pieza mal puesta, añade vía (también rampas y espirales) y, si hace falta, quita alguna pieza para rehacer la unión. Si no quieres quitar piezas, elige 🛑 Solo topes. Acepta con ✔️ o quítalo con ✖️.", "The 🔧 button finds loose ends, where the train would fall off, and suggests how to fix them: it changes a badly placed piece, adds track (ramps and spirals too) and, if needed, removes a few pieces to redo the join. If you don't want pieces removed, choose 🛑 Only buffer stops. Accept with ✔️ or remove it with ✖️.", "Le bouton 🔧 cherche les bouts libres, où le train tomberait, et te propose comment les réparer : il change une pièce mal posée, ajoute de la voie (rampes et spirales aussi) et, si besoin, enlève quelques pièces pour refaire le raccord. Si tu ne veux pas enlever de pièces, choisis 🛑 Seulement des butoirs. Accepte avec ✔️ ou enlève avec ✖️."],
 ["Si dos trenes se tocan en el mismo piso, chocan. Si un tren llega a una vía suelta o al borde, descarrila: toca 🔄 para recolocarlo.", "If two trains touch on the same floor, they crash. If a train reaches a loose end or the edge, it derails: tap 🔄 to put it back.", "Si deux trains se touchent au même étage, ils se percutent. Si un train arrive à un bout libre ou au bord, il déraille : touche 🔄 pour le remettre."],
 ["En 💾 hay proyectos de ciudades listos para jugar y puedes guardar tus circuitos con nombre.", "In 💾 there are ready-to-play city projects and you can save your layouts with a name.", "Dans 💾 il y a des projets de villes prêts à jouer et tu peux sauvegarder tes circuits avec un nom."],
 // tutorial
