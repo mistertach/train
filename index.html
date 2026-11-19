@@ -4013,7 +4013,7 @@ function playHzTap(wx, wy) {
   playHz = null; refreshHzPlay();
   return true;
 }
-function drvHzTick(dt) { drvTick(); stationTick(dt); boardingTick(); fireTrainTick(dt); trainBadges(); nightTick(dt); }
+function drvHzTick(dt) { faceTick(dt); drvTick(); stationTick(dt); boardingTick(); fireTrainTick(dt); trainBadges(); nightTick(dt); }
 
 // =====================================================================
 //  🏪 SHOP: spend the coins earned by carrying passengers and boxes
@@ -4102,6 +4102,59 @@ function fireTrainTick(dt) {
 }
 // coins can only be made at stations: the extra pull of a café
 const cafeNear = p => [...pieces.values()].some(q => q.type === "cafe" && Math.abs(q.c - p.c) <= 3 && Math.abs(q.r - p.r) <= 3);
+
+// =====================================================================
+//  😊 FACES: every engine has its own cartoon face that reacts to what happens
+// =====================================================================
+const FACE_AT = { steam: [3, 14], diesel: [4, 14], bullet: [3, 13], subway: [5, 15], tram: [15, 25] };
+function drawFace(g, loco, mood, blink) {
+  const at = FACE_AT[loco]; if (!at) return;
+  const [ex, mx] = at, ink = "#2b1d12";
+  if (loco === "steam") el("ellipse", { cx: (ex + mx) / 2 + 1, cy: 0, rx: 13, ry: 16, fill: "#f6e7cf", stroke: "rgba(0,0,0,.35)", "stroke-width": 1.5 }, g);
+  el("circle", { cx: mx - 2, cy: -12, r: 3.4, fill: "#ff8fa3", opacity: .65 }, g);
+  el("circle", { cx: mx - 2, cy: 12, r: 3.4, fill: "#ff8fa3", opacity: .65 }, g);
+  [-7.5, 7.5].forEach(y => {
+    if (mood === "dizzy") { el("path", { d: `M${ex - 4} ${y - 4}l8 8M${ex + 4} ${y - 4}l-8 8`, stroke: ink, "stroke-width": 2.6, "stroke-linecap": "round" }, g); return; }
+    if (mood === "ouch") { el("path", { d: `M${ex - 4} ${y - 4}L${ex + 3} ${y}L${ex - 4} ${y + 4}`, stroke: ink, "stroke-width": 2.6, fill: "none", "stroke-linecap": "round", "stroke-linejoin": "round", transform: y < 0 ? "" : `translate(0 0)` }, g); return; }
+    if (blink || mood === "sleep") { el("path", { d: `M${ex - 1} ${y - 5}Q${ex + 3} ${y} ${ex - 1} ${y + 5}`, stroke: ink, "stroke-width": 2.4, fill: "none", "stroke-linecap": "round" }, g); return; }
+    const r = mood === "wow" ? 7 : 6;
+    el("circle", { cx: ex, cy: y, r, fill: "#fff", stroke: ink, "stroke-width": 1.6 }, g);
+    el("circle", { cx: ex + 2, cy: y + (mood === "worried" ? 0 : y * .05), r: mood === "wow" ? 3.6 : 3.1, fill: ink }, g);
+    el("circle", { cx: ex + 3, cy: y - 1.2, r: 1.1, fill: "#fff" }, g);
+    if (mood === "worried") el("path", { d: `M${ex - 7} ${y - (y < 0 ? 1 : -1) * 6}L${ex - 5} ${y + (y < 0 ? 5 : -5)}`, stroke: ink, "stroke-width": 2.2, "stroke-linecap": "round" }, g);
+  });
+  if (mood === "wow" || mood === "ouch") el("ellipse", { cx: mx + 1, cy: 0, rx: 3.6, ry: 4.4, fill: "#7a2a2a", stroke: ink, "stroke-width": 1.4 }, g);
+  else if (mood === "worried") el("path", { d: `M${mx + 1} -5Q${mx - 3} 0 ${mx + 1} 5`, stroke: ink, "stroke-width": 2.2, fill: "none", "stroke-linecap": "round" }, g);
+  else if (mood === "dizzy") el("path", { d: `M${mx} -6q2 2 0 4q-2 2 0 4q2 2 0 4`, stroke: ink, "stroke-width": 2, fill: "none", "stroke-linecap": "round" }, g);
+  else if (mood === "sleep") { el("path", { d: `M${mx} -3Q${mx + 2} 0 ${mx} 3`, stroke: ink, "stroke-width": 2, fill: "none", "stroke-linecap": "round" }, g); }
+  else { el("path", { d: `M${mx - 1} -6Q${mx + 7} 0 ${mx - 1} 6Z`, fill: "#7a2a2a", stroke: ink, "stroke-width": 1.8, "stroke-linejoin": "round" }, g); el("path", { d: `M${mx + 1.5} -2.5Q${mx + 4} 0 ${mx + 1.5} 2.5`, fill: "#ff8fa3" }, g); }
+}
+function moodOf(tr) {
+  if (tr.wreck) return "dizzy";
+  if (tr.status === "bonk") return "ouch";
+  if (tr.turbo > 0 || tr.jumpT >= 0) return "wow";
+  if (!running) return night ? "sleep" : "happy";
+  if (tr.wait > 0 || tr.thr === 0) return "happy";
+  if ((tr.still || 0) > .35) return night ? "sleep" : "worried";
+  return "happy";
+}
+function faceTick(dt) {
+  trains.forEach(tr => {
+    const loco = KINDS[tr.kind].loco; if (!FACE_AT[loco] || !tr.gs[0]) return;
+    // is it standing still although it should be going?
+    const q = posOf(tr.head), lp = tr.lastP; tr.lastP = q;
+    if (lp && Math.hypot(q.x - lp.x, q.y - lp.y) < .05) tr.still = (tr.still || 0) + dt; else tr.still = 0;
+    tr.blinkT = (tr.blinkT == null ? rnd(1, 4) : tr.blinkT) - dt;
+    const blink = tr.blinkT < 0 && tr.blinkT > -.14;
+    if (tr.blinkT < -.14) tr.blinkT = rnd(2, 5);
+    const mood = moodOf(tr), key = mood + (blink ? "b" : "");
+    if (tr.faceKey === key && tr.faceG && tr.faceG.parentNode === tr.gs[0]) return;
+    tr.faceKey = key;
+    if (tr.faceG) tr.faceG.remove();
+    tr.faceG = el("g", { "pointer-events": "none" }, tr.gs[0]);
+    drawFace(tr.faceG, loco, mood, blink);
+  });
+}
 
 // =====================================================================
 //  MAIN LOOP
@@ -4420,7 +4473,7 @@ function showLock() {
 }
 function trainIcon(kind, cars, c1, c2) {
   const s = el("svg", { xmlns: NS, viewBox: `${-46 - (cars - 1) * SP} -26 ${92 + (cars - 1) * SP} 52` });
-  carTypes(kind, cars - 1).forEach((type, i) => { const g = el("g", { transform: `translate(${-i * SP} 0)` }, s); drawCar(g, type, carColor(KINDS[kind], i, c1), c2); });
+  carTypes(kind, cars - 1).forEach((type, i) => { const g = el("g", { transform: `translate(${-i * SP} 0)` }, s); drawCar(g, type, carColor(KINDS[kind], i, c1), c2); if (i === 0 && typeof drawFace === "function") drawFace(el("g", {}, g), KINDS[kind].loco, "happy", false); });
   return s;
 }
 function updateCarsUI() {
