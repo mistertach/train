@@ -134,6 +134,12 @@
   #fixbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(250px + env(safe-area-inset-bottom)); z-index: 24; width: min(640px, calc(100vw - 30px));
     background: #fff8e8; border: 5px solid #ffd400; border-radius: 22px; padding: 10px 14px; box-shadow: 0 8px 24px rgba(0,0,0,.3); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
   #fixbar[hidden] { display: none; }
+  #guidebar { position: fixed; left: 50%; transform: translateX(-50%); z-index: 23; width: min(600px, calc(100vw - 150px)); display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: #fff8e8; border: 5px solid #e0b000; border-radius: 22px; padding: 6px 12px; box-shadow: 0 5px 14px rgba(0,0,0,.25); }
+  #guidebar[hidden] { display: none; } #guidebar .big { font-size: 38px; } #guidebar .tx { flex: 1 1 200px; font-size: 16px; line-height: 1.3; }
+  #guidebar .row { display: flex; gap: 8px; } #guidebar .b { width: auto; padding: 0 14px; font-size: 18px; height: 50px; } #guidebar .b.go { background: #6fd36f; border-color: #2f8f2f; }
+  body.playing #guidebar { display: none; }
+  .libfolders .folder { text-align: center; cursor: pointer; } .libfolders .big { font-size: 64px; } .libRow { flex-wrap: wrap; gap: 8px; }
   #fixbar .big { font-size: 40px; } #fixbar .tx { flex: 1 1 260px; font-size: 17px; line-height: 1.35; }
   #fixbar .row { display: flex; gap: 8px; } #fixbar .b { width: auto; padding: 0 14px; font-size: 18px; }
   #fixbar .b.go { background: #6fd36f; border-color: #2f8f2f; }
@@ -278,7 +284,7 @@
   <div class="modes">
     <div class="mode" id="goAdv"><div class="big">🗺️</div><b>Aventura</b><span>Viaja por el mundo: lleva el tren de la estación A hasta la 🏁 construyendo la vía.</span></div>
     <div class="mode" id="goFree"><div class="big">🧱</div><b>Juego libre</b><span>Construye lo que quieras, con todas las piezas, trenes, coches y monumentos.</span></div>
-    <div class="mode" id="goDraw"><div class="big">🐘</div><b>Dibujos</b><span>Haz un elefante, un gato o un corazón con vías, y el tren da la vuelta.</span></div>
+    <div class="mode" id="goDraw"><div class="big">📚</div><b>Biblioteca</b><span>Ciudades, animales, comida y cosas para construir y jugar.</span></div>
   </div>
   <div class="tutrow">
     <div id="goTut" class="tutc"><div class="big">🎓</div><div><b>Aprender a jugar</b><span>Un tutorial paso a paso, con voz, para antes de la aventura o del juego libre.</span></div></div>
@@ -397,7 +403,7 @@ const CIUDAD = [["casa", "🏠", "Casa"], ["granja", "🏡", "Casa con jardín"]
   ["fuente", "⛲", "Fuente"], ["estadio", "🏟️", "Estadio"], ["museo", "🏛️", "Museo"], ["kiosco", "🏪", "Tienda"], ["globo", "🎈", "Globo"]];
 const GTILES = [["plaza", "Plaza (adoquines)", "#d9d3c7"], ["arena", "Arena de playa", "#f2d98d"], ["parque", "Parque con flores", "#5fb04f"],
   ["nieve", "Nieve o sal", "#f3f7fb"], ["campo", "Campo de cultivo", "#b9c45a"],
-  ["gris", "Suelo gris", "#a7acb4"], ["rosa", "Suelo rosa", "#f6a6c1"], ["naranja", "Suelo naranja", "#f5a84e"], ["azul", "Suelo azul", "#86c8f2"], ["amarillo", "Suelo amarillo", "#ffd95a"], ["marron", "Suelo marrón", "#6e4a2c"]];
+  ["gris", "Suelo gris", "#a7acb4"], ["rosa", "Suelo rosa", "#f6a6c1"], ["naranja", "Suelo naranja", "#f5a84e"], ["azul", "Suelo azul", "#86c8f2"], ["amarillo", "Suelo amarillo", "#ffd95a"], ["marron", "Suelo marrón", "#6e4a2c"], ["rojo", "Suelo rojo", "#e2493b"]];
 const DECO_NAME = {};
 GTILES.forEach(([id, nm, col]) => { DEFS[id] = { gtile: col, cells: P1, ports: [], routes: [] }; });
 [...CAMPO, ...CIUDAD].forEach(([id, em, nm]) => { DEFS[id] = { deco: em || " ", water: id === "agua", cells: P1, ports: [], routes: [] }; DECO_NAME[id] = nm; });
@@ -2617,7 +2623,7 @@ function step(dt) {
   if (running && crashTimer <= 0) { trains.forEach(tr => updateTrain(tr, dt)); checkCollisions(); updateCars(dt); }
   else if (lvl && crashTimer <= 0) trains.forEach(tr => { if (tr.ambient) updateTrain(tr, dt); });
   cowTick(dt);
-  updateWrecks(dt); updateCrossings(dt); updateFx(dt); renderTrains(); renderCars(); renderSlopeBtn(); drawMini(); tutTick(dt); lvlTick(); camTick(dt);
+  updateWrecks(dt); updateCrossings(dt); updateFx(dt); renderTrains(); renderCars(); renderSlopeBtn(); drawMini(); tutTick(dt); guideTick(); lvlTick(); camTick(dt);
 }
 
 // =====================================================================
@@ -2633,6 +2639,7 @@ const INFO = {
   rosa: [null, "Suelo rosa", "Pinta el suelo de color. Arrastra el dedo para pintar muchas casillas."],
   naranja: [null, "Suelo naranja", "Pinta el suelo de color. Arrastra el dedo para pintar muchas casillas."],
   azul: [null, "Suelo azul", "Pinta el suelo de color. Arrastra el dedo para pintar muchas casillas."],
+  rojo: [null, "Suelo rojo", "Pinta el suelo de color. Arrastra el dedo para pintar muchas casillas."],
   marron: [null, "Suelo marrón", "Pinta el suelo de color. Arrastra el dedo para pintar muchas casillas."],
   amarillo: [null, "Suelo amarillo", "Pinta el suelo de color. Arrastra el dedo para pintar muchas casillas."],
   sesgoI: [null, "Vía en diagonal", "Se desplaza una casilla hacia un lado. Pon varias seguidas para hacer una línea inclinada, como la trompa de un elefante. Tócala con la misma pieza o con ✋ para girarla: tiene 8 posiciones. El lápiz ✏️ también las pone solo al dibujar líneas inclinadas."],
@@ -2683,7 +2690,7 @@ const TABS = [
   { id: "especial", ic: "🚉", nm: "Especiales", items: ["estacion", "tunel", "tunelL", "tope", "paso"] },
   { id: "campo", ic: "🌳", nm: "Campo", items: CAMPO.map(d => d[0]) },
   { id: "calles", ic: "🚗", nm: "Calles", items: ["calle", "calleC", "calleT", "calleX", "paso", "calleVia", "calleViaC", "car_coche", "car_taxi", "car_bus", "car_policia", "car_bomberos", "car_tuktuk"] },
-  { id: "suelos", ic: "🎨", nm: "Suelos", items: ["plaza", "arena", "parque", "nieve", "campo", "gris", "rosa", "naranja", "azul", "amarillo", "marron", "agua"] },
+  { id: "suelos", ic: "🎨", nm: "Suelos", items: ["plaza", "arena", "parque", "nieve", "campo", "gris", "rosa", "naranja", "azul", "amarillo", "marron", "rojo", "agua"] },
   { id: "ciudad", ic: "🏙️", nm: "Ciudad", items: ["casa", "granja", "iglesia", "rascacielos", "tienda", "ciudad", "museo", "kiosco", "estadio", "fuente", "barco", "velero", "torre", "castillo", "torii", "templo", "estatua", "reloj", "noria", "atraccion", "tiovivo", "globo", "dragon"] },
   { id: "monumentos", ic: "🏛️", nm: "Monumentos", items: ["arco", "eiffel", "towerb", "bigben", "acueducto", "alcala", "toriiG", "obelisco", "faro", "monte"] },
   { id: "trenes", ic: "🚂", nm: "Trenes", items: [] },
@@ -3002,22 +3009,14 @@ $("modal").addEventListener("pointerdown", e => { if (e.target === $("modal")) c
 function mkBtn(txt, title, fn) { const b = document.createElement("button"); b.className = "b"; b.textContent = txt; b.title = title; b.onclick = fn; return b; }
 function h2(card, text) { const h = document.createElement("h2"); h.textContent = text; const x = mkBtn("✖️", "Cerrar", closeModal); x.classList.add("x"); h.appendChild(x); card.appendChild(h); }
 function addEl(parent, tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; parent.appendChild(e); return e; }
-function loadNamed(data, name) { clearUndo(); loadData(data); curName = name; userMoved = false; fitAll(); autosave(); closeModal(); toast("📂"); sfx.whistleShort(); }
+function loadNamed(data, name) { endGuide(); clearUndo(); loadData(data); curName = name; userMoved = false; fitAll(); autosave(); closeModal(); toast("📂"); sfx.whistleShort(); }
 
 function openSaves() {
   openModal(card => {
     h2(card, "💾 Proyectos y guardados");
-    { const dr = mkBtn("🎨 Dibujos con vías", "Dibujos con vías", () => openDrawings()); dr.style.width = "auto"; dr.style.padding = "0 18px"; dr.style.fontSize = "18px"; card.appendChild(dr); }
-    addEl(card, "h3", "", "⭐ Proyectos listos para jugar");
-    addEl(card, "p", "", "Toca uno para cargarlo y pulsa ▶️. Todos traen trenes preparados.");
-    const g1 = addEl(card, "div", "grid");
-    PROJECTS.forEach(pr => {
-      const c = addEl(g1, "div", "proj"); c.title = trn("Cargar") + " " + trn(pr.name);
-      const cv = addEl(c, "canvas"); cv.width = 340; cv.height = 224; drawThumb(cv, pr.data);
-      addEl(c, "div", "nm", pr.emoji + " " + pr.name);
-      addEl(c, "div", "ds", pr.desc);
-      c.onclick = () => loadNamed(pr.data, pr.name);
-    });
+    addEl(card, "h3", "", "📚 Biblioteca");
+    const lr = addEl(card, "div", "saveRow libRow");
+    LIBRARY.forEach(L => { const b = mkBtn(L.em + " " + trn(L.nm), trn(L.nm), () => { sfx.click(); openLibrary(L.id); }); b.style.width = "auto"; b.style.padding = "0 16px"; b.style.fontSize = "18px"; lr.appendChild(b); });
     addEl(card, "h3", "", "📁 Mis circuitos");
     const ok = sset(KEY + "-probe", 1);
     if (!ok) addEl(card, "div", "warn", "⚠️ Aquí no se puede guardar: esta vista no deja usar el almacenamiento del navegador. Abre constructor.html con doble clic para poder guardar.");
@@ -3063,7 +3062,7 @@ $("clearBtn").onclick = () => running ? (wobble($("play")), toast("⏸️ 🔨")
   addEl(card, "p", "", "Se quitan todas las piezas y los trenes. Los circuitos guardados no se borran.");
   const yn = addEl(card, "div", "saveRow"); yn.style.justifyContent = "center"; yn.style.gap = "30px"; yn.style.marginTop = "12px";
   const big = b => { b.style.width = "110px"; b.style.height = "84px"; b.style.fontSize = "46px"; return b; };
-  yn.appendChild(big(mkBtn("✔️", "Sí, vaciar", () => { withUndo(clearBoard); curName = ""; setFloor(0); autosave(); closeModal(); sfx.toc(); })));
+  yn.appendChild(big(mkBtn("✔️", "Sí, vaciar", () => { endGuide(); withUndo(clearBoard); curName = ""; setFloor(0); autosave(); closeModal(); sfx.toc(); })));
   yn.appendChild(big(mkBtn("✖️", "No", closeModal)));
 });
 $("helpBtn").onclick = () => openModal(card => {
@@ -3129,6 +3128,31 @@ const DRAWINGS = [
     deco: [] },
   { id: "estrella", em: "⭐", nm: "Estrella", art: "una", artFr: "une", tile: "amarillo", poly: [[13, 0], [16, 8], [25, 8], [18, 13], [21, 22], [13, 17], [5, 22], [8, 13], [1, 8], [10, 8]],
     deco: [] },
+  // more animals
+  { id: "pato", em: "🦆", nm: "Pato", tile: "amarillo", poly: [[6, 1], [10, 1], [12, 3], [12, 7], [14, 8], [20, 8], [25, 4], [25, 10], [22, 14], [17, 16], [9, 16], [5, 14], [4, 11], [7, 9], [5, 7], [0, 7], [0, 5], [4, 5], [4, 3]],
+    paint: [["naranja", 1, 6, 4, 1], ["marron", 8, 3, 1, 1], ["nieve", 13, 10, 6, 2]], around: "agua" },
+  { id: "conejo", em: "🐰", nm: "Conejo", tile: "nieve", poly: [[5, 0], [7, 0], [8, 2], [8, 9], [13, 9], [13, 2], [14, 0], [16, 0], [17, 2], [17, 10], [19, 13], [19, 18], [16, 21], [11, 22], [6, 21], [2, 18], [2, 13], [4, 10], [4, 2]],
+    paint: [["rosa", 5, 2, 3, 7], ["rosa", 14, 2, 3, 8], ["marron", 7, 13, 1, 1], ["marron", 14, 13, 1, 1], ["rosa", 10, 16, 2, 1]] },
+  { id: "tortuga", em: "🐢", nm: "Tortuga", tile: "campo", poly: [[4, 10], [5, 6], [8, 3], [14, 2], [19, 3], [22, 6], [23, 9], [26, 8], [28, 9], [28, 12], [22, 12], [22, 15], [19, 15], [19, 13], [9, 13], [9, 15], [6, 15], [6, 12], [2, 12]],
+    paint: [["parque", 8, 5, 3, 3], ["parque", 13, 4, 3, 3], ["parque", 17, 6, 3, 3], ["parque", 11, 9, 4, 2], ["marron", 26, 10, 1, 1]] },
+  // food
+  { id: "manzana", em: "🍎", nm: "Manzana", tile: "rojo", poly: [[4, 6], [8, 4], [11, 5], [14, 4], [18, 6], [20, 10], [20, 15], [17, 20], [14, 21], [11, 20], [8, 21], [5, 20], [2, 15], [2, 10]],
+    paint: [["marron", 11, 1, 1, 3, 1], ["parque", 12, 1, 3, 2, 1], ["nieve", 6, 8, 2, 2]] },
+  { id: "helado", em: "🍦", nm: "Helado", tile: "naranja", poly: [[4, 9], [5, 5], [8, 2], [12, 1], [16, 2], [19, 5], [20, 9], [18, 10], [13, 23], [11, 23], [6, 10]],
+    paint: [["rosa", 4, 1, 17, 9], ["rojo", 12, 2, 1, 1], ["amarillo", 9, 12, 6, 1], ["amarillo", 10, 16, 4, 1]] },
+  { id: "pizza", em: "🍕", nm: "Pizza", tile: "amarillo", poly: [[2, 2], [22, 2], [12, 22]],
+    paint: [["naranja", 3, 3, 19, 2], ["rojo", 8, 7, 2, 2], ["rojo", 14, 7, 2, 2], ["rojo", 11, 12, 2, 2], ["rojo", 10, 7, 1, 1]] },
+  { id: "fresa", em: "🍓", nm: "Fresa", tile: "rojo", poly: [[12, 23], [4, 13], [3, 7], [5, 4], [9, 3], [15, 3], [19, 4], [21, 7], [20, 13]],
+    paint: [["parque", 6, 4, 12, 2], ["amarillo", 8, 8, 1, 1], ["amarillo", 13, 8, 1, 1], ["amarillo", 17, 9, 1, 1], ["amarillo", 10, 12, 1, 1], ["amarillo", 15, 13, 1, 1], ["amarillo", 7, 11, 1, 1], ["amarillo", 12, 17, 1, 1]] },
+  // things
+  { id: "casa", em: "🏠", nm: "Casa", tile: "naranja", poly: [[2, 10], [12, 1], [22, 10], [19, 10], [19, 22], [5, 22], [5, 10]],
+    paint: [["rojo", 0, 0, 25, 10], ["marron", 11, 17, 3, 5], ["azul", 7, 13, 3, 3], ["azul", 15, 13, 3, 3]], deco: [["arbol", 25, 20], ["flores", 3, 23]] },
+  { id: "cohete", em: "🚀", nm: "Cohete", art: "un", tile: "nieve", poly: [[12, 0], [16, 5], [16, 17], [20, 22], [15, 21], [9, 21], [4, 22], [8, 17], [8, 5]],
+    paint: [["rojo", 0, 0, 25, 5], ["azul", 11, 8, 3, 3], ["rojo", 0, 18, 25, 5]] },
+  { id: "barco", em: "⛵", nm: "Barco", tile: "nieve", poly: [[13, 1], [20, 13], [24, 14], [20, 21], [6, 21], [2, 14], [13, 14]],
+    paint: [["marron", 0, 15, 26, 7], ["azul", 14, 10, 1, 1]], around: "agua" },
+  { id: "coche", em: "🚗", nm: "Coche", tile: "rojo", poly: [[2, 15], [2, 10], [6, 9], [9, 4], [18, 4], [21, 9], [25, 10], [25, 15]],
+    paint: [["azul", 10, 6, 3, 3], ["azul", 15, 6, 3, 3], ["marron", 4, 15, 4, 3, 1], ["marron", 19, 15, 4, 3, 1], ["amarillo", 24, 11, 1, 1]] },
 ];
 // 4-connected squares along a straight segment, keeping slants evenly spread
 function rasterSeg(a, b, out) {
@@ -3185,38 +3209,118 @@ function drawAutoBuild(specs) {
     if (i >= todo.length) { clearInterval(drawAuto); drawAuto = null; refreshHints(); autosave(); }
   }, 70);
 }
-function drawingSteps(D) {
-  const B = drawingPieces(D), nm = trn(D.nm);
-  const done = () => looseEnds().length === 0 && B.specs.filter(ghostCovered).length >= .85 * B.specs.length;
-  return [
-    { em: D.em, tx: LX(`¡Vamos a hacer ${D.art || "un"} ${nm.toLowerCase()} con vías! Sigue el dibujo amarillo con el lápiz ✏️ o con piezas. Si quieres, pulsa ✨ y lo hago yo.`,
-        `Let's make ${D.artEn || "a"} ${nm.toLowerCase()} out of track! Follow the yellow picture with the pencil ✏️ or with pieces. If you like, press ✨ and I'll do it.`,
-        `Faisons ${D.artFr || "un"} ${nm.toLowerCase()} avec des voies ! Suis le dessin jaune avec le crayon ✏️ ou avec des pièces. Si tu veux, appuie sur ✨ et je le fais.`),
-      ghosts: B.specs, fitBox: B.box, extra: ["✨ Hazlo tú", () => drawAutoBuild(B.specs)],
-      onEnter: () => {
-        selectTab("vias"); selectTool("lapiz");
-        if (D.tile) B.fill.forEach(([x, y]) => inB(x, y) && paintAt(D.tile, x, y));
-        (D.paint || []).forEach(([t, x, y, w, h]) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (inB(x + i + B.ox, y + j + B.oy)) paintAt(t, x + i + B.ox, y + j + B.oy); });
-        if (D.around) B.ring.forEach(([x, y]) => inB(x, y) && !piecesIn(x, y).length && addPiece(D.around, x, y, 0, 0, 0));
-        (D.deco || []).forEach(([t, x, y]) => { if (DEFS[t]) addPiece(t, x + B.ox, y + B.oy, 0, 0, 0); });
-      },
-      hi: () => tool === "lapiz" ? null : curTab === "vias" ? '.it[data-id="lapiz"]' : '.tab[data-tab="vias"]',
-      done, hold: 2.5, doneSay: LX("¡Qué bonito te ha quedado!", "That looks lovely!", "Que c'est joli !") },
-    { em: "🚂", tx: LX("Ahora pon un tren en la vía y pulsa ▶️ para que dé la vuelta al dibujo.", "Now put a train on the track and press ▶️ so it goes all the way round the picture.", "Maintenant pose un train sur la voie et appuie sur ▶️ pour qu'il fasse le tour du dessin."),
-      hi: () => trains.length ? "#play" : tool === "train" ? null : '.tab[data-tab="trenes"]', done: () => trains.length > 0 && running },
-    { em: "🎉", tx: LX("¡Chu-chu! Cuando quieras, pulsa ⏸️ para parar.", "Choo-choo! Whenever you like, press ⏸️ to stop.", "Tchou-tchou ! Quand tu veux, appuie sur ⏸️ pour arrêter."), hi: () => "#play", done: () => !running, minTime: 3 },
-    { em: "🏆", tx: LX("¡Lo has hecho muy bien! ¿Hacemos otro dibujo?", "Well done! Shall we make another picture?", "Bravo ! On fait un autre dessin ?"), end: true, again: true },
-  ];
+// paint the picture: colour inside, details, water around, decorations
+function paintPicture(D, B) {
+  const inside = new Set(B.fill.map(p => p.join(",")));
+  if (D.tile) B.fill.forEach(([x, y]) => inB(x, y) && paintAt(D.tile, x, y));
+  (D.paint || []).forEach(([t, x, y, w, h, any]) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const X = x + i + B.ox, Y = y + j + B.oy; if (inB(X, Y) && (any || inside.has(X + "," + Y))) paintAt(t, X, Y); } });
+  if (D.around) B.ring.forEach(([x, y]) => inB(x, y) && !piecesIn(x, y).length && addPiece(D.around, x, y, 0, 0, 0));
+  (D.deco || []).forEach(([t, x, y]) => { if (DEFS[t]) addPiece(t, x + B.ox, y + B.oy, 0, 0, 0); });
 }
-function openDrawings() {
+// the same, as saved data (for the little pictures in the library)
+function pictureData(D) {
+  const B = drawingPieces(D), out = new Map(), inside = new Set(B.fill.map(p => p.join(",")));
+  const put = (t, x, y) => out.set(x + "," + y + ":" + (DEFS[t].gtile || DEFS[t].water ? "f" : "p"), [t, x, y, 0, 0, 0]);
+  if (D.tile) B.fill.forEach(([x, y]) => put(D.tile, x, y));
+  (D.paint || []).forEach(([t, x, y, w, h, any]) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const X = x + i + B.ox, Y = y + j + B.oy; if (any || inside.has(X + "," + Y)) put(t, X, Y); } });
+  if (D.around) B.ring.forEach(([x, y]) => put(D.around, x, y));
+  const pcs = [...out.values()];
+  B.specs.forEach(g => pcs.push([g.type, g.c, g.r, g.rot, 0, 0]));
+  return { v: 2, pieces: pcs, trains: [] };
+}
+// 🎨 a picture in free play: the yellow guide shows where the track goes; it can be built for you
+let guide = null;
+function loadPicture(D) {
+  if (tut) endTutorial(false);
+  closeModal(); $("home").hidden = true; $("advmap").hidden = true;
+  if (lvl) enterFree();
+  if (running) setRunning(false);
+  if (pieces.size) { undoStack.push(snapshot()); updUndo(); }
+  clearBoard(); setFloor(0); curName = trn(D.nm);
+  const B = drawingPieces(D);
+  paintPicture(D, B);
+  guide = { D, specs: B.specs, box: B.box, done: false, left: -1 };
+  refreshHints(); drawGhosts(); showGuideBar();
+  selectTab("vias"); selectTool("lapiz");
+  setTimeout(() => fitBoxView(B.box), 120);
+  autosave(); sfx.whistleShort();
+  speak(LX("Sigue el dibujo amarillo con el lápiz o con piezas. Si quieres, pulsa la estrella y lo hago yo.", "Follow the yellow picture with the pencil or with pieces. If you like, press the sparkles and I'll do it.", "Suis le dessin jaune avec le crayon ou avec des pièces. Si tu veux, appuie sur les étoiles et je le fais."));
+}
+function fitBoxView(box) {
+  const gb = $("guidebar"), top = Math.max($("top").getBoundingClientRect().bottom, gb && !gb.hidden ? gb.getBoundingClientRect().bottom : 0) + 10, bot = innerHeight - bottomH() - 10;
+  const x0 = (box[0] - .5) * T, x1 = (box[1] + .5) * T, y0 = (box[2] - .5) * T, y1 = (box[3] + .5) * T;
+  view.z = clamp(Math.min((innerWidth - 90) / (x1 - x0), Math.max(120, bot - top) / (y1 - y0)), minZ(), 1);
+  view.x = (innerWidth - 70) / 2 - (x0 + x1) / 2 * view.z; view.y = (top + bot) / 2 - (y0 + y1) / 2 * view.z;
+  userMoved = true; applyView();
+}
+function showGuideBar() {
+  let bar = $("guidebar");
+  if (!bar) { bar = document.createElement("div"); bar.id = "guidebar"; document.body.appendChild(bar); }
+  bar.innerHTML = ""; bar.hidden = !guide;
+  if (!guide) return;
+  bar.style.top = ($("top").offsetHeight + 12) + "px";
+  addEl(bar, "div", "big", guide.done ? "🎉" : guide.D.em);
+  addEl(bar, "div", "tx", guide.done ? LX("¡Qué bonito te ha quedado! Ahora pon un tren 🚂 y pulsa ▶️. Puedes guardarlo en 💾.", "That looks lovely! Now put a train 🚂 on it and press ▶️. You can save it in 💾.", "Que c'est joli ! Maintenant pose un train 🚂 et appuie sur ▶️. Tu peux le sauvegarder dans 💾.")
+    : LX("Sigue el dibujo amarillo con el lápiz ✏️ o con piezas.", "Follow the yellow picture with the pencil ✏️ or with pieces.", "Suis le dessin jaune avec le crayon ✏️ ou avec des pièces."));
+  const row = addEl(bar, "div", "row");
+  if (!guide.done) row.appendChild(Object.assign(mkBtn("✨ " + LX("Hazlo tú", "You do it", "Fais-le, toi"), LX("Hazlo tú", "You do it", "Fais-le, toi"), () => { unlockAudio(); drawAutoBuild(guide.specs); }), { className: "b go" }));
+  else row.appendChild(Object.assign(mkBtn("🚂", LX("Trenes", "Trains", "Trains"), () => { selectTab("trenes"); sfx.click(); }), { className: "b go" }));
+  row.appendChild(mkBtn("✖️", LX("Quitar la guía", "Remove the guide", "Enlever le guide"), () => { endGuide(); sfx.click(); }));
+}
+function endGuide() { guide = null; if (!tut) L.tut.innerHTML = ""; const bar = $("guidebar"); if (bar) bar.hidden = true; if (drawAuto && !tut) { clearInterval(drawAuto); drawAuto = null; } }
+function guideTick() {
+  if (!guide || tut) return;
+  if (lvl) { endGuide(); return; }
+  const left = guide.specs.filter(g => !ghostCovered(g)).length;
+  if (left !== guide.left) { guide.left = left; if (!guide.done) drawGhosts(); }
+  if (!guide.done && left <= .15 * guide.specs.length && !drawAuto && looseEnds().length === 0) {
+    guide.done = true; L.tut.innerHTML = ""; sfx.bell(); tone([523, 659, 784, 1047], "triangle", .12, .3, .12);
+    const [x0, x1, y0, y1] = guide.box; burst((x0 + x1) / 2 * T, (y0 + y1) / 2 * T, ["🎉", "⭐", "✨"], 14);
+    showGuideBar(); speak($("guidebar").querySelector(".tx").textContent);
+  }
+  if (guide.done && running) endGuide();
+}
+// 📚 the library: folders of ready-made things to build and play
+const LIBRARY = [
+  { id: "ciudades", em: "🏙️", nm: "Ciudades" },
+  { id: "animales", em: "🐾", nm: "Animales", pics: ["elefante", "gato", "pez", "pato", "conejo", "tortuga"] },
+  { id: "comida", em: "🍎", nm: "Comida", pics: ["manzana", "fresa", "helado", "pizza"] },
+  { id: "cosas", em: "🧸", nm: "Cosas", pics: ["corazon", "estrella", "casa", "coche", "cohete", "barco", "persona"] },
+];
+const thumbCache = new Map();
+function openLibrary(fid) {
   if (running) setRunning(false);
   openModal(card => {
-    h2(card, "🎨 Dibujos con vías");
-    addEl(card, "p", "", "Elige un dibujo: lo haces con vías y luego el tren da la vuelta.");
-    const g = addEl(card, "div", "tutpick drawpick");
-    DRAWINGS.forEach(D => {
-      const c = addEl(g, "div", "proj"); c.onclick = () => { unlockAudio(); sfx.whistleShort(); startTutorial("draw:" + D.id); };
-      addEl(c, "div", "big", D.em); addEl(c, "div", "nm", D.nm);
+    const F = fid && LIBRARY.find(x => x.id === fid);
+    h2(card, F ? F.em + " " + F.nm : "📚 Biblioteca");
+    if (!F) {
+      addEl(card, "p", "", "Elige una carpeta. Toca un dibujo y constrúyelo en el juego libre, o deja que lo haga yo.");
+      const g = addEl(card, "div", "grid libfolders");
+      LIBRARY.forEach(L => {
+        const c = addEl(g, "div", "proj folder"); c.onclick = () => { sfx.click(); openLibrary(L.id); };
+        addEl(c, "div", "big", L.em); addEl(c, "div", "nm", L.nm);
+        addEl(c, "div", "ds", "📁 " + (L.pics ? L.pics.length : PROJECTS.length));
+      });
+      const c = addEl(g, "div", "proj folder"); c.onclick = () => { sfx.click(); openSaves(); };
+      addEl(c, "div", "big", "📁"); addEl(c, "div", "nm", "Mis circuitos"); addEl(c, "div", "ds", "💾");
+      return;
+    }
+    const back = mkBtn("⬅️ " + trn("Biblioteca"), trn("Biblioteca"), () => { sfx.click(); openLibrary(); });
+    back.style.width = "auto"; back.style.padding = "0 16px"; back.style.fontSize = "17px"; card.appendChild(back);
+    const g = addEl(card, "div", "grid");
+    if (F.id === "ciudades") PROJECTS.forEach(pr => {
+      const c = addEl(g, "div", "proj"); c.title = trn("Cargar") + " " + trn(pr.name);
+      const cv = addEl(c, "canvas"); cv.width = 340; cv.height = 224; drawThumb(cv, pr.data);
+      addEl(c, "div", "nm", pr.emoji + " " + pr.name); addEl(c, "div", "ds", pr.desc);
+      c.onclick = () => { endGuide(); loadNamed(pr.data, pr.name); };
+    });
+    else F.pics.map(id => DRAWINGS.find(d => d.id === id)).filter(Boolean).forEach(D => {
+      const c = addEl(g, "div", "proj"); c.title = trn("Cargar") + " " + trn(D.nm);
+      const cv = addEl(c, "canvas"); cv.width = 340; cv.height = 224;
+      if (!thumbCache.has(D.id)) thumbCache.set(D.id, pictureData(D));
+      drawThumb(cv, thumbCache.get(D.id));
+      addEl(c, "div", "nm", D.em + " " + D.nm);
+      c.onclick = () => { unlockAudio(); loadPicture(D); };
     });
   });
 }
@@ -3236,7 +3340,7 @@ const TUT_SPIRAL = [G("subeI", 12, -3, 0), { type: "subeI", c: TC + 12, r: TR - 
 const TUT_SPTOP = [{ type: "tope", c: TC + 12, r: TR - 3, rot: 0, h: 4 }];
 function tutStub() { if (!pieceAtLevel(TC + 6, TR - 3, 0)) { addPiece("corta", TC + 6, TR - 3, 0, 0, 0); addPiece("tope", TC + 5, TR - 3, 2, 0, 0); refreshHints(); } setFloor(0); }
 const STRAIGHTS = ["corta", "recta", "estacion", "tunel", "tunelL", "paso"];
-function ghostDone(g) { if (tut && tut.draw) return ghostCovered(g); const p = pieceAtLevel(g.c, g.r, g.h); return !!p && (p.type === g.type || (g.type === "corta" && STRAIGHTS.includes(p.type))); }
+function ghostDone(g) { if ((tut && tut.draw) || (!tut && guide)) return ghostCovered(g); const p = pieceAtLevel(g.c, g.r, g.h); return !!p && (p.type === g.type || (g.type === "corta" && STRAIGHTS.includes(p.type))); }
 const TUT_BASIC = [
   { em: "👋", tx: "¡Hola! Vamos a construir juntos un circuito de tren. Sigue las luces amarillas: te dicen qué tocar.", btn: "¡Empezamos!" },
   { em: "🛤️", tx: "Abajo están las pestañas con las piezas. Toca la pestaña 🛤️ Vías.", hi: () => '.tab[data-tab="vias"]', done: () => curTab === "vias" },
@@ -3287,22 +3391,23 @@ const TUT_HIGH = [
 let TUT = TUT_BASIC;
 let tut = null, tutStashKeep = null;
 function tutGhostFor(type, c, r) {
-  if (!tut || !tut.ghosts) return null;
-  return tut.ghosts.find(g => g.type === type && cellsFor(g.type, g.c, g.r, g.rot).some(([x, y]) => x === c && y === r)) || null;
+  const src = tut ? tut.ghosts : guide && !guide.done && !lvl ? guide.specs : null;
+  if (!src) return null;
+  return src.find(g => g.type === type && cellsFor(g.type, g.c, g.r, g.rot).some(([x, y]) => x === c && y === r)) || null;
 }
 function startTutorial(kind) {
+  endGuide();
   closeModal(); $("home").hidden = true; $("advmap").hidden = true;
   if (lvl) enterFree();
   const keep = (tut && tut.stash) || tutStashKeep; tutStashKeep = null;
   if (tut) endTutorial(false);
-  const D = kind && kind.startsWith("draw:") && DRAWINGS.find(x => "draw:" + x.id === kind);
-  TUT = D ? null : kind === "alto" ? TUT_HIGH : TUT_BASIC;
+  const D = null;
+  TUT = kind === "alto" ? TUT_HIGH : TUT_BASIC;
   const stash = keep || (pieces.size ? { data: serialize(), name: curName } : null);
   clearBoard(); setFloor(0); curName = "";
   if (running) setRunning(false);
   selectTab("campo"); selectTool("hand");
   tut = { i: 0, t: 0, drawn: 0, stash, hiT: 0, kind: D ? kind : kind === "alto" ? "alto" : "basic", draw: !!D };
-  if (D) TUT = drawingSteps(D);
   sset(KEY + "-tut", 1);
   showTutStep();
   tutFit();
@@ -3318,15 +3423,16 @@ function tutFit(alt) {
 function clearTutHi() { document.querySelectorAll(".tutHi").forEach(e => e.classList.remove("tutHi")); }
 function drawGhosts() {
   L.tut.innerHTML = "";
-  if (!tut || !tut.ghosts) return;
-  tut.ghosts.filter(g => !ghostDone(g)).forEach(g => {
+  const src = tut ? tut.ghosts : guide && !guide.done && !lvl ? guide.specs : null;
+  if (!src) return;
+  src.filter(g => !ghostDone(g)).forEach(g => {
     const fake = { id: -1, type: g.type, c: g.c, r: g.r, rot: g.rot, h: g.h, state: 0 };
     buildGeo(fake);
     const gg = el("g", { opacity: .4 }, L.tut);
     drawPiece(fake, k => k === "shadow" ? null : gg);
     fake.geo.cells.forEach(([x, y]) => el("rect", { x: x * T + 6, y: y * T + 6 - g.h * E, width: T - 12, height: T - 12, rx: 14, class: "tutCell" }, L.tut));
   });
-  tut.left = tut.ghosts.filter(g => !ghostDone(g)).length;
+  if (tut) tut.left = tut.ghosts.filter(g => !ghostDone(g)).length;
 }
 function showTutStep() {
   const S = TUT[tut.i], box = $("tut");
@@ -3346,7 +3452,6 @@ function showTutStep() {
   if (S.btn) btn(S.btn, "go", nextTutStep);
   if (S.end) {
     if (S.next) btn("⛰️ Subir y bajar", "go", () => startTutorial(S.next));
-    if (S.again) { btn("🎨 Otro dibujo", "go", () => { const st = tut.stash; endTutorial(false); if (st) tutStashKeep = st; openDrawings(); }); }
     btn("🗺️ ¡A la aventura!", S.next ? "" : "go", () => { endTutorial(!!tut.stash); openMap(); });
     btn("🏁 Terminar", "", () => endTutorial(false));
     if (tut.stash) btn("↩️ Volver a mi circuito", "", () => endTutorial(true));
@@ -3973,6 +4078,7 @@ function showWin() {
   });
 }
 function startLevel(i) {
+  endGuide();
   clearUndo(); profSel = null; try { speechSynthesis.cancel(); } catch (e) {}
   closeModal(); $("home").hidden = true; $("advmap").hidden = true;
   if (tut) endTutorial(false);
@@ -4042,7 +4148,7 @@ function goHome() { if (running) setRunning(false); if (tut) endTutorial(!!tut.s
 $("homeBtn").onclick = () => { unlockAudio(); sfx.click(); goHome(); };
 $("parentBtn").onclick = () => goParents();
 $("goTut").onclick = () => { unlockAudio(); sfx.whistleShort(); startTutorial("basic"); };
-$("goDraw").onclick = () => { unlockAudio(); sfx.whistleShort(); openDrawings(); };
+$("goDraw").onclick = () => { unlockAudio(); sfx.click(); openLibrary(); };
 $("goTut2").onclick = () => { unlockAudio(); sfx.whistleShort(); startTutorial("alto"); };
 function markTutHome() { $("goTut").classList.toggle("new", !sget(KEY + "-tut")); }
 $("goAdv").onclick = () => { unlockAudio(); sfx.click(); openMap(); };
@@ -4571,6 +4677,14 @@ I18N_ROWS.push(
 );
 I18N_ROWS.push(["Suelo gris", "Grey ground", "Sol gris"], ["Suelo rosa", "Pink ground", "Sol rose"], ["Suelo naranja", "Orange ground", "Sol orange"], ["Suelo azul", "Blue ground", "Sol bleu"], ["Suelo amarillo", "Yellow ground", "Sol jaune"], ["Suelo marrón", "Brown ground", "Sol marron"],
 ["Pinta el suelo de color. Arrastra el dedo para pintar muchas casillas.", "Paints the ground a colour. Drag your finger to paint lots of squares.", "Peint le sol en couleur. Glisse le doigt pour peindre beaucoup de cases."]);
+I18N_ROWS.push(
+["Pato", "Duck", "Canard"], ["Conejo", "Rabbit", "Lapin"], ["Tortuga", "Turtle", "Tortue"], ["Manzana", "Apple", "Pomme"], ["Helado", "Ice cream", "Glace"], ["Pizza", "Pizza", "Pizza"], ["Fresa", "Strawberry", "Fraise"],
+["Casa", "House", "Maison"], ["Cohete", "Rocket", "Fusée"], ["Barco", "Boat", "Bateau"], ["Coche", "Car", "Voiture"], ["Suelo rojo", "Red ground", "Sol rouge"],
+["Ciudades", "Cities", "Villes"], ["Animales", "Animals", "Animaux"], ["Comida", "Food", "Nourriture"], ["Cosas", "Things", "Objets"], ["Biblioteca", "Library", "Bibliothèque"], ["📚 Biblioteca", "📚 Library", "📚 Bibliothèque"],
+["Mis circuitos", "My layouts", "Mes circuits"],
+["Elige una carpeta. Toca un dibujo y constrúyelo en el juego libre, o deja que lo haga yo.", "Pick a folder. Tap a picture and build it in free play, or let me do it.", "Choisis un dossier. Touche un dessin et construis-le dans le jeu libre, ou laisse-moi le faire."],
+["Ciudades, animales, comida y cosas para construir y jugar.", "Cities, animals, food and things to build and play.", "Des villes, des animaux, de la nourriture et des objets à construire et à jouer."],
+);
 const LANGS = { es: "🇪🇸", en: "🇬🇧", fr: "🇫🇷" };
 const I18N = new Map();
 I18N_ROWS.forEach(([es, en, fr]) => I18N.set(es.trim(), { en, fr }));
