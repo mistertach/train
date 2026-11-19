@@ -1381,7 +1381,7 @@ svg.addEventListener("pointerdown", e => {
   unlockAudio();
   try { svg.setPointerCapture(e.pointerId); } catch (_) {}
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (ptrs.size === 1) gest = { type: "tap", sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y, draw: (tool === "lapiz" || tool === "agua" || !!(DEFS[tool] && DEFS[tool].gtile)) && !running };
+  if (ptrs.size === 1) gest = { type: "tap", sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y, draw: (tool === "lapiz" || tool === "lapizCalle" || tool === "agua" || !!(DEFS[tool] && DEFS[tool].gtile)) && !running };
   else if (ptrs.size === 2) {
     clearDrawLine();
     const [a, b] = [...ptrs.values()];
@@ -1392,10 +1392,10 @@ svg.addEventListener("pointermove", e => {
   if (!ptrs.has(e.pointerId) || !gest) return;
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (gest.type === "tap" && Math.hypot(e.clientX - gest.sx, e.clientY - gest.sy) > 10) {
-    if (gest.draw) { const [wx, wy] = toWorld(gest.sx, gest.sy); gest.type = "draw"; gest.path = [cellAtFloor(wx, wy)]; gest.closed = false; }
+    if (gest.draw) { const [wx, wy] = toWorld(gest.sx, gest.sy); gest.type = "draw"; gest.f = tool === "lapizCalle" ? 0 : floor; gest.path = [cellAtFloor(wx, wy, gest.f)]; gest.closed = false; }
     else { gest.type = "pan"; svg.classList.add("dragging"); }
   }
-  if (gest.type === "draw") { const [wx, wy] = toWorld(e.clientX, e.clientY); drawAddCell(gest, cellAtFloor(wx, wy)); return; }
+  if (gest.type === "draw") { const [wx, wy] = toWorld(e.clientX, e.clientY); drawAddCell(gest, cellAtFloor(wx, wy, gest.f)); return; }
   if (gest.type !== "tap") { userMoved = true; if (camMode === "follow") setCam("free"); }
   if (gest.type === "pan") { view.x = gest.vx + e.clientX - gest.sx; view.y = gest.vy + e.clientY - gest.sy; applyView(); }
   else if (gest.type === "pinch" && ptrs.size === 2) {
@@ -1410,7 +1410,7 @@ function endPtr(e) {
   if (!ptrs.has(e.pointerId)) return;
   ptrs.delete(e.pointerId);
   if (gest && gest.type === "tap" && ptrs.size === 0 && e.type === "pointerup") { const [wx, wy] = toWorld(e.clientX, e.clientY); handleTap(wx, wy); }
-  if (gest && gest.type === "draw" && ptrs.size === 0) { if (e.type === "pointerup" && gest.path.length > 1) { const g = gest; withUndo(() => tool === "lapiz" ? commitDraw(g) : paintPath(g)); } else clearDrawLine(); }
+  if (gest && gest.type === "draw" && ptrs.size === 0) { if (e.type === "pointerup" && gest.path.length > 1) { const g = gest; withUndo(() => tool === "lapiz" ? commitDraw(g) : tool === "lapizCalle" ? commitRoad(g) : paintPath(g)); } else clearDrawLine(); }
   if (ptrs.size === 0) { gest = null; svg.classList.remove("dragging"); }
   else if (gest) gest.type = "none";
 }
@@ -1848,13 +1848,13 @@ function handleTap0(wx, wy) {
   }
   // a piece tool: works on the selected floor
   if (DEFS[tool] && DEFS[tool].gtile) { if (paintAt(tool, Math.floor(wx / T), Math.floor(wy / T))) sfx.toc(); else sfx.no(); autosave(); return; }
-  const type = tool === "lapiz" ? "corta" : tool;
+  const type = tool === "lapiz" ? "corta" : tool === "lapizCalle" ? "calle" : tool;
   const dd = DEFS[type], deco = !!(dd.deco || dd.road || dd.mon || dd.tramst);
   let f = deco ? 0 : floor, c = Math.floor(wx / T), r = Math.floor((wy + f * E) / T);
   if (!deco) { const st = smartTarget(wx, wy); if (st && !pieceAtLevel(st.c, st.r, st.z)) { c = st.c; r = st.r; f = st.z; } }
   const here = pieceAtLevel(c, r, f);
   if (here && isSlope(here.type) && (isSlope(type) || here.type === type)) { slopeSel = here.id; sfx.click(); return; } // slopes use their two buttons
-  if (here && (here.type === type || tool === "lapiz")) { rotatePiece(here); return; } // same piece: turn it
+  if (here && (here.type === type || tool === "lapiz" || (tool === "lapizCalle" && DEFS[here.type].road))) { rotatePiece(here); return; } // same piece: turn it
   if (here && here.fixed) { lockedFx(); return; }
   if (!canTake(type, here ? [here] : [])) { sfx.no(); toast("🧱 0"); wobble(document.querySelector(`.it[data-id="${type}"]`)); return; }
   if (!inB(c, r)) return;
@@ -2222,7 +2222,7 @@ function toggleSide(on) {
 //  PENCIL: drag a finger and the right straights and curves appear
 // =====================================================================
 let drawLine = null;
-const cellAtFloor = (wx, wy) => [Math.floor(wx / T), Math.floor((wy + floor * E) / T)];
+const cellAtFloor = (wx, wy, f) => { if (f == null) f = floor; return [Math.floor(wx / T), Math.floor((wy + f * E) / T)]; };
 function drawAddCell(g, cell) {
   const P = g.path, lastC = P[P.length - 1];
   if (g.closed || !inB(cell[0], cell[1])) return;
@@ -2235,8 +2235,9 @@ function drawAddCell(g, cell) {
     else P.push(nx);
     if (nx[0] === cell[0] && nx[1] === cell[1]) break;
   }
-  if (!drawLine) drawLine = el("polyline", { fill: "none", stroke: "rgba(255,212,0,.85)", "stroke-width": 26, "stroke-linecap": "round", "stroke-linejoin": "round" }, L.ui);
-  const pts = P.concat(g.closed ? [P[0]] : []).map(([c, r]) => `${(c + .5) * T},${(r + .5) * T - floor * E}`).join(" ");
+  const road = tool === "lapizCalle", f = g.f == null ? floor : g.f;
+  if (!drawLine) drawLine = el("polyline", { fill: "none", stroke: road ? "rgba(70,70,70,.8)" : "rgba(255,212,0,.85)", "stroke-width": road ? 44 : 26, "stroke-linecap": "round", "stroke-linejoin": "round" }, L.ui);
+  const pts = P.concat(g.closed ? [P[0]] : []).map(([c, r]) => `${(c + .5) * T},${(r + .5) * T - f * E}`).join(" ");
   drawLine.setAttribute("points", pts);
 }
 function clearDrawLine() { if (drawLine) { drawLine.remove(); drawLine = null; } }
@@ -2264,6 +2265,63 @@ function paintPath(g) {
   });
   if (n) sfx.toc(); else sfx.no();
   autosave();
+}
+// ---------- the street pencil: straights, curves, T and X junctions, and level crossings over track
+const ROAD_TYPES = ["calle", "calleC", "calleT", "calleX"];
+const roadEdgesOf = (type, rot) => roadPortsFor(type, 0, 0, rot).map(o => o.e);
+function roadSpec(S) {
+  if (S.size === 1) { const e = [...S][0]; return { type: "calle", rot: e % 2 === 1 ? 0 : 1 }; }
+  for (const type of ROAD_TYPES) for (let rot = 0; rot < 4; rot++) {
+    const E2 = roadEdgesOf(type, rot);
+    if (E2.length === S.size && E2.every(e => S.has(e))) return { type, rot };
+  }
+  return null;
+}
+// what stands on the street level of a cell (floor tiles don't count)
+const groundAt = (c, r) => conflictsFor("calle", c, r, 0, 0);
+const roadPieceAt = (c, r) => { const g = groundAt(c, r); return g && g.length === 1 && DEFS[g[0].type].road ? g[0] : null; };
+const roadEdgesAt = (c, r) => { const s = new Set(); piecesIn(c, r).forEach(q => (q.geo.rports || []).forEach(o => { if (o.c === c && o.r === r) s.add(o.e); })); return s; };
+function commitRoad(g) {
+  clearDrawLine();
+  const P = g.path, n = P.length, want = new Map(), key = p => p.join(",");
+  const add = (cell, e) => { const k = key(cell); if (!want.has(k)) want.set(k, { c: cell[0], r: cell[1], S: roadEdgesAt(cell[0], cell[1]) }); if (e != null) want.get(k).S.add(e); };
+  for (let i = 0; i < n; i++) {
+    const cur = P[i], prev = i > 0 ? P[i - 1] : g.closed ? P[n - 1] : null, next = i < n - 1 ? P[i + 1] : g.closed ? P[0] : null;
+    add(cur, prev ? edgeTo(cur, prev) : null); add(cur, next ? edgeTo(cur, next) : null);
+  }
+  // a stroke that starts or ends beside a street joins it (the street grows a junction if needed)
+  if (!g.closed && n > 1) [[P[0], P[1]], [P[n - 1], P[n - 2]]].forEach(([cell, nb]) => {
+    const w = want.get(key(cell)), back = edgeTo(cell, nb);
+    if (w.S.size > 1) return;
+    for (const e of [opp(back), (back + 1) % 4, (back + 3) % 4]) {
+      const N = [cell[0] + DX[e], cell[1] + DY[e]];
+      if (!inB(N[0], N[1]) || want.has(key(N))) continue;
+      const S = roadEdgesAt(N[0], N[1]);
+      if (!S.size) continue;
+      if (S.has(opp(e))) { w.S.add(e); return; }
+      const q = roadPieceAt(N[0], N[1]);
+      if (q && !q.fixed && S.size < 4) { w.S.add(e); add(N, opp(e)); return; }
+    }
+  });
+  let placed = 0;
+  want.forEach(w => {
+    const conf = groundAt(w.c, w.r);
+    if (!conf) return;
+    let spec = null;
+    if (!conf.length || conf.every(q => DEFS[q.type].road)) spec = roadSpec(w.S);
+    else if (conf.length === 1 && conf[0].type === "corta") { // across a straight track: a level crossing
+      const trackH = conf[0].rot % 2 === 0;
+      if ([...w.S].every(e => (e % 2 === 0) === trackH)) spec = { type: "paso", rot: trackH ? 0 : 1 };
+    }
+    if (!spec || conf.some(q => q.fixed) || !canTake(spec.type, conf)) return;
+    const here = conf[0];
+    if (here && conf.length === 1 && here.type === spec.type && here.rot === spec.rot) return;
+    if (!withUnlinked(conf, () => fits(spec.type, w.c, w.r, spec.rot, 0))) return;
+    const p = conf.length ? replaceAt(spec.type, w.c, w.r, spec.rot, 0, conf) : addPiece(spec.type, w.c, w.r, spec.rot, 0, 0);
+    if (p) placed++;
+  });
+  if (placed) sfx.toc(); else sfx.no();
+  refreshHints(); autosave();
 }
 // the pieces for a path of squares (shared by the pencil and the pictures)
 function pathPieces(P, closed, ends) {
@@ -2632,6 +2690,7 @@ function step(dt) {
 const INFO = {
   hand: ["✋", "Mano", "Arrastra para mover el tablero. Toca una pieza para girarla, un desvío para cambiar su camino (flecha verde) y un tren para darle la vuelta."],
   erase: ["🧽", "Borrar", "Toca una pieza o un tren para quitarlo. (Para cambiar una pieza no hace falta borrar: elige la nueva y tócala encima.)"],
+  lapizCalle: ["🖍️", "Lápiz de calles", "Arrastra el dedo y la calle se dibuja sola, con curvas y cruces. Si cruzas una vía recta, pone un paso a nivel. Si empiezas junto a una calle, se une a ella."],
   lapiz: ["✏️", "Lápiz de vías", "Arrastra el dedo por el tablero y la vía se dibuja sola, con rectas y curvas. Si empiezas junto a una vía suelta, se une a ella; si cruzas tu camino, pone un cruce. Vuelve atrás con el dedo para deshacer."],
   recta: [null, "Recta larga", "Vía recta de 2 casillas."],
   corta: [null, "Recta corta", "Vía recta de 1 casilla, para rellenar huecos."],
@@ -2689,7 +2748,7 @@ const TABS = [
   { id: "subir", ic: "⛰️", nm: "Rampas", items: ["rampa", "subeI", "subeD"] },
   { id: "especial", ic: "🚉", nm: "Especiales", items: ["estacion", "tunel", "tunelL", "tope", "paso"] },
   { id: "campo", ic: "🌳", nm: "Campo", items: CAMPO.map(d => d[0]) },
-  { id: "calles", ic: "🚗", nm: "Calles", items: ["calle", "calleC", "calleT", "calleX", "paso", "calleVia", "calleViaC", "car_coche", "car_taxi", "car_bus", "car_policia", "car_bomberos", "car_tuktuk"] },
+  { id: "calles", ic: "🚗", nm: "Calles", items: ["lapizCalle", "calle", "calleC", "calleT", "calleX", "paso", "calleVia", "calleViaC", "car_coche", "car_taxi", "car_bus", "car_policia", "car_bomberos", "car_tuktuk"] },
   { id: "suelos", ic: "🎨", nm: "Suelos", items: ["plaza", "arena", "parque", "nieve", "campo", "gris", "rosa", "naranja", "azul", "amarillo", "marron", "rojo", "agua"] },
   { id: "ciudad", ic: "🏙️", nm: "Ciudad", items: ["casa", "granja", "iglesia", "rascacielos", "tienda", "ciudad", "museo", "kiosco", "estadio", "fuente", "barco", "velero", "torre", "castillo", "torii", "templo", "estatua", "reloj", "noria", "atraccion", "tiovivo", "globo", "dragon"] },
   { id: "monumentos", ic: "🏛️", nm: "Monumentos", items: ["arco", "eiffel", "towerb", "bigben", "acueducto", "alcala", "toriiG", "obelisco", "faro", "monte"] },
@@ -2809,6 +2868,7 @@ function buildTabs() {
 function allowedItem(id) {
   if (!lvl || id === "hand" || id === "erase") return true;
   if (id === "lapiz") return lvl.inv.corta != null && lvl.inv.curva != null;
+  if (id === "lapizCalle") return lvl.inv.calle != null && lvl.inv.calleC != null;
   return lvl.inv[id] != null;
 }
 function makeItem(id, onClick) {
@@ -4415,7 +4475,8 @@ const I18N_ROWS = [
 ["Mano", "Hand", "Main"], ["Borrar", "Eraser", "Gomme"],
 ["Arrastra para mover el tablero. Toca una pieza para girarla, un desvío para cambiar su camino (flecha verde) y un tren para darle la vuelta.", "Drag to move the board. Tap a piece to turn it, a switch to change its way (green arrow) and a train to turn it around.", "Glisse pour déplacer le plateau. Touche une pièce pour la tourner, un aiguillage pour changer son chemin (flèche verte) et un train pour le faire demi-tour."],
 ["Toca una pieza o un tren para quitarlo. (Para cambiar una pieza no hace falta borrar: elige la nueva y tócala encima.)", "Tap a piece or a train to remove it. (To change a piece you don't need to erase: pick the new one and tap on top.)", "Touche une pièce ou un train pour l'enlever. (Pour changer une pièce, pas besoin d'effacer : choisis la nouvelle et touche dessus.)"],
-["Lápiz de vías", "Track pencil", "Crayon à voies"],
+["Lápiz de vías", "Track pencil", "Crayon à voies"], ["Lápiz de calles", "Street pencil", "Crayon à rues"],
+["Arrastra el dedo y la calle se dibuja sola, con curvas y cruces. Si cruzas una vía recta, pone un paso a nivel. Si empiezas junto a una calle, se une a ella.", "Drag your finger and the street draws itself, with curves and junctions. If you cross a straight track, it adds a level crossing. If you start next to a street, it joins on.", "Glisse le doigt et la rue se dessine toute seule, avec des courbes et des carrefours. Si tu traverses une voie droite, il met un passage à niveau. Si tu commences à côté d'une rue, il s'y raccorde."],
 ["Arrastra el dedo por el tablero y la vía se dibuja sola, con rectas y curvas. Si empiezas junto a una vía suelta, se une a ella; si cruzas tu camino, pone un cruce. Vuelve atrás con el dedo para deshacer.", "Drag your finger across the board and the track draws itself, with straights and curves. Start next to a loose end and it joins it; cross your own path and it adds a crossing. Go back with your finger to undo.", "Glisse ton doigt sur le plateau et la voie se dessine toute seule, avec des droites et des courbes. Si tu commences près d'un bout libre, elle s'y raccorde ; si tu croises ton chemin, elle met un croisement. Reviens en arrière avec le doigt pour annuler."],
 ["Recta larga", "Long straight", "Grande droite"], ["Vía recta de 2 casillas.", "A straight track 2 squares long.", "Une voie droite de 2 cases."],
 ["Recta corta", "Short straight", "Petite droite"], ["Vía recta de 1 casilla, para rellenar huecos.", "A straight track 1 square long, for filling gaps.", "Une voie droite d'1 case, pour combler les trous."],
