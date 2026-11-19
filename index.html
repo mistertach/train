@@ -209,6 +209,38 @@
   .paints { display: flex; flex-wrap: wrap; gap: 6px; max-width: 200px; align-items: center; }
   .paints .paint { width: 30px; height: 30px; border-radius: 50%; border: 3px solid #a8743d; cursor: pointer; padding: 0; }
   .paints .paint.on { box-shadow: 0 0 0 3px #ffd400; transform: scale(1.12); }
+  html, body, button, input { font-family: ui-rounded, "SF Pro Rounded", "Nunito", "Varela Round", "Arial Rounded MT Bold", system-ui, -apple-system, sans-serif; }
+  html, body { background: #b07a47 repeating-linear-gradient(92deg, rgba(255,255,255,.035) 0 3px, transparent 3px 22px, rgba(0,0,0,.04) 22px 25px, transparent 25px 60px); }
+  .b .ic { width: 70%; height: 70%; pointer-events: none; }
+  #play .ic { width: 58%; height: 58%; }
+  .b { transition: transform .12s cubic-bezier(.3, 1.6, .5, 1), box-shadow .12s; }
+  .b:active { transform: translateY(3px) scale(.93); }
+  .tab .ic { width: 34px; height: 30px; }
+  .tab { transition: background .15s, transform .15s; }
+  .tab.sel { background: #ffd34d; color: #3b2a18; transform: translateY(-2px); }
+  .it.sel { border-color: #ffb300; background: #fff3b0; }
+  #home .big .ic { width: 96px; height: 96px; }
+  #home .tutc .big .ic { width: 58px; height: 58px; }
+  #menuPop { position: fixed; z-index: 28; background: #fff8e8; border: 4px solid #a8743d; border-radius: 22px; padding: 8px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.3); animation: cardin .18s ease-out; }
+  #menuPop[hidden] { display: none; }
+  #menuPop .b.row { width: auto; white-space: nowrap; min-width: 220px; height: 52px; justify-content: flex-start; gap: 10px; padding: 0 16px 0 8px; font-size: 17px; font-weight: 700; color: #3b2a18; }
+  #menuPop .b.row .ic { width: 36px; height: 36px; flex: 0 0 36px; }
+  body.playing #menuPop #tutBtn, body.playing #menuPop #helpBtn, body.playing #menuPop #saveBtn, body.playing #menuPop #clearBtn { display: none !important; }
+  #info { transition: max-width .35s ease, padding .35s ease; cursor: pointer; overflow: hidden; }
+  #info.mini { max-width: 64px; padding-right: 8px; }
+  #info.mini b, #info.mini .tx { display: none; }
+  .gridov { transition: opacity .35s; opacity: 0; }
+  .popin { transform-box: fill-box; transform-origin: 50% 85%; animation: popin .42s cubic-bezier(.3, 1.7, .5, 1); }
+  @keyframes popin { 0% { transform: scale(.35); opacity: .3; } 100% { transform: scale(1); opacity: 1; } }
+  .sway { transform-box: fill-box; transform-origin: 50% 100%; animation: sway 4s ease-in-out infinite; }
+  @keyframes sway { 0%, 100% { transform: rotate(-1.4deg); } 50% { transform: rotate(1.4deg); } }
+  .slidein { animation: slidein .28s ease-out both; }
+  @keyframes slidein { 0% { transform: translateY(16px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+  #home:not([hidden]), #advmap:not([hidden]) { animation: fadein .35s ease-out; }
+  @keyframes fadein { 0% { opacity: 0; } 100% { opacity: 1; } }
+  #modal:not([hidden]) #card { animation: cardin .25s cubic-bezier(.3, 1.5, .5, 1); }
+  @keyframes cardin { 0% { transform: scale(.85); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .sway, .popin, .slidein, #card, #menuPop { animation: none !important; } }
   #toast { position: fixed; left: 50%; top: 24%; transform: translate(-50%, -50%) scale(.5); font-size: 84px; opacity: 0; pointer-events: none; z-index: 40;
     transition: opacity .25s, transform .25s; text-shadow: 0 4px 10px rgba(0,0,0,.3); white-space: nowrap; }
   #toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
@@ -263,10 +295,10 @@
   <defs>
     <pattern id="grass" width="100" height="100" patternUnits="userSpaceOnUse">
       <rect width="100" height="100" fill="#83c96f"/>
-      <path d="M0 0 H100 M0 0 V100" stroke="#77bd63" stroke-width="2"/>
-      <circle cx="0" cy="0" r="4" fill="#6cae58"/>
+      <path d="M20 84 l2 -6 l2 6" stroke="#73b95f" stroke-width="2" fill="none"/>
       <path d="M30 62 l3 -8 l3 8 M70 28 l3 -7 l3 7" stroke="#6cae58" stroke-width="2" fill="none"/>
     </pattern>
+    <pattern id="gridp" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M0 0 H100 M0 0 V100" stroke="rgba(255,255,255,.55)" stroke-width="2" stroke-dasharray="6 6"/><circle cx="0" cy="0" r="3.5" fill="rgba(255,255,255,.75)"/></pattern>
     <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".28"/>
     </linearGradient>
@@ -558,6 +590,7 @@ function addPiece(type, c, r, rot, h, state) {
 }
 function unlinkCells(p) { p.geo.cells.forEach(([x, y]) => { const a = cellP[y * COLS + x], i = a.indexOf(p); if (i >= 0) a.splice(i, 1); }); }
 function removePiece(p) {
+  if (DEFS[p.type].gtile && typeof refreshTilesAround === "function") setTimeout(() => refreshTilesAround(p.c, p.r), 0);
   if (p.waitEl) { p.waitEl.remove(); p.waitEl = null; }
   if (p.tapEl) { p.tapEl.remove(); p.tapEl = null; }
   unlinkCells(p); (p.els || []).forEach(e => e.remove()); pieces.delete(p.id);
@@ -565,6 +598,7 @@ function removePiece(p) {
 }
 function setRot(p, rot) { unlinkCells(p); p.rot = rot; buildGeo(p); p.geo.cells.forEach(([x, y]) => cellP[y * COLS + x].push(p)); redrawPiece(p); }
 function redrawPiece(p) { (p.els || []).forEach(e => e.remove()); drawPiece(p); }
+{ const addPiece0 = addPiece; addPiece = function (...a) { const p = addPiece0(...a); if (p && typeof userPlacing !== "undefined" && userPlacing) popFx(p); return p; }; }
 const drawPiece0 = drawPiece;
 drawPiece = function (p, lay) { drawPiece0(p, lay); if (!lay && p.fx && typeof drawHzBadges === "function") drawHzBadges(p); };
 
@@ -625,9 +659,10 @@ for (let k = 1; k < LV; k++) L.lv.push(mkLv(cam));
 ["hints", "tut", "smoke", "ui", "fx"].forEach(k => L[k] = el("g", {}, cam));
 (function drawGround() {
   const W = COLS * T, H = ROWS * T, g = L.ground;
-  el("rect", { x: -70, y: -70, width: W + 140, height: H + 140, rx: 40, fill: "#8a5a2b" }, g);
-  el("rect", { x: -56, y: -56, width: W + 112, height: H + 112, rx: 30, fill: "#c99158" }, g);
-  el("rect", { x: 0, y: 0, width: W, height: H, fill: "url(#grass)" }, g);
+  for (let i = 6; i >= 1; i--) el("rect", { x: -60 + i * 3, y: -60 + i * 6, width: W + 120, height: H + 120, rx: 90, fill: "#000", opacity: .035 }, g); // soft shadow on the table
+  el("rect", { x: -60, y: -60, width: W + 120, height: H + 120, rx: 90, fill: "#5c9e48" }, g);
+  el("rect", { x: -44, y: -44, width: W + 88, height: H + 88, rx: 76, fill: "none", stroke: "#e8f5d8", "stroke-width": 5, "stroke-dasharray": "16 12", opacity: .8 }, g);
+  el("rect", { x: -30, y: -30, width: W + 60, height: H + 60, rx: 62, fill: "url(#grass)" }, g);
   for (let i = 0; i < 40; i++) el("ellipse", { cx: rnd(0, W), cy: rnd(0, H), rx: rnd(80, 260), ry: rnd(60, 180), fill: Math.random() < .5 ? "#9bd585" : "#6fb55c", opacity: .25 }, g);
   for (let i = 0; i < 160; i++) {
     const t = el("text", { x: rnd(20, W - 20), y: rnd(20, H - 20), "font-size": 18, opacity: .7, "text-anchor": "middle" }, g);
@@ -670,7 +705,7 @@ function drawPiece(p, lay) {
     const pg = lay("paint") || g, x = p.c * T, y = p.r * T;
     if (pg !== g) { g.remove(); els.length = 0; }
     const tg = el("g", {}, pg); els.push(tg); p.els = els;
-    el("rect", { x: x - .5, y: y - .5, width: T + 1, height: T + 1, fill: d.gtile }, tg);
+    drawTile(p, tg, x, y); return;
     if (p.type === "plaza") el("path", { d: `M${x} ${y + 33}H${x + T}M${x} ${y + 66}H${x + T}M${x + 25} ${y}V${y + 33}M${x + 75} ${y}V${y + 33}M${x + 50} ${y + 33}V${y + 66}M${x + 25} ${y + 66}V${y + T}M${x + 75} ${y + 66}V${y + T}`, stroke: "rgba(120,110,95,.35)", "stroke-width": 2, fill: "none" }, tg);
     if (p.type === "arena") [[20, 30], [70, 20], [45, 60], [80, 75], [15, 80]].forEach(([a, b]) => el("circle", { cx: x + a, cy: y + b, r: 2.5, fill: "#d9b862" }, tg));
     if (p.type === "parque") [[22, 28, "#ffe066"], [70, 40, "#ff8fb1"], [40, 72, "#fff"], [82, 80, "#ffe066"]].forEach(([a, b, cl]) => el("circle", { cx: x + a, cy: y + b, r: 4, fill: cl }, tg));
@@ -688,6 +723,7 @@ function drawPiece(p, lay) {
       const ov = lay("over"), sg = ov ? el("g", {}, ov) : g; if (ov) els.push(sg);
       if (ov) { sg.dataset.y = cy; const nx = [...ov.children].find(ch => ch !== sg && ch.dataset.y != null && +ch.dataset.y > cy); if (nx) ov.insertBefore(sg, nx); }
       SPRITES[p.type](sg, cx - 50, cy - 50, p.c * 7 + p.r * 13);
+      if (SWAY.has(p.type)) { const sw = el("g", { class: "sway", style: `animation-delay:${(-(p.c * 0.37 + p.r * 0.71) % 4).toFixed(2)}s` }, sg); while (sg.firstChild !== sw) sw.appendChild(sg.firstChild); }
       return;
     }
     const fs = DECO_FS[p.type] || 70;
@@ -1832,12 +1868,14 @@ function updateFx(dt) {
 }
 function burst(x, y, emojis, n) {
   for (let i = 0; i < n; i++) {
-    const t = el("text", { x, y, "font-size": 40, "text-anchor": "middle", "dominant-baseline": "central" }, L.fx);
-    t.textContent = emojis[i % emojis.length];
-    const a = rnd(0, Math.PI * 2), r = rnd(80, 170);
+    const em = emojis[i % emojis.length], art = typeof BURST_ART !== "undefined" && BURST_ART[em];
+    const t = el("g", { transform: `translate(${x} ${y})` }, L.fx);
+    if (art) { const sc = el("g", { transform: `scale(${rnd(1.1, 1.7).toFixed(2)})` }, t); art(sc); }
+    else { const tx = el("text", { x: 0, y: 0, "font-size": 40, "text-anchor": "middle", "dominant-baseline": "central" }, t); tx.textContent = em; }
+    const a = rnd(0, Math.PI * 2), r = rnd(80, 170), spin = rnd(-180, 180);
     addFx(t, rnd(.9, 1.4), (k, e) => {
       const ease = 1 - Math.pow(1 - k, 2);
-      e.setAttribute("x", x + Math.cos(a) * r * ease); e.setAttribute("y", y + Math.sin(a) * r * ease - 60 * Math.sin(k * Math.PI));
+      e.setAttribute("transform", `translate(${(x + Math.cos(a) * r * ease).toFixed(1)} ${(y + Math.sin(a) * r * ease - 60 * Math.sin(k * Math.PI)).toFixed(1)}) rotate(${(spin * k).toFixed(0)})`);
       e.setAttribute("opacity", 1 - k);
     });
   }
@@ -1980,7 +2018,7 @@ function endPtr(e) {
   if (!ptrs.has(e.pointerId)) return;
   ptrs.delete(e.pointerId);
   if (gest && gest.type === "tap" && ptrs.size === 0 && e.type === "pointerup") { const [wx, wy] = toWorld(e.clientX, e.clientY); handleTap(wx, wy); }
-  if (gest && gest.type === "draw" && ptrs.size === 0) { if (e.type === "pointerup" && gest.path.length > 1) { const g = gest; withUndo(() => tool === "lapiz" ? commitDraw(g) : tool === "lapizCalle" ? commitRoad(g) : paintPath(g)); } else clearDrawLine(); }
+  if (gest && gest.type === "draw" && ptrs.size === 0) { if (e.type === "pointerup" && gest.path.length > 1) { const g = gest; userPlacing = true; popsLeft = 40; try { withUndo(() => tool === "lapiz" ? commitDraw(g) : tool === "lapizCalle" ? commitRoad(g) : paintPath(g)); } finally { userPlacing = false; } } else clearDrawLine(); }
   if (ptrs.size === 0) { gest = null; svg.classList.remove("dragging"); }
   else if (gest) gest.type = "none";
 }
@@ -2015,7 +2053,9 @@ function paintAt(type, c, r) {
   if (!inB(c, r)) return null;
   const old = piecesIn(c, r).find(q => DEFS[q.type].gtile);
   if (old) { if (old.type === type || old.fixed) return null; removePiece(old); }
-  return addPiece(type, c, r, 0, 0, 0);
+  const p = addPiece(type, c, r, 0, 0, 0);
+  if (p && typeof refreshTilesAround === "function") refreshTilesAround(c, r);
+  return p;
 }
 function nearestOnPiece(p, wx, wy) {
   let best = { ri: 0, d: 0, dist: 1e9 };
@@ -2352,7 +2392,7 @@ $("undoBtn").onclick = () => { unlockAudio(); undo(); };
 $("fixBtn").onclick = () => { unlockAudio(); sfx.click(); planFix(); };
 $("sideBtn").onclick = () => { unlockAudio(); sfx.click(); toggleSide(); };
 $("sideClose").onclick = () => { sfx.click(); toggleSide(false); };
-function handleTap(wx, wy) { if (fixPlan) { cancelFix(); return; } return withUndo(() => handleTap0(wx, wy)); }
+function handleTap(wx, wy) { if (fixPlan) { cancelFix(); return; } userPlacing = true; popsLeft = 6; try { return withUndo(() => handleTap0(wx, wy)); } finally { userPlacing = false; } }
 function handleTap0(wx, wy) {
   for (const tr of trains) if (tr.status === "derailed" && tr.wreck) {
     const q = tr.wreck[tr.flip ? tr.wreck.length - 1 : 0], qy = q.y - q.z * E;
@@ -2970,8 +3010,8 @@ function commitDraw(g) {
 //  SOUND (Web Audio)
 // =====================================================================
 let actx = null, noiseBuf = null, sfxOn = true, voiceOn = true;
-function saveCfg() { sset(KEY + "-cfg", { sfx: sfxOn, voice: voiceOn, lang: LANG, hz: hzOn, rnd: hzRnd }); }
-function setSfx(on) { sfxOn = on; $("mute").textContent = on ? "🔊" : "🔇"; $("mute").classList.toggle("off", !on); if (on) sfx.click(); else try { speechSynthesis.cancel(); } catch (e) {} saveCfg(); }
+function saveCfg() { sset(KEY + "-cfg", { sfx: sfxOn, voice: voiceOn, lang: LANG, hz: hzOn, rnd: hzRnd, pro: proMode }); }
+function setSfx(on) { sfxOn = on; setMuteIcon(); $("mute").classList.toggle("off", !on); if (on) sfx.click(); else try { speechSynthesis.cancel(); } catch (e) {} saveCfg(); }
 function ac() {
   if (!actx) {
     actx = new (window.AudioContext || window.webkitAudioContext)();
@@ -3466,7 +3506,9 @@ function startFire(p) {
   const f = { pid: p.id, hp: 100, t: 0, puff: 0, age: 0 };
   const c = pieceCenter(p); f.x = c.x; f.y = c.y;
   f.g = el("g", { "pointer-events": "none" }, L.hz);
-  f.fl = [[-22, -6, 54], [18, -14, 62], [0, -30, 48]].map(([dx, dy, s]) => { const t = el("text", { x: f.x + dx, y: f.y + dy, "font-size": s, "text-anchor": "middle", "dominant-baseline": "central" }, f.g); t.textContent = "🔥"; return t; });
+  f.fl = [[-20, 4, .8], [16, -2, 1], [0, -14, .9]].map(([dx, dy, sc]) => { const t = el("g", {}, f.g); t.dataset.x = f.x + dx; t.dataset.y = f.y + dy + 20; t.dataset.s = sc;
+    el("path", { d: "M0 0C-18 0 -22 -18 -14 -32C-12 -22 -6 -22 -6 -26C-6 -38 2 -48 4 -56C8 -42 22 -34 18 -16C17 -6 10 0 0 0Z", fill: "#ff7a1a", stroke: "#c2410c", "stroke-width": 2 }, t);
+    el("path", { d: "M0 -2C-9 -2 -11 -12 -6 -20C-4 -14 0 -16 0 -18C1 -26 5 -30 6 -34C9 -24 14 -18 11 -9C9 -4 5 -2 0 -2Z", fill: "#ffd34d" }, t); return t; });
   (p.els || []).forEach(e => e.style.filter = "brightness(.55) sepia(.4)");
   fires.push(f); fireRoads = null;
   noise(.6, 900, .7, .12, "lowpass");
@@ -3607,7 +3649,7 @@ function hzTick(dt) {
     if (!pieces.has(f.pid)) { fires = fires.filter(o => o !== f); f.g.remove(); return; }
     if (f.hp <= 0) { putOut(f); return; }
     f.t += dt; const s = f.hp / 100;
-    f.fl.forEach((t, i) => { const k = .8 + .25 * Math.sin(f.t * 9 + i * 2) ; t.setAttribute("transform", `translate(${t.getAttribute("x")} ${t.getAttribute("y")}) scale(${(k * (.45 + .55 * s)).toFixed(2)}) translate(${-t.getAttribute("x")} ${-t.getAttribute("y")})`); });
+    f.fl.forEach((t, i) => { const k = .85 + .2 * Math.sin(f.t * 9 + i * 2), sx = k * (.45 + .55 * s) * +t.dataset.s, sy = (k + .12 * Math.sin(f.t * 13 + i)) * (.45 + .55 * s) * +t.dataset.s; t.setAttribute("transform", `translate(${t.dataset.x} ${t.dataset.y}) scale(${sx.toFixed(2)} ${sy.toFixed(2)})`); });
     f.puff -= dt;
     if (f.puff <= 0) { f.puff = .35; const x = f.x + rnd(-15, 15), y = f.y - 50; const c = el("circle", { cx: x, cy: y, r: 10, fill: "#666", opacity: .55 }, L.smoke); addFx(c, 2.2, (k, e) => { e.setAttribute("r", 10 + 30 * k); e.setAttribute("cy", y - 90 * k); e.setAttribute("opacity", .55 * (1 - k)); }); }
   });
@@ -3827,7 +3869,8 @@ function drawWaiting(p) {
   const n = (p.pax || 0), b = (p.box || 0); if (!n && !b) { p.waitEl = null; return; }
   const s = stationSpot(p), g = el("g", { "pointer-events": "none" }, L.hz); p.waitEl = g;
 
-  for (let i = 0; i < n; i++) miniPerson(g, s.x + s.nx * 58 + s.tx * (i - (n - 1) / 2) * 22, s.y + s.ny * 58 + s.ty * (i - (n - 1) / 2) * 22, p.id * 3 + i);
+  if (n) { const cx = s.x + s.nx * 58, cy = s.y + s.ny * 58, len = n * 30 + 20; el("rect", { x: cx - (Math.abs(s.tx) > .5 ? len / 2 : 22), y: cy - (Math.abs(s.tx) > .5 ? 14 : len / 2) + 8, width: Math.abs(s.tx) > .5 ? len : 44, height: Math.abs(s.tx) > .5 ? 28 : len, rx: 10, fill: "#e8dcc4", stroke: "#b9a37a", "stroke-width": 2.5 }, g); }
+  for (let i = 0; i < n; i++) { const pg = miniPerson(g, s.x + s.nx * 58 + s.tx * (i - (n - 1) / 2) * 30, s.y + s.ny * 58 + s.ty * (i - (n - 1) / 2) * 30, p.id * 3 + i); pg.setAttribute("transform", pg.getAttribute("transform") + " scale(1.35)"); }
   for (let i = 0; i < b; i++) miniCargo(g, s.x - s.nx * 60 + s.tx * (i - (b - 1) / 2) * 26, s.y - s.ny * 60 + s.ty * (i - (b - 1) / 2) * 26, i % 2 === 1);
 }
 function hop(emoji, x0, y0, x1, y1, delay) {
@@ -3859,8 +3902,11 @@ function stationStop(tr, p) {
 function showTapHint(p, fr) {
   if (p.tapEl) p.tapEl.remove();
   const s = stationSpot(p), side = fr ? -1 : 1;
-  p.tapEl = el("text", { x: s.x + s.nx * 58 * side, y: s.y + s.ny * 58 * side - 50, "font-size": 46, "text-anchor": "middle", "dominant-baseline": "central", "pointer-events": "none" }, L.ui);
-  p.tapEl.textContent = "👆"; p.tapFr = fr;
+  p.tapEl = el("g", { "pointer-events": "none" }, L.ui);
+  const hx = s.x + s.nx * 58 * side, hy = s.y + s.ny * 58 * side - 48;
+  el("circle", { cx: hx, cy: hy + 34, r: 16, fill: "none", stroke: "#ffd400", "stroke-width": 4, opacity: .8 }, p.tapEl);
+  el("path", { d: `M${hx - 6} ${hy + 24}V${hy - 8}a5 5 0 0 1 10 0V${hy + 6}a5 5 0 0 1 9 2v4a5 5 0 0 1 9 2v12c0 10 -8 16 -16 16h-4c-6 0 -10 -4 -13 -9l-8 -12a4 4 0 0 1 7 -5Z`, fill: "#fff", stroke: "#3b2a18", "stroke-width": 3, "stroke-linejoin": "round" }, p.tapEl);
+  p.tapFr = fr;
 }
 function boardingTick() {
   pieces.forEach(p => {
@@ -4020,7 +4066,7 @@ function playHzTap(wx, wy) {
   playHz = null; refreshHzPlay();
   return true;
 }
-function drvHzTick(dt) { faceTick(dt); bubbleTick(dt); drvTick(); stationTick(dt); boardingTick(); fireTrainTick(dt); trainBadges(); nightTick(dt); }
+function drvHzTick(dt) { idleTick(dt); faceTick(dt); bubbleTick(dt); drvTick(); stationTick(dt); boardingTick(); fireTrainTick(dt); trainBadges(); nightTick(dt); }
 
 // =====================================================================
 //  🏪 SHOP: spend the coins earned by carrying passengers and boxes
@@ -4245,6 +4291,187 @@ function moodTalk(tr, prev, mood) {
 }
 
 // =====================================================================
+//  🎨 ICONS: one hand-drawn set in the toy-wood style (no emoji, same on every device)
+// =====================================================================
+const IK = "#3b2a18";
+const _s = (d, f, extra) => `<path d="${d}" fill="${f || "none"}" stroke="${IK}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" ${extra || ""}/>`;
+const _c = (cx, cy, r, f, extra) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${f}" stroke="${IK}" stroke-width="2.6" ${extra || ""}/>`;
+const _r = (x, y, w, h, rx, f, extra) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${f}" stroke="${IK}" stroke-width="2.6" ${extra || ""}/>`;
+const ICONS = {
+  play: _s("M16 10 L38 24 L16 38 Z", "#fff"),
+  pause: _r(13, 10, 8, 28, 3, "#fff") + _r(27, 10, 8, 28, 3, "#fff"),
+  reset: _s("M37 20a14 14 0 1 0 1 9", "none", 'stroke-width="4.5"') + _s("M30 12 L38 20 L39 9 Z", IK),
+  undo: _s("M15 22 h15 a9 9 0 0 1 0 18 h-8", "none", 'stroke-width="4.5"') + _s("M17 13 L8 22 L17 31 Z", IK),
+  fix: _s("M29 9 a9 9 0 0 0 -8 12 L9 33 a4 4 0 0 0 6 6 L27 27 a9 9 0 0 0 12 -8 l-6 2 -4 -4 2 -6 Z", "#b8c4cf"),
+  home: _s("M8 24 L24 9 L40 24", "none", 'stroke-width="3.2"') + _s("M12 22 V39 H36 V22", "#ffe7b8") + _r(21, 28, 7, 11, 2, "#d9483b") + _s("M8 24 L24 9 L40 24 L36 24 L24 13 L12 24 Z", "#d9483b"),
+  shop: _s("M10 18 H38 L35 40 H13 Z", "#ff8fb1") + _s("M18 18 v-4 a6 6 0 0 1 12 0 v4", "none", 'stroke-width="3"') + _c(24, 29, 4, "#ffd34d"),
+  menu: _s("M36.1 21.0 L41.3 21.2 L41.3 26.8 L36.1 27.0 L34.7 30.5 L38.2 34.2 L34.2 38.2 L30.5 34.7 L27.0 36.1 L26.8 41.3 L21.2 41.3 L21.0 36.1 L17.5 34.7 L13.8 38.2 L9.8 34.2 L13.3 30.5 L11.9 27.0 L6.7 26.8 L6.7 21.2 L11.9 21.0 L13.3 17.5 L9.8 13.8 L13.8 9.8 L17.5 13.3 L21.0 11.9 L21.2 6.7 L26.8 6.7 L27.0 11.9 L30.5 13.3 L34.2 9.8 L38.2 13.8 L34.7 17.5 Z", "#c9d3dc") + _c(24, 24, 5.5, "#fff8e8"),
+  help: _c(24, 24, 16, "#8fd0f5") + _s("M18 19 a6 6 0 1 1 8 5.5 c-2 1 -2 2 -2 5", "none", 'stroke-width="4"') + `<circle cx="24" cy="35" r="2.6" fill="${IK}"/>`,
+  save: _s("M7 16 V38 H41 V19 H25 L21 14 H9 Z", "#ffd34d") + _s("M24 23 l2.4 4.8 5.3 .8 -3.8 3.7 .9 5.2 -4.8 -2.5 -4.8 2.5 .9 -5.2 -3.8 -3.7 5.3 -.8 Z", "#fff"),
+  sound: _s("M8 19 H15 L25 11 V37 L15 29 H8 Z", "#fff") + _s("M30 18 a8 8 0 0 1 0 12 M34 13 a14 14 0 0 1 0 22", "none", 'stroke-width="3"'),
+  mute: _s("M8 19 H15 L25 11 V37 L15 29 H8 Z", "#ddd") + _s("M31 18 L41 30 M41 18 L31 30", "none", 'stroke-width="3.5" stroke="#d63a2f"'),
+  full: _s("M9 18 V9 H18 M30 9 H39 V18 M39 30 V39 H30 M18 39 H9 V30", "none", 'stroke-width="4"'),
+  clear: _s("M12 15 H36 L33 40 H15 Z", "#c9d3dc") + _s("M9 15 H39 M19 15 V10 H29 V15 M19 21 L20 34 M29 21 L28 34 M24 21 V34", "none", 'stroke-width="2.8"'),
+  tut: _s("M4 19 L24 10 L44 19 L24 28 Z", "#4a6fa5") + _s("M12 23 V32 Q24 39 36 32 V23", "#34527d") + _s("M40 21 V32", "none", 'stroke-width="2.6"') + _c(40, 34, 2.6, "#ffd34d"),
+  zin: _c(24, 24, 15, "#fff") + _s("M24 16 V32 M16 24 H32", "none", 'stroke-width="4.5"'),
+  zout: _c(24, 24, 15, "#fff") + _s("M16 24 H32", "none", 'stroke-width="4.5"'),
+  center: _c(24, 24, 16, "#fff") + _c(24, 24, 10, "#ff8a80") + _c(24, 24, 4, "#d63a2f") + _s("M24 2v8M24 38v8M2 24h8M38 24h8", "none", 'stroke-width="3"'),
+  map: _s("M6 12 L17 8 L31 12 L42 8 V36 L31 40 L17 36 L6 40 Z", "#bfe3a8") + _s("M17 8 V36 M31 12 V40", "none") + _s("M10 30 q8 -14 16 -6 t12 -8", "none", 'stroke="#d63a2f" stroke-dasharray="3 3"'),
+  side: _s("M5 38 H43", "none", 'stroke-width="3"') + _s("M7 36 L30 18 H41", "none", 'stroke-width="4" stroke="#a8743d"') + _r(26, 9, 13, 8, 3, "#d9483b", 'transform="rotate(-38 32 13)"'),
+  fup: _s("M24 8 L38 24 H30 V38 H18 V24 H10 Z", "#8fd0f5"),
+  fdown: _s("M24 40 L38 24 H30 V10 H18 V24 H10 Z", "#8fd0f5"),
+  cam: _r(6, 15, 26, 20, 5, "#9b6b4e") + _s("M32 21 L42 15 V35 L32 29 Z", "#9b6b4e") + _c(19, 25, 5, "#8fd0f5"),
+  eyes: _c(16, 24, 10, "#fff") + _c(33, 24, 10, "#fff") + `<circle cx="19" cy="25" r="4" fill="${IK}"/><circle cx="36" cy="25" r="4" fill="${IK}"/>`,
+  // tabs
+  t_vias: _r(5, 14, 38, 6, 3, "#c98a4b") + _r(5, 28, 38, 6, 3, "#c98a4b") + [9, 18, 27, 36].map(x => _r(x, 11, 5, 26, 2, "#8a5a2b")).join(""),
+  t_cruces: _s("M8 40 V28 Q8 18 18 14 L38 8", "none", 'stroke-width="7" stroke="#c98a4b"') + _s("M8 40 V8", "none", 'stroke-width="7" stroke="#c98a4b"') + _s("M30 4 L41 8 L33 16", IK),
+  t_subir: _s("M3 40 Q16 40 24 26 T45 12 V40 Z", "#7cc36a") + _s("M3 34 Q16 34 24 21 T45 7", "none", 'stroke-width="4" stroke="#c98a4b"'),
+  t_especial: _r(8, 20, 32, 20, 3, "#fff3d6") + _s("M5 21 L24 9 L43 21 Z", "#d9483b") + _c(24, 28, 4, "#fff") + _r(14, 30, 6, 10, 1, "#8fd0f5") + _r(28, 30, 6, 10, 1, "#8fd0f5"),
+  t_campo: _r(21, 28, 6, 14, 2, "#8a5a2b") + _c(24, 20, 13, "#4caf50") + _c(18, 16, 4, "#81c784", 'stroke="none"'),
+  t_calles: _r(6, 18, 36, 16, 7, "#e74c3c") + _s("M13 18 L17 10 H31 L35 18", "#8fd0f5") + _c(14, 35, 4.5, "#333") + _c(34, 35, 4.5, "#333"),
+  t_suelos: _s("M24 6 C10 6 5 17 6 26 C7 36 17 42 24 40 C30 38 27 32 31 30 C36 28 42 29 42 21 C42 12 34 6 24 6 Z", "#ffe7b8") + _c(16, 16, 3.5, "#e74c3c") + _c(26, 13, 3.5, "#3498db") + _c(34, 20, 3.5, "#2ecc71") + _c(14, 27, 3.5, "#f1c40f"),
+  t_ciudad: _r(5, 20, 12, 22, 2, "#e9c46a") + _r(17, 8, 13, 34, 2, "#7fb3d5") + _r(30, 16, 13, 26, 2, "#e76f51") + `<path d="M21 14h5M21 20h5M21 26h5M21 32h5M34 22h5M34 28h5M8 26h5M8 32h5" stroke="#fff" stroke-width="2.6"/>`,
+  t_monumentos: _s("M6 16 L24 6 L42 16 Z", "#f5f0e4") + _r(6, 36, 36, 6, 1, "#e6e0d2") + [10, 19, 28, 36].map(x => _r(x, 17, 4, 19, 1, "#fffaf0")).join(""),
+  t_sorpresas: _s("M27 4 L10 27 H22 L19 44 L38 19 H26 Z", "#ffd34d"),
+  t_trenes: _r(6, 16, 26, 20, 4, "#d9483b") + _r(9, 9, 11, 10, 2, "#d9483b") + _s("M32 22 L41 22 L43 34 H32", "#333") + _c(13, 37, 5, "#555") + _c(27, 37, 5, "#555") + _r(10, 20, 8, 7, 1, "#8fd0f5"),
+  // palette tools
+  hand: _s("M17 26 V12 a3 3 0 0 1 6 0 V24 V9 a3 3 0 0 1 6 0 V24 V11 a3 3 0 0 1 6 0 V27 V18 a3 3 0 0 1 6 0 V30 c0 8 -6 13 -13 13 h-2 c-6 0 -9 -3 -12 -8 l-6 -9 a3 3 0 0 1 5 -3 Z", "#ffd8a8"),
+  erase: _s("M8 30 L24 12 L40 24 L26 40 H14 Z", "#ffd34d") + _s("M8 30 L14 40 H26 L32 33 L18 20 Z", "#7fc8f8"),
+  pencil: _s("M10 38 L13 28 L33 8 L40 15 L20 35 Z", "#ffd34d") + _s("M10 38 L13 28 L20 35 Z", "#f6d7a7") + _s("M29 12 L36 19", "none") + `<path d="M10 38 L11.5 33 L15 36.5 Z" fill="${IK}"/>`,
+  crayon: _s("M10 38 L13 28 L33 8 L40 15 L20 35 Z", "#7d8590") + _s("M10 38 L13 28 L20 35 Z", "#555") + _s("M26 15 L33 22", "none", 'stroke="#fff" stroke-width="3"'),
+  // home cards
+  h_adv: _s("M4 12 L16 7 L32 12 L44 7 V37 L32 42 L16 37 L4 42 Z", "#bfe3a8") + _s("M16 7 V37 M32 12 V42", "none") + _s("M24 30 c-6 -8 -8 -11 -8 -14 a8 8 0 0 1 16 0 c0 3 -2 6 -8 14 Z", "#d63a2f") + _c(24, 16, 3, "#fff"),
+  h_free: _r(5, 26, 17, 15, 3, "#3498db") + _r(24, 26, 17, 15, 3, "#e74c3c") + _r(14, 10, 17, 15, 3, "#ffd34d") + `<circle cx="22" cy="17" r="2.5" fill="${IK}"/><circle cx="13" cy="33" r="2.5" fill="${IK}"/><circle cx="32" cy="33" r="2.5" fill="${IK}"/>`,
+  h_lib: _r(6, 30, 36, 9, 2, "#e74c3c") + _r(9, 21, 32, 9, 2, "#3498db") + _r(7, 12, 34, 9, 2, "#2ecc71") + `<path d="M12 16h24M14 25h22M11 34h26" stroke="#fff" stroke-width="2"/>`,
+  h_tut: _s("M4 19 L24 10 L44 19 L24 28 Z", "#4a6fa5") + _s("M12 23 V32 Q24 39 36 32 V23", "#34527d") + _s("M40 21 V32", "none") + _c(40, 34, 2.6, "#ffd34d"),
+  h_alto: _s("M2 42 L18 12 L26 26 L32 18 L46 42 Z", "#8d9aa6") + _s("M18 12 L23 21 L18 19 L14 21 Z", "#fff") + _s("M4 40 Q20 38 26 30 T46 24", "none", 'stroke-width="3.5" stroke="#c98a4b"'),
+};
+const ic = name => ICONS[name] ? `<svg class="ic" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">${ICONS[name]}</svg>` : "";
+const TAB_IC = { vias: "t_vias", cruces: "t_cruces", subir: "t_subir", especial: "t_especial", campo: "t_campo", calles: "t_calles", suelos: "t_suelos", ciudad: "t_ciudad", monumentos: "t_monumentos", sorpresas: "t_sorpresas", trenes: "t_trenes" };
+const PAL_IC = { hand: "hand", erase: "erase", lapiz: "pencil", lapizCalle: "crayon" };
+function iconNode(name) { const d = document.createElement("span"); d.className = "icw"; d.innerHTML = ic(name); return d.firstChild; }
+// =====================================================================
+//  🧸 UI POLISH: calmer controls, playmat, textured ground, motion
+// =====================================================================
+let proMode = false;
+// ---------- the toolbar: big things for children, the rest in a ⚙️ menu
+(function buildMenu() {
+  const g2 = $("homeBtn").parentNode;
+  const mb = document.createElement("button"); mb.className = "b"; mb.id = "menuBtn"; mb.title = "Más";
+  g2.appendChild(mb);
+  const pop = document.createElement("div"); pop.id = "menuPop"; pop.hidden = true; document.body.appendChild(pop);
+  [["tutBtn", "Aprender a jugar"], ["helpBtn", "Ayuda"], ["saveBtn", "Mis circuitos"], ["mute", "Sonido"], ["fs", "Pantalla completa"], ["clearBtn", "Vaciar el tablero"]].forEach(([id, label]) => {
+    const b = $(id); pop.appendChild(b); b.classList.add("row");
+    const sp = document.createElement("span"); sp.className = "lbl"; sp.textContent = label; b.appendChild(sp);
+    b.addEventListener("click", () => { pop.hidden = true; });
+  });
+  mb.onclick = e => { e.stopPropagation(); unlockAudio(); sfx.click(); pop.hidden = !pop.hidden; if (!pop.hidden) { const r = mb.getBoundingClientRect(); pop.style.top = (r.bottom + 8) + "px"; pop.style.right = (innerWidth - r.right) + "px"; } };
+  document.addEventListener("pointerdown", e => { if (!pop.hidden && !pop.contains(e.target) && e.target !== mb && !mb.contains(e.target)) pop.hidden = true; }, true);
+})();
+const BTN_IC = { resetAll: "reset", undoBtn: "undo", fixBtn: "fix", homeBtn: "home", shopBtn: "shop", menuBtn: "menu", helpBtn: "help", saveBtn: "save", fs: "full", clearBtn: "clear", tutBtn: "tut",
+  zin: "zin", zout: "zout", center: "center", miniBtn: "map", sideBtn: "side", fUp: "fup", fDown: "fdown", camFollow: "cam", camCab: "eyes" };
+function applyIcons() {
+  Object.entries(BTN_IC).forEach(([id, n]) => { const b = $(id); if (!b) return; const lbl = b.querySelector(".lbl"); b.innerHTML = ic(n); if (lbl) b.appendChild(lbl); });
+  $("play").innerHTML = ic(running ? "pause" : "play");
+  setMuteIcon();
+  [["goAdv", "h_adv"], ["goFree", "h_free"], ["goDraw", "h_lib"], ["goTut", "h_tut"], ["goTut2", "h_alto"]].forEach(([id, n]) => { const b = $(id) && $(id).querySelector(".big"); if (b) b.innerHTML = ic(n); });
+}
+function setMuteIcon() { const b = $("mute"); if (!b) return; const lbl = b.querySelector(".lbl"); b.innerHTML = ic(sfxOn ? "sound" : "mute"); if (lbl) b.appendChild(lbl); }
+// ---------- tools that only show up when they are useful
+let fixShown = null;
+function uiTick() {
+  const heights = proMode || curTab === "subir" || floor !== 0 || [...pieces.values()].some(p => p.h !== 0 || isSlope(p.type));
+  $("floorBox").style.display = heights ? "" : "none";
+  $("sideBtn").style.display = heights ? "" : "none";
+  // 🔧 appears (with a wiggle) only when a train could fall off somewhere
+  let loose = false; try { loose = !running && trains.length > 0 && looseEnds().length > 0; } catch (e) {}
+  const showFix = proMode || loose;
+  if (showFix !== fixShown) { fixShown = showFix; $("fixBtn").style.display = showFix ? "" : "none"; if (showFix && loose) wobble($("fixBtn")); }
+}
+setInterval(uiTick, 500);
+// ---------- the help line under the board fades to a small ⓘ after a moment
+let infoT = 0;
+function infoShown() {
+  const box = $("info"); box.classList.remove("mini"); clearTimeout(infoT);
+  infoT = setTimeout(() => box.classList.add("mini"), 3800);
+}
+$("info").addEventListener("click", () => { const box = $("info"); if (box.classList.contains("mini")) infoShown(); else box.classList.add("mini"); });
+// ---------- the grid only while placing something
+const gridRect = el("rect", { x: 0, y: 0, width: COLS * T, height: ROWS * T, fill: "url(#gridp)", "pointer-events": "none", class: "gridov" }, cam);
+cam.insertBefore(gridRect, L.shadow);
+function updateGrid() { const placing = !running && tool && !["hand", "erase", "train"].includes(tool) && !tool.startsWith("car_") && !tool.startsWith("hz_"); gridRect.style.opacity = placing ? 1 : 0; }
+// ---------- floor tiles: textures, and soft edges where they meet the grass
+var GRASS = "#83c96f";
+var tileRefreshOff = false;
+function seeded(c, r, i) { const x = Math.sin(c * 127.1 + r * 311.7 + i * 74.7) * 43758.5453; return x - Math.floor(x); }
+function drawTile(p, tg, x, y) {
+  const d = DEFS[p.type], c = p.c, r = p.r, col = d.gtile, R = (i) => seeded(c, r, i);
+  el("rect", { x: x - .5, y: y - .5, width: T + 1, height: T + 1, fill: col }, tg);
+  const ln = (dd, s, w, o) => el("path", { d: dd, stroke: s, "stroke-width": w || 2, fill: "none", opacity: o == null ? 1 : o, "stroke-linecap": "round" }, tg);
+  switch (p.type) {
+    case "plaza": for (let j = 0; j < 4; j++) for (let i = 0; i < 5; i++) { const bx = Math.max(x + 1, x + i * 25 + (j % 2) * 12 - 12), bx1 = Math.min(x + T - 1, x + i * 25 + (j % 2) * 12 + 9); if (bx1 - bx > 4) el("rect", { x: bx, y: y + j * 25 + 2, width: bx1 - bx, height: 21, rx: Math.min(6, (bx1 - bx) / 2), fill: R(i + j * 5) < .5 ? "#e3ddd1" : "#d2cbbd", stroke: "rgba(120,110,95,.3)", "stroke-width": 1.5 }, tg); } break;
+    case "arena": for (let i = 0; i < 9; i++) el("circle", { cx: x + 8 + R(i) * 84, cy: y + 8 + R(i + 20) * 84, r: 1.6 + R(i + 40) * 1.8, fill: "#d9b862" }, tg); ln(`M${x + 10} ${y + 55}q15 -7 30 0t30 0`, "#e3c776", 3, .8); break;
+    case "parque": for (let i = 0; i < 7; i++) el("circle", { cx: x + 10 + R(i) * 80, cy: y + 10 + R(i + 9) * 80, r: 3.5, fill: ["#ffe066", "#ff8fb1", "#fff"][i % 3] }, tg); for (let i = 0; i < 6; i++) ln(`M${x + 8 + R(i + 30) * 84} ${y + 12 + R(i + 50) * 80}l3 -7l3 7`, "#4f9a40", 2); break;
+    case "nieve": ln(`M${x + 10} ${y + 70}q20 -14 40 0t40 0`, "rgba(150,180,210,.45)", 4); for (let i = 0; i < 4; i++) el("circle", { cx: x + 12 + R(i) * 76, cy: y + 12 + R(i + 5) * 50, r: 2, fill: "#d6e6f5" }, tg); break;
+    case "campo": for (let k = 12; k < T; k += 22) ln(`M${x + 4} ${y + k}H${x + T - 4}`, "#8b9a32", 6); for (let k = 12; k < T; k += 22) for (let i = 0; i < 4; i++) el("circle", { cx: x + 12 + i * 25 + R(k + i) * 6, cy: y + k - 3, r: 2.2, fill: "#d5df7a" }, tg); break;
+    case "gris": for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) el("rect", { x: x + 3 + i * 50, y: y + 3 + j * 50, width: 44, height: 44, rx: 4, fill: R(i + j * 2) < .5 ? "#b0b5bd" : "#a1a6ae", stroke: "rgba(70,75,85,.35)", "stroke-width": 1.5 }, tg); break;
+    case "rosa": for (let i = 0; i < 8; i++) el("circle", { cx: x + 8 + R(i) * 84, cy: y + 8 + R(i + 11) * 84, r: 2.4, fill: R(i + 3) < .5 ? "#ffd1e0" : "#f084a8" }, tg); break;
+    case "naranja": for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) el("rect", { x: x + 2 + i * 33, y: y + 2 + j * 33, width: 29, height: 29, rx: 3, fill: R(i + j * 3) < .5 ? "#f6b467" : "#ec9a3f", stroke: "rgba(150,80,20,.3)", "stroke-width": 1.2 }, tg); break;
+    case "azul": for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) el("rect", { x: x + 1 + i * 25, y: y + 1 + j * 25, width: 23, height: 23, rx: 2, fill: (i + j) % 2 ? "#97d1f5" : "#7cc1ee", stroke: "rgba(255,255,255,.5)", "stroke-width": 1 }, tg); ln(`M${x + 15} ${y + 30}q8 -5 16 0`, "#fff", 2, .6); break;
+    case "amarillo": for (let k = -T; k < T; k += 14) ln(`M${x + Math.max(0, k)} ${y + Math.max(0, -k)}L${x + Math.min(T, T + k)} ${y + Math.min(T, T - k)}`, "#f7c73c", 3, .6); break;
+    case "marron": for (let i = 0; i < 7; i++) el("ellipse", { cx: x + 8 + R(i) * 84, cy: y + 8 + R(i + 7) * 84, rx: 3 + R(i + 3) * 3, ry: 2 + R(i + 4) * 2, fill: R(i + 9) < .5 ? "#8a6444" : "#5a3d26" }, tg); ln(`M${x + 20 + R(30) * 20} ${y + 30}l10 8l-4 10l9 6`, "#4a3220", 2, .6); break;
+    case "rojo": for (let j = 0; j < 5; j++) for (let i = -1; i < 3; i++) { const bx = Math.max(x + 1, x + i * 40 + (j % 2) * 20 + 1), bx1 = Math.min(x + T - 1, x + i * 40 + (j % 2) * 20 + 39); if (bx1 - bx > 3) el("rect", { x: bx, y: y + j * 20 + 1, width: bx1 - bx, height: 18, rx: 2, fill: R(i + 1 + j * 4) < .5 ? "#e2493b" : "#cf3d30", stroke: "rgba(255,230,220,.45)", "stroke-width": 1.4 }, tg); } break;
+  }
+  // soft edges where the tile meets plain grass: a shaded border and rounded outside corners
+  const same = (dc, dr) => { const q = piecesIn(c + dc, r + dr).find(z => DEFS[z.type].gtile); return q ? (q.type === p.type ? 2 : 1) : 0; };
+  const N = same(0, -1), E2 = same(1, 0), S = same(0, 1), W = same(-1, 0);
+  const dark = "rgba(0,0,0,.16)";
+  if (!N) ln(`M${x} ${y + 1.5}H${x + T}`, "rgba(255,255,255,.35)", 3);
+  if (!S) ln(`M${x} ${y + T - 2}H${x + T}`, dark, 4);
+  if (!W) ln(`M${x + 1.5} ${y}V${y + T}`, "rgba(255,255,255,.2)", 3);
+  if (!E2) ln(`M${x + T - 2} ${y}V${y + T}`, dark, 4);
+  if (p.type === "campo") { if (!N) for (let i = 0; i < 6; i++) el("circle", { cx: x + 8 + i * 17, cy: y + 3, r: 6, fill: "#4e9a3e" }, tg); if (!S) for (let i = 0; i < 6; i++) el("circle", { cx: x + 8 + i * 17, cy: y + T - 3, r: 6, fill: "#4e9a3e" }, tg); }
+  const RR = 18, corner = (cx, cy, sx, sy) => el("path", { d: `M${cx} ${cy}h${sx * RR}a${RR} ${RR} 0 0 ${sx * sy > 0 ? 0 : 1} ${-sx * RR} ${sy * RR}Z`, fill: GRASS }, tg);
+  if (!N && !W && !same(-1, -1)) corner(x, y, 1, 1);
+  if (!N && !E2 && !same(1, -1)) corner(x + T, y, -1, 1);
+  if (!S && !W && !same(-1, 1)) corner(x, y + T, 1, -1);
+  if (!S && !E2 && !same(1, 1)) corner(x + T, y + T, -1, -1);
+}
+function refreshTilesAround(c, r) {
+  if (tileRefreshOff) return;
+  for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) { if (!dc && !dr) continue; piecesIn(c + dc, r + dr).forEach(q => { if (DEFS[q.type].gtile) redrawPiece(q); }); }
+}
+// ---------- bursts drawn instead of emoji (stars, sparkles, splashes, puffs)
+var BURST_ART = {
+  "⭐": g => el("path", { d: "M0 -14l4 9 10 1 -7.5 7 2 10 -8.5 -5 -8.5 5 2 -10 -7.5 -7 10 -1Z", fill: "#ffd34d", stroke: "#c98a00", "stroke-width": 2, "stroke-linejoin": "round" }, g),
+  "✨": g => el("path", { d: "M0 -14Q2 -2 14 0Q2 2 0 14Q-2 2 -14 0Q-2 -2 0 -14Z", fill: "#fff6a0", stroke: "#e0b000", "stroke-width": 1.5 }, g),
+  "💫": g => { el("path", { d: "M-10 4a9 9 0 1 1 9 9a6 6 0 1 1 -6 -6", stroke: "#ffd34d", "stroke-width": 3.5, fill: "none", "stroke-linecap": "round" }, g); el("circle", { cx: 10, cy: -8, r: 3, fill: "#fff6a0" }, g); },
+  "💦": g => el("path", { d: "M0 -13C6 -4 9 1 9 5a9 9 0 0 1 -18 0c0 -4 3 -9 9 -18Z", fill: "#7fd3ff", stroke: "#2e86c1", "stroke-width": 2 }, g),
+  "💧": g => el("path", { d: "M0 -11C5 -3 7 1 7 4a7 7 0 0 1 -14 0c0 -3 2 -7 7 -15Z", fill: "#7fd3ff", stroke: "#2e86c1", "stroke-width": 2 }, g),
+  "💨": g => { el("circle", { cx: -6, cy: 2, r: 9, fill: "#fff", opacity: .85 }, g); el("circle", { cx: 7, cy: -2, r: 7, fill: "#fff", opacity: .85 }, g); },
+};
+// ---------- motion: things pop in when placed, with a little puff of dust
+var userPlacing = false, popsLeft = 0;
+function popFx(p) {
+  if (popsLeft <= 0 || !p.els) return; popsLeft--;
+  p.els.forEach(e => { e.classList.remove("popin"); void e.getBBox; e.classList.add("popin"); setTimeout(() => e.classList.remove("popin"), 450); });
+  if (DEFS[p.type].gtile) return;
+  const c = pieceCenter(p);
+  for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2 + .6, dot = el("circle", { cx: c.x, cy: c.y + 30, r: 6, fill: "#f3e8d2", opacity: .9 }, L.fx); addFx(dot, .5, (k, e) => { e.setAttribute("cx", c.x + Math.cos(a) * 40 * k); e.setAttribute("cy", c.y + 30 + Math.sin(a) * 14 * k); e.setAttribute("r", 6 + 6 * k); e.setAttribute("opacity", .9 * (1 - k)); }); }
+}
+// gentle life: chimney smoke from a house now and then
+let smokeT = 0;
+function idleTick(dt) {
+  smokeT -= dt; if (smokeT > 0) return; smokeT = .7;
+  const houses = []; pieces.forEach(p => { if (p.type === "casa") houses.push(p); });
+  if (!houses.length) return;
+  const p = houses[Math.floor(Math.random() * houses.length)], x = p.c * T + 68, y = p.r * T + 44 - Zp(2.35);
+  const c = el("circle", { cx: x, cy: y, r: 5, fill: "#e9e9e9", opacity: .7, "pointer-events": "none" }, L.smoke);
+  addFx(c, 2.4, (k, e) => { e.setAttribute("r", 5 + 12 * k); e.setAttribute("cy", y - 60 * k); e.setAttribute("cx", x + 14 * k); e.setAttribute("opacity", .7 * (1 - k)); });
+}
+var SWAY = new Set(["arbol", "pino", "palmera", "cerezo", "girasol", "flores"]);
+
+// =====================================================================
 //  MAIN LOOP
 // =====================================================================
 let last = performance.now();
@@ -4361,7 +4588,7 @@ function textOf(id) {
 // =====================================================================
 function setRunning(on) {
   running = on;
-  $("play").textContent = on ? "⏸️" : "▶️";
+  $("play").innerHTML = ic(on ? "pause" : "play"); setTimeout(updateGrid, 0);
   $("play").classList.toggle("on", on);
   $("bottom").classList.toggle("locked", on);
   document.body.classList.toggle("playing", on);
@@ -4433,6 +4660,7 @@ function vehicleIcon(kind) {
 function iconFor(id) {
   if (id === "train") { const K = KINDS[trainKind]; return trainIcon(trainKind, 2, K.c1[0], K.c2[0]); }
   if (id.startsWith("car_")) return vehicleIcon(id.slice(4));
+  if (PAL_IC[id]) return iconNode(PAL_IC[id]);
   if (INFO[id] && INFO[id][0]) { const sp = document.createElement("span"); sp.textContent = INFO[id][0]; return sp; }
   if (DEFS[id] && !DEFS[id].deco) return pieceIcon(id);
   if (id === "agua") { const s = el("svg", { viewBox: "0 0 100 100" }); el("rect", { x: 4, y: 4, width: 92, height: 92, rx: 14, fill: "#4aa3df" }, s); el("path", { d: "M15 40 q12 -10 24 0 t24 0 t24 0 M15 66 q12 -10 24 0 t24 0 t24 0", stroke: "#bfe6ff", "stroke-width": 6, fill: "none" }, s); return s; }
@@ -4445,14 +4673,14 @@ function showInfo(id) {
   const ic = document.createElement("div"); ic.className = "iic"; ic.appendChild(iconFor(id)); box.appendChild(ic);
   const b = document.createElement("b"); b.textContent = nameOf(id); box.appendChild(b);
   const t = document.createElement("span"); t.className = "tx"; t.textContent = textOf(id); box.appendChild(t);
-  layoutUI();
+  layoutUI(); infoShown(); updateGrid();
 }
 let curTab = "vias";
 function buildTabs() {
   const tb = $("tabs");
   TABS.forEach(t => {
     const d = document.createElement("div"); d.className = "tab"; d.dataset.tab = t.id; d.title = t.nm;
-    d.innerHTML = `${t.ic}<small>${t.nm}</small>`;
+    d.innerHTML = `${TAB_IC[t.id] ? ic(TAB_IC[t.id]) : t.ic}<small>${t.nm}</small>`;
     d.onclick = () => { unlockAudio(); selectTab(t.id); sfx.click(); };
     tb.appendChild(d);
   });
@@ -4543,10 +4771,11 @@ function selectTab(id) {
     else selectTool(its.includes(tool) ? tool : its[0]);
     invChanged();
   }
+  [...$("palette").children].forEach((e, i) => { e.style.animationDelay = (i * 14) + "ms"; e.classList.remove("slidein"); void e.offsetWidth; e.classList.add("slidein"); });
   layoutUI();
 }
 function selectTool(id) {
-  tool = id;
+  tool = id; if (typeof updateGrid === "function") setTimeout(updateGrid, 0);
   if (WX[id]) setWeather(WX[id]);
   if (id === "hz_noche") setNight(!night);
   document.querySelectorAll("#palette .it").forEach(e => e.classList.toggle("sel", e.dataset.id === id || (id === "train" && e.dataset.kind === trainKind)));
@@ -4640,6 +4869,7 @@ function loadData(data) {
   if (typeof fixPlan !== "undefined" && fixPlan) { if (fixPlan.marks) fixPlan.marks.remove(); fixPlan = null; $("fixbar").hidden = true; }
   clearBoard();
   if (!data || !Array.isArray(data.pieces)) return;
+  tileRefreshOff = true;
   data.pieces.forEach(([t, c, r, rot, st, h, fx]) => { if (t === "puente") t = "cruce"; if (!DEFS[t]) return; const p = addPiece(t, c, r, rot | 0, h | 0, st); if (p && fx && typeof fx === "object") { p.fx = Object.assign({}, fx); redrawPiece(p); } });
   (data.trains || []).forEach(tt => {
     let [k, n, c, r, h, ri, dir, d] = tt;
@@ -4651,6 +4881,7 @@ function loadData(data) {
     const p = piecesIn(c, r).find(q => q.c === c && q.r === r && q.geo.rroutes.length);
     if (p) addCar(k, p.id, ri | 0, dir === -1 ? -1 : 1, d, ci);
   });
+  tileRefreshOff = false; pieces.forEach(p => { if (DEFS[p.type].gtile) redrawPiece(p); });
   setFloor(0);
   refreshHints();
 }
@@ -5021,7 +5252,7 @@ const TUT_BASIC = [
   { em: "🎉", tx: "¡Chu-chu! Mientras el tren anda no se puede construir: solo cambiar desvíos. Cuando quieras, pulsa ⏸️ para parar.", hi: () => "#play", done: () => !running, minTime: 3 },
   { em: "✏️", tx: "Truco: con el lápiz ✏️ dibujas la vía arrastrando el dedo, y las curvas se ponen solas. Elige el lápiz y dibuja un camino que salga de la estación.",
     hi: () => tool === "lapiz" ? null : curTab === "vias" ? '.it[data-id="lapiz"]' : '.tab[data-tab="vias"]', done: () => tut.drawn >= 3, hold: 3.5, doneSay: "¡Mira qué vía has dibujado!" },
-  { em: "🏆", tx: "¡Ya sabes lo básico! ❓ tiene la ayuda y en 💾 hay ciudades listas para jugar. Cuando seas mayor, aprende a subir y bajar con el tutorial ⛰️.", hi: () => ["#helpBtn", "#saveBtn"], end: true, next: "alto" },
+  { em: "🏆", tx: "¡Ya sabes lo básico! En ⚙️ tienes la ayuda y tus circuitos, y en 🏠 la biblioteca con ciudades listas para jugar. Cuando seas mayor, aprende a subir y bajar con el tutorial ⛰️.", hi: () => ["#menuBtn", "#homeBtn"], end: true, next: "alto" },
 ];
 const TUT_HIGH = [
   { em: "⛰️", tx: "Vamos a aprender a construir hacia arriba: rampas, puentes y una espiral, como una montaña rusa.", btn: "¡Empezamos!", onEnter: tutStub },
@@ -5930,6 +6161,10 @@ function openParents() {
     sw(r4, sfxOn, "Sonidos (trenes, pitos, golpes)", () => { setSfx(!sfxOn); openParents(); });
     sw(r4, voiceOn, "Voz que lee las consignas", () => { voiceOn = !voiceOn; saveCfg(); if (voiceOn) speak("Hola. Así suena la voz."); openParents(); });
     addEl(card, "p", "", "El botón 🔊 de arriba también apaga todo de golpe.").style.fontSize = "14px";
+    addEl(card, "h3", "", "🧰 Modo constructor");
+    const r7 = row(card);
+    sw(r7, proMode, "Herramientas avanzadas siempre a la vista (🔧 arreglar, 📐 vista de lado, pisos, mapa)", () => { proMode = !proMode; saveCfg(); miniOn = proMode; $("mini").classList.toggle("hide", !miniOn); $("miniBtn").classList.toggle("off", !miniOn); fixShown = null; uiTick(); openParents(); });
+    addEl(card, "p", "", "Apagado, la pantalla es más sencilla: los pisos y la vista de lado salen solos cuando se usan rampas, y 🔧 aparece cuando un tren se puede caer.").style.fontSize = "14px";
     addEl(card, "h3", "", "🪙 Monedas y tienda");
     addEl(card, "p", "", LX(`Hay ${wallet()} monedas y ${ownedSet().size} cosas compradas en la tienda.`, `There are ${wallet()} coins and ${ownedSet().size} things bought in the shop.`, `Il y a ${wallet()} pièces et ${ownedSet().size} achats dans la boutique.`));
     const r6 = row(card);
@@ -6091,6 +6326,8 @@ const I18N_ROWS = [
 ["Arrastra para mover el tablero. Toca una pieza para girarla, un desvío para cambiar su camino (flecha verde) y un tren para darle la vuelta.", "Drag to move the board. Tap a piece to turn it, a switch to change its way (green arrow) and a train to turn it around.", "Glisse pour déplacer le plateau. Touche une pièce pour la tourner, un aiguillage pour changer son chemin (flèche verte) et un train pour le faire demi-tour."],
 ["Toca una pieza o un tren para quitarlo. (Para cambiar una pieza no hace falta borrar: elige la nueva y tócala encima.)", "Tap a piece or a train to remove it. (To change a piece you don't need to erase: pick the new one and tap on top.)", "Touche une pièce ou un train pour l'enlever. (Pour changer une pièce, pas besoin d'effacer : choisis la nouvelle et touche dessus.)"],
 ["Lápiz de vías", "Track pencil", "Crayon à voies"],
+["¡Ya sabes lo básico! En ⚙️ tienes la ayuda y tus circuitos, y en 🏠 la biblioteca con ciudades listas para jugar. Cuando seas mayor, aprende a subir y bajar con el tutorial ⛰️.", "You know the basics! ⚙️ has the help and your layouts, and 🏠 has the library with cities ready to play. When you're older, learn to go up and down with the ⛰️ tutorial.", "Tu connais l'essentiel ! ⚙️ contient l'aide et tes circuits, et 🏠 la bibliothèque avec des villes prêtes à jouer. Quand tu seras plus grand, apprends à monter et descendre avec le tutoriel ⛰️."],
+["Más", "More", "Plus"], ["Ayuda", "Help", "Aide"], ["Mis circuitos", "My layouts", "Mes circuits"], ["Sonido", "Sound", "Son"], ["Pantalla completa", "Full screen", "Plein écran"], ["Vaciar el tablero", "Clear the board", "Vider le plateau"], ["Modo constructor", "Builder mode", "Mode constructeur"], ["Herramientas avanzadas siempre a la vista (🔧 arreglar, 📐 vista de lado, pisos, mapa)", "Advanced tools always visible (🔧 fix, 📐 side view, floors, map)", "Outils avancés toujours visibles (🔧 réparer, 📐 vue de côté, étages, carte)"], ["Apagado, la pantalla es más sencilla: los pisos y la vista de lado salen solos cuando se usan rampas, y 🔧 aparece cuando un tren se puede caer.", "When off, the screen is simpler: floors and the side view appear by themselves when ramps are used, and 🔧 appears when a train could fall off.", "Désactivé, l'écran est plus simple : les étages et la vue de côté apparaissent seuls quand on utilise des rampes, et 🔧 apparaît quand un train peut tomber."], 
 ["Tienda", "Shop", "Boutique"], ["Trenes especiales", "Special trains", "Trains spéciaux"], ["Mejoras", "Upgrades", "Améliorations"], ["Estaciones", "Stations", "Gares"], ["Tren de oro", "Golden train", "Train en or"], ["¡Todo de oro! Brilla y va dejando estrellitas.", "All gold! It shines and leaves little stars behind.", "Tout en or ! Il brille et laisse des petites étoiles."], ["Tren arcoíris", "Rainbow train", "Train arc-en-ciel"], ["Cada vagón de un color, y deja una estela de colores.", "Every wagon a different colour, and it leaves a rainbow trail.", "Chaque wagon d'une couleur, et il laisse une traînée de couleurs."], ["Tren dragón", "Dragon train", "Train dragon"], ["Una locomotora con cara de dragón que ruge y echa fuego por la boca.", "An engine with a dragon face that roars and breathes fire.", "Une locomotive à tête de dragon qui rugit et crache du feu."], ["Tren de bomberos", "Fire train", "Train de pompiers"], ["Lleva un vagón de agua y apaga los fuegos que hay junto a la vía al pasar.", "It carries a water wagon and puts out fires next to the track as it passes.", "Il porte un wagon d'eau et éteint les feux près de la voie en passant."], ["Pintura", "Paint", "Peinture"], ["Elige el color de tus trenes en la pestaña 🚂 Trenes.", "Choose the colour of your trains in the 🚂 Trains tab.", "Choisis la couleur de tes trains dans l'onglet 🚂 Trains."], ["Trenes largos", "Long trains", "Trains longs"], ["Hasta 9 vagones en cada tren (antes 6).", "Up to 9 wagons on each train (instead of 6).", "Jusqu'à 9 wagons par train (au lieu de 6)."], ["Súper bocina", "Super horn", "Super klaxon"], ["El botón 📣 del conductor toca una fanfarria.", "The driver's 📣 button plays a fanfare.", "Le bouton 📣 du conducteur joue une fanfare."], ["Turbo rápido", "Quick turbo", "Turbo rapide"], ["El turbo 🚀 se recarga el doble de rápido.", "The 🚀 turbo recharges twice as fast.", "Le turbo 🚀 se recharge deux fois plus vite."], ["Estaciones grandes", "Big stations", "Grandes gares"], ["Caben el doble de pasajeros y de cajas esperando en cada estación.", "Twice as many passengers and boxes can wait at each station.", "Deux fois plus de voyageurs et de caisses peuvent attendre à chaque gare."], ["Café", "Café", "Café"], ["Ponlo junto a una estación (pestaña 🏙️ Ciudad): llega más gente a esa estación.", "Put it next to a station (🏙️ City tab): more people come to that station.", "Pose-le près d'une gare (onglet 🏙️ Ville) : plus de gens viennent à cette gare."], ["Monedas y tienda", "Coins and shop", "Pièces et boutique"], ["Regalar 50 monedas", "Give 50 coins", "Offrir 50 pièces"], ["Vaciar monedas y tienda", "Reset coins and shop", "Remettre à zéro pièces et boutique"], ["¿Vaciar las monedas y la tienda?", "Reset the coins and the shop?", "Remettre à zéro les pièces et la boutique ?"], ["Las monedas vuelven a 0 y lo comprado se vuelve a cerrar.", "Coins go back to 0 and everything bought is locked again.", "Les pièces reviennent à 0 et les achats sont reverrouillés."], ["Regalar monedas", "Give coins", "Offrir des pièces"], ["Cerrar", "Close", "Fermer"], 
 ["Noche", "Night", "Nuit"], ["Toca para que se haga de noche (y otra vez para que sea de día). Los trenes y los coches encienden los faros y las casas las luces.", "Tap to make it night (and again to make it day). Trains and cars switch on their headlights and the houses their lights.", "Touche pour qu'il fasse nuit (et encore pour qu'il fasse jour). Les trains et les voitures allument leurs phares et les maisons leurs lumières."], ["Pitar", "Toot", "Klaxonner"], ["Parar / arrancar", "Stop / go", "Arrêter / démarrer"], ["Turbo", "Turbo", "Turbo"], ["Saltar", "Jump", "Sauter"], ["Marcha atrás", "Reverse", "Marche arrière"], ["Palanca de velocidad", "Speed lever", "Levier de vitesse"], ["Dejar de conducir", "Stop driving", "Arrêter de conduire"], 
 ["Sorpresas", "Surprises", "Surprises"], ["Sorpresas y desastres", "Surprises and disasters", "Surprises et catastrophes"], ["Pestaña ⚡ Sorpresas (fuego, lluvia, vacas, señales…)", "⚡ Surprises tab (fire, rain, cows, signals…)", "Onglet ⚡ Surprises (feu, pluie, vaches, signaux…)"], ["Sorpresas al azar mientras juegan (vacas y rocas en la vía)", "Random surprises while they play (cows and rocks on the track)", "Surprises au hasard pendant le jeu (vaches et rochers sur la voie)"], ["Nadie se hace daño: los choques son de dibujos animados y siempre hay un rescate (bomberos, grúa…). Si a tu peque le asustan, apágalas aquí.", "Nobody gets hurt: crashes are cartoon-style and there's always a rescue (fire engine, crane…). If they scare your little one, turn them off here.", "Personne ne se fait mal : les chocs sont façon dessin animé et il y a toujours un sauvetage (pompiers, grue…). Si ça fait peur à ton petit, désactive-les ici."], ["Señal", "Signal", "Signal"], ["Ponla en una vía. Se pone roja y para al tren si otro tren está todavía en el tramo de delante (hasta la próxima señal). Así los trenes no chocan. Tócala con ✋ para ponerla roja tú.", "Put it on a track. It turns red and stops the train if another train is still in the stretch ahead (up to the next signal). That way trains don't crash. Tap it with ✋ to make it red yourself.", "Pose-le sur une voie. Il passe au rouge et arrête le train si un autre train est encore dans le tronçon devant (jusqu'au prochain signal). Comme ça les trains ne se percutent pas. Touche-le avec ✋ pour le mettre au rouge toi-même."], ["Desvío listo", "Smart switch", "Aiguillage malin"], ["Toca un desvío para hacerlo listo. Después de cada tren cambia solo, y el siguiente va por el otro lado. Si un lado tiene un tren, manda el tren por el lado libre; si los dos están ocupados, el tren espera.", "Tap a switch to make it smart. After each train it changes by itself, so the next one goes the other way. If one side has a train on it, it sends the train down the free side; if both are busy, the train waits.", "Touche un aiguillage pour le rendre malin. Après chaque train il change tout seul, et le suivant passe de l'autre côté. Si un côté a un train, il envoie le train du côté libre ; si les deux sont occupés, le train attend."], ["Barrera a mano", "Hand barrier", "Barrière à la main"], ["Toca un paso a nivel: ahora tú bajas y subes la barrera con ✋. Si viene el tren y la barrera está subida… ¡bonk! La grúa se lleva el coche.", "Tap a level crossing: now you lower and raise the barrier with ✋. If the train comes and the barrier is up… bonk! The tow truck takes the car away.", "Touche un passage à niveau : maintenant c'est toi qui baisses et lèves la barrière avec ✋. Si le train arrive et que la barrière est levée… bonk ! La dépanneuse emmène la voiture."], ["Fuego", "Fire", "Feu"], ["Toca una casa, un árbol o una estación y se prende fuego. Pulsa ▶️ y los bomberos 🚒 van por la calle a apagarlo. Sin calle, tócalo con ✋ para echar agua.", "Tap a house, a tree or a station and it catches fire. Press ▶️ and the fire engine 🚒 drives down the street to put it out. With no street, tap it with ✋ to throw water.", "Touche une maison, un arbre ou une gare et il prend feu. Appuie sur ▶️ et les pompiers 🚒 vont par la rue pour l'éteindre. Sans rue, touche-le avec ✋ pour l'arroser."], ["Vaca en la vía", "Cow on the track", "Vache sur la voie"], ["Pon una vaca en la vía. El tren frena, pita y la vaca se aparta.", "Put a cow on the track. The train brakes, toots and the cow moves away.", "Pose une vache sur la voie. Le train freine, siffle et la vache s'en va."], ["Rocas en la vía", "Rocks on the track", "Rochers sur la voie"], ["Pon rocas en la vía. El tren se para delante: tócalas y la grúa las quita.", "Put rocks on the track. The train stops in front: tap them and the crane takes them away.", "Pose des rochers sur la voie. Le train s'arrête devant : touche-les et la grue les enlève."], ["Sol", "Sun", "Soleil"], ["Hace buen tiempo. El agua de las inundaciones se va.", "Nice weather. The flood water goes away.", "Il fait beau. L'eau des inondations s'en va."], ["Lluvia", "Rain", "Pluie"], ["Llueve y los trenes van más despacio. Si llueve mucho, el río se desborda y tapa las vías de al lado: súbelas con rampas o pon el sol.", "It rains and trains go slower. If it rains a lot, the river floods the tracks next to it: lift them with ramps or bring out the sun.", "Il pleut et les trains vont moins vite. S'il pleut beaucoup, la rivière inonde les voies à côté : monte-les avec des rampes ou mets le soleil."], ["Nieve", "Snow", "Neige"], ["Nieva: los trenes van despacio y la nieve tapa la vía. Toca la nieve para quitarla.", "It snows: trains go slowly and snow covers the track. Tap the snow to clear it.", "Il neige : les trains vont lentement et la neige couvre la voie. Touche la neige pour l'enlever."], ["Viento", "Wind", "Vent"], ["Mucho viento: los árboles junto a la vía pueden caerse encima. Toca el árbol y la grúa lo quita.", "Very windy: trees next to the track can fall on it. Tap the tree and the crane takes it away.", "Beaucoup de vent : les arbres près de la voie peuvent tomber dessus. Touche l'arbre et la grue l'enlève."],  ["Lápiz de calles", "Street pencil", "Crayon à rues"],
@@ -6436,7 +6673,8 @@ function langPicker(parent, after) {
 // =====================================================================
 //  START
 // =====================================================================
-{ const cfg = sget(KEY + "-cfg"); const nl = (navigator.language || "es").slice(0, 2); LANG = cfg && cfg.lang || (LANGS[nl] ? nl : "es"); if (cfg) { hzOn = cfg.hz !== false; hzRnd = !!cfg.rnd; voiceOn = cfg.voice !== false; if (cfg.sfx === false) { sfxOn = false; $("mute").textContent = "🔇"; $("mute").classList.add("off"); } } }
+{ const cfg = sget(KEY + "-cfg"); const nl = (navigator.language || "es").slice(0, 2); LANG = cfg && cfg.lang || (LANGS[nl] ? nl : "es"); if (cfg) { hzOn = cfg.hz !== false; hzRnd = !!cfg.rnd; voiceOn = cfg.voice !== false; if (cfg.sfx === false) { sfxOn = false; $("mute").classList.add("off"); } proMode = !!cfg.pro; } }
+applyIcons(); if (!proMode) { miniOn = false; $("mini").classList.add("hide"); $("miniBtn").classList.add("off"); }
 langPicker($("home")); setLang(LANG); buildTabs(); buildProjects(); markTutHome(); selectTab("vias"); selectTool("hand"); sizeMini(); layoutUI(); setFloor(0);
 (function start() {
   const auto = sget(KEY + "-auto");
