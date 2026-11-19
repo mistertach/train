@@ -156,6 +156,15 @@
   #sideBtn.on { background: #ffd34d; border-color: #b8860b; }
   .sep { flex: 0 0 6px; height: 60px; border-radius: 3px; background: rgba(255,255,255,.3); }
   #carsShow { min-width: 130px; height: 64px; display: flex; align-items: center; justify-content: center; background: #fff8e8; border-radius: 14px; padding: 0 6px; }
+  #weather { position: fixed; inset: 0; pointer-events: none; display: none; overflow: hidden; }
+  #weather.lluvia { display: block; background: linear-gradient(rgba(40,60,100,.22), rgba(40,60,100,.22)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg stroke='%23cfe3ff' stroke-width='2.5' stroke-linecap='round' opacity='.8'%3E%3Cpath d='M10 0l-6 22M50 40l-6 22M90 10l-6 22M30 80l-6 22M75 70l-6 22M110 55l-6 22'/%3E%3C/g%3E%3C/svg%3E"); animation: wxrain .35s linear infinite; }
+  #weather.nevada { display: block; background: linear-gradient(rgba(220,235,255,.18), rgba(220,235,255,.18)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cg fill='%23fff' opacity='.95'%3E%3Ccircle cx='20' cy='20' r='4'/%3E%3Ccircle cx='90' cy='50' r='5'/%3E%3Ccircle cx='140' cy='15' r='3'/%3E%3Ccircle cx='50' cy='110' r='4.5'/%3E%3Ccircle cx='120' cy='130' r='3.5'/%3E%3Ccircle cx='10' cy='150' r='3'/%3E%3C/g%3E%3C/svg%3E"); animation: wxsnow 5s linear infinite; }
+  #weather.viento { display: block; }
+  #weather span { display: none; position: absolute; left: -60px; font-size: 34px; animation: wxleaf 4s linear infinite; }
+  #weather.viento span { display: block; }
+  @keyframes wxrain { to { background-position: 0 0, -40px 120px; } }
+  @keyframes wxsnow { to { background-position: 0 0, 60px 160px; } }
+  @keyframes wxleaf { 0% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(55vw, 30px) rotate(200deg); } 100% { transform: translate(115vw, -10px) rotate(400deg); } }
   #toast { position: fixed; left: 50%; top: 24%; transform: translate(-50%, -50%) scale(.5); font-size: 84px; opacity: 0; pointer-events: none; z-index: 40;
     transition: opacity .25s, transform .25s; text-shadow: 0 4px 10px rgba(0,0,0,.3); white-space: nowrap; }
   #toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
@@ -509,6 +518,8 @@ function removePiece(p) {
 }
 function setRot(p, rot) { unlinkCells(p); p.rot = rot; buildGeo(p); p.geo.cells.forEach(([x, y]) => cellP[y * COLS + x].push(p)); redrawPiece(p); }
 function redrawPiece(p) { (p.els || []).forEach(e => e.remove()); drawPiece(p); }
+const drawPiece0 = drawPiece;
+drawPiece = function (p, lay) { drawPiece0(p, lay); if (!lay && p.fx && typeof drawHzBadges === "function") drawHzBadges(p); };
 
 // a train entering cell (c,r) through edge e at height z: which piece/route takes it?
 function connectAt(c, r, e, z) {
@@ -1105,7 +1116,7 @@ function resetTrain(tr) {
   const d = clamp(tr.start.d == null ? R.len / 2 : tr.start.d, 6, R.len - 6);
   tr.head = { pid: p.id, ri: tr.start.ri, dir: tr.start.dir, s: tr.start.dir === 1 ? d : R.len - d };
   tr.trail = walkBack(tr.head, trainLen(tr)).pts.reverse();
-  tr.flip = false; tr.status = "ok"; tr.wait = 0; tr.wreck = null; tr.acc = 0; tr.atStart = true;
+  tr.flip = false; tr.status = "ok"; tr.wait = 0; tr.wreck = null; tr.acc = 0; tr.atStart = true; tr.res = null;
   tr.btn.setAttribute("display", "none");
   tr.gs.forEach(g => g.removeAttribute("opacity"));
 }
@@ -1155,11 +1166,14 @@ function updateTrain(tr, dt) {
   if (tr.wait > 0) { tr.wait -= dt; return; }
   if (cowAhead(tr)) return;
   if (carAheadOfTram(tr)) return;
+  if (hzBlocked(tr)) return;
   const R = routeOf(tr.head);
-  let v = BASE * speed * KINDS[tr.kind].vf;
+  let v = BASE * speed * KINDS[tr.kind].vf * wxSpeed();
   const slope = (R.zb - R.za) * tr.head.dir;
   if (slope > 0) v *= .62; else if (slope < 0) v *= 1.45;
-  let dist = v * dt;
+  let dist = hzLimit(tr, v * dt);
+  if (dist <= 0) return;
+  const pid0 = tr.head.pid;
   tr.atStart = false; tr.acc += dist;
   while (dist > 0) {
     const st = Math.min(4, dist); dist -= st;
@@ -1173,6 +1187,7 @@ function updateTrain(tr, dt) {
     }
   }
   trimTrail(tr);
+  hzEntered(tr, pid0);
   const K = KINDS[tr.kind];
   tr.acc2 = (tr.acc2 || 0) + v * dt;
   if (tr.head.joint) { tr.head.joint = false; if (K.snd === "heavy" || K.snd === "rumble") sfx.clank(); }
@@ -1308,9 +1323,11 @@ function updateCrossings(dt) {
     const cx = (p.c + .5) * T, cy = (p.r + .5) * T;
     let near = false;
     trains.forEach(tr => { if (!tr.wreck) carPoses(tr).forEach(q => { if (Math.abs(q.z - p.h) < .6 && Math.hypot(q.x - cx, q.y - cy) < 190) near = true; }); });
-    if (near && !p.closed) sfx.ding();
-    p.closed = near;
-    p.armT = clamp(p.armT + (near ? dt : -dt) * 2.5, 0, 1);
+    if (near && !p.wasNear) sfx.ding();
+    p.wasNear = near;
+    const down = p.fx && p.fx.man ? !!p.manClosed : near;
+    p.closed = down;
+    p.armT = clamp(p.armT + (down ? dt : -dt) * 2.5, 0, 1);
     p.arms.forEach(a => a.g.setAttribute("transform", `translate(${a.x} ${a.y}) rotate(${a.base - 90 + 90 * p.armT})`));
     const blink = near && (performance.now() / 300 | 0) % 2;
     p.lights.forEach((l, i) => l.setAttribute("fill", near ? ((blink + i) % 2 ? "#ff3b30" : "#552") : "#552"));
@@ -1794,6 +1811,7 @@ function handleTap0(wx, wy) {
     const hit = slopeBtnLayout(sp).find(b => Math.hypot(b.x - wx, b.y - wy) < rr);
     if (hit) { ({ girar: () => rotatePiece(sp), forma: () => morphSlope(sp), flip: () => flipSlope(sp), seguir: () => continueSlope(sp) })[hit.id](); return; }
   }
+  if (hzTapFix(wx, wy)) return;
   const tr = trainAt(wx, wy), car = carAt(wx, wy);
   if (running) { // while playing: only switches, horns and honks
     if (tr && !tr.wreck) { hornOf(tr); return; }
@@ -1803,6 +1821,7 @@ function handleTap0(wx, wy) {
     else { wobble($("play")); toast("⏸️ 🔨"); }
     return;
   }
+  if (tool.startsWith("hz_")) { hzToolTap(wx, wy); return; }
   if (tool === "erase") {
     if (car && !lvl) { removeCar(car); sfx.toc(); autosave(); return; }
     if (tr) { if (lvl) { hornOf(tr); return; } removeTrain(tr); sfx.toc(); autosave(); return; }
@@ -2396,7 +2415,7 @@ function commitDraw(g) {
 //  SOUND (Web Audio)
 // =====================================================================
 let actx = null, noiseBuf = null, sfxOn = true, voiceOn = true;
-function saveCfg() { sset(KEY + "-cfg", { sfx: sfxOn, voice: voiceOn, lang: LANG }); }
+function saveCfg() { sset(KEY + "-cfg", { sfx: sfxOn, voice: voiceOn, lang: LANG, hz: hzOn, rnd: hzRnd }); }
 function setSfx(on) { sfxOn = on; $("mute").textContent = on ? "🔊" : "🔇"; $("mute").classList.toggle("off", !on); if (on) sfx.click(); else try { speechSynthesis.cancel(); } catch (e) {} saveCfg(); }
 function ac() {
   if (!actx) {
@@ -2578,7 +2597,8 @@ function advanceCar(c, ds) {
     if (nx.p.type === "paso" && (nx.p.closed || nx.p.armT > .02)) { c.s = R.len; return; } // wait at the barrier
     ds -= rem;
     const cands = []; nx.p.geo.rroutes.forEach((Q, i) => { if (Q.a === nx.pi || Q.b === nx.pi) cands.push(i); });
-    const ri = cands[Math.floor(Math.random() * cands.length)];
+    let ri = engineChoice(c, nx.p, cands, nx.pi);
+    if (ri == null) ri = cands[Math.floor(Math.random() * cands.length)];
     c.pid = nx.p.id; c.ri = ri; c.dir = nx.p.geo.rroutes[ri].a === nx.pi ? 1 : -1; c.s = 0;
   }
 }
@@ -2611,7 +2631,7 @@ function updateCars(dt) {
     if (TP.some(B => { const dx = B.x - A.x, dy = B.y - A.y, d = Math.hypot(dx, dy); return d < CARS[c.kind].len / 2 + 46 && d > 1 && (dx * A.tx + dy * A.ty) / d > .6 && A.tx * B.tx + A.ty * B.ty > .3; })) c.block = -2;
   });
   cars.forEach(c => {
-    if (c.block !== -1) return;
+    if (c.block !== -1 || c.bonk > 0 || engineNear(c)) return;
     let ds = 95 * speed * CARS[c.kind].vf * dt; c.atStart = false;
     while (ds > 0) { const st = Math.min(4, ds); ds -= st; advanceCar(c, st); }
   });
@@ -2620,6 +2640,7 @@ function renderCars() {
   const blink = running && (performance.now() / 250 | 0) % 2;
   cars.forEach(c => {
     const q = carPose(c);
+    if (c.bonk > 0) { const k = clamp(3.2 - c.bonk, 0, .5) / .5; q.x -= q.ty * 40 * k * c.spin; q.y += q.tx * 40 * k * c.spin; q.a += 160 * k * c.spin; }
     c.g.setAttribute("transform", `translate(${q.x.toFixed(1)} ${q.y.toFixed(1)}) rotate(${q.a.toFixed(1)})`);
     c.g.querySelectorAll(".sirenA").forEach(e => e.setAttribute("opacity", blink ? 1 : .25));
     c.g.querySelectorAll(".sirenB").forEach(e => e.setAttribute("opacity", blink ? .25 : 1));
@@ -2669,6 +2690,462 @@ function camTick(dt) {
 }
 
 // =====================================================================
+//  ⚡ SURPRISES: obstacles, signals, smart switches, manual crossings, fire, weather
+//  (nobody gets hurt: every surprise has a rescue)
+// =====================================================================
+L.hz = el("g", {}, cam); cam.insertBefore(L.hz, L.ui);
+const snowCover = el("rect", { x: 0, y: 0, width: COLS * T, height: ROWS * T, fill: "#fff", opacity: 0, "pointer-events": "none" }, cam);
+cam.insertBefore(snowCover, L.shadow);
+let hzOn = true, hzRnd = false, weather = "sol", wxT = 0, hzSpawnT = 0, rndT = 0;
+let obst = [], fires = [], occ = new Map();
+const WX = { hz_sol: "sol", hz_lluvia: "lluvia", hz_nevada: "nevada", hz_viento: "viento" };
+const wxSpeed = () => weather === "lluvia" ? .8 : weather === "nevada" ? .7 : 1;
+const routeMid = (p, ri) => { const R = p.geo.routes[ri || 0], d = R.len / 2, [x, y] = pointAt(R, d); return { x, y, z: zAt(R, d) }; };
+const pieceCenter = p => { const cs = p.geo.cells; return { x: (cs.reduce((s, c) => s + c[0], 0) / cs.length + .5) * T, y: (cs.reduce((s, c) => s + c[1], 0) / cs.length + .5) * T - p.h * E }; };
+
+// ---------- the track ahead (follows the switches as they are set)
+function walkAhead(pid, ri, dir, n, stop) {
+  const out = [], seen = new Set();
+  let p = pieces.get(pid);
+  for (let i = 0; i < n && p; i++) {
+    const R = p.geo.routes[ri]; if (!R) break;
+    const ep = dir === 1 ? R.b : R.a; if (ep === -1) break;
+    const pt = p.geo.ports[ep], nx = connectAt(pt.c + DX[pt.e], pt.r + DY[pt.e], opp(pt.e), pt.z);
+    if (!nx) break;
+    const k = nx.p.id + ":" + nx.ri + ":" + nx.dir; if (seen.has(k)) break; seen.add(k);
+    out.push(nx.p.id);
+    if (stop && stop(nx.p)) break;
+    p = nx.p; ri = nx.ri; dir = nx.dir;
+  }
+  return out;
+}
+// which pieces each train is standing on
+let anySig = false, phys = new Map();
+function computeOcc() {
+  occ = new Map(); phys = new Map(); anySig = false;
+  pieces.forEach(p => { if (p.fx && p.fx.sig) anySig = true; });
+  const put = (id, t, real) => { if (!occ.has(id)) occ.set(id, new Set()); occ.get(id).add(t); if (real) { if (!phys.has(id)) phys.set(id, new Set()); phys.get(id).add(t); } };
+  trains.forEach(tr => {
+    if (tr.wreck) return;
+    if (tr.res) tr.res.forEach(id => put(id, tr.id));
+    put(tr.head.pid, tr.id, true);
+    const P = carPoses(tr), pts = [];
+    P.forEach((q, i) => { pts.push(q); if (i) pts.push({ x: (q.x + P[i - 1].x) / 2, y: (q.y + P[i - 1].y) / 2, z: (q.z + P[i - 1].z) / 2 }); });
+    pts.forEach(q => piecesIn(Math.floor(q.x / T), Math.floor(q.y / T)).forEach(p => {
+      if (p.geo.routes.length && q.z > p.h - .6 && q.z < p.h + spanOf(p) + .6) put(p.id, tr.id, true);
+    }));
+  });
+}
+const busyFor = (ids, tr) => ids.some(id => { const s = occ.get(id); return s && [...s].some(t => t !== tr.id); });
+const facingRoutes = (p, pi) => { const c = []; p.geo.routes.forEach((R, i) => { if (R.a === pi || R.b === pi) c.push(i); }); return c; };
+
+// ---------- 🚦 signals: red while a train is in the stretch ahead (up to the next signal)
+const hasSig = p => !!(p && p.fx && p.fx.sig);
+// the stretch a signal protects: up to the next signal, plus the tracks that join it at a switch
+function blockOf(p, h) {
+  const ids = [p.id, ...walkAhead(p.id, h.ri, h.dir, 60, hasSig)], set = new Set(ids);
+  ids.forEach(id => {
+    const q = pieces.get(id); if (!q || !DEFS[q.type].sw) return;
+    q.geo.ports.forEach(pt => {
+      const nx = connectAt(pt.c + DX[pt.e], pt.r + DY[pt.e], opp(pt.e), pt.z);
+      if (!nx || set.has(nx.p.id) || hasSig(nx.p)) return;
+      [nx.p.id, ...walkAhead(nx.p.id, nx.ri, nx.dir, 8, hasSig)].forEach(k => { if (!hasSig(pieces.get(k))) set.add(k); });
+    });
+  });
+  return [...set];
+}
+function sigRed(p, tr) {
+  if (p.fx.man) return true;
+  const ids = blockOf(p, tr.head);
+  if (busyFor(ids, tr)) return true;
+  // green: this train keeps the stretch until it reaches the next signal
+  tr.res = ids; ids.forEach(id => { if (!occ.has(id)) occ.set(id, new Set()); occ.get(id).add(tr.id); });
+  return false;
+}
+// ---------- 🧠 smart switches: take the free branch, and the next train goes the other way
+function smartPick(sp, pi, tr) {
+  const cands = facingRoutes(sp, pi), n = cands.length, st = sp.state % n;
+  for (let k = 0; k < n; k++) {
+    const idx = (st + k) % n, ri = cands[idx], dir = sp.geo.routes[ri].a === pi ? 1 : -1;
+    const ids = walkAhead(sp.id, ri, dir, 40, q => DEFS[q.type].sw || hasSig(q));
+    if (!busyFor(ids, tr)) return idx;
+  }
+  return null;
+}
+function nextOf(h) {
+  const p = pieces.get(h.pid), R = p.geo.routes[h.ri], ep = h.dir === 1 ? R.b : R.a;
+  if (ep === -1) return null;
+  const pt = p.geo.ports[ep];
+  return connectAt(pt.c + DX[pt.e], pt.r + DY[pt.e], opp(pt.e), pt.z);
+}
+// how far a train may go this frame (signals and smart switches can hold it)
+function hzLimit(tr, dist) {
+  if (tr.ambient) return dist;
+  const h = tr.head, p = pieces.get(h.pid), R = p.geo.routes[h.ri];
+  if (hasSig(p)) {
+    const mid = R.len / 2 - .5;
+    if (h.s <= mid + .01 && h.s + dist > mid && sigRed(p, tr)) { p.holdT = .4; dist = Math.max(0, mid - h.s); }
+  }
+  // with signals on the board, a train never runs into the back of another one
+  if (anySig && dist > 0 && walkAhead(h.pid, h.ri, h.dir, 2).some(id => { const o = phys.get(id); return o && [...o].some(t => t !== tr.id); })) dist = 0;
+  const rem = R.len - h.s;
+  if (rem < 60) {
+    const nx = nextOf(h);
+    if (nx && nx.p.fx && nx.p.fx.smart) {
+      const cands = facingRoutes(nx.p, nx.pi);
+      if (cands.length > 1) {
+        const k = smartPick(nx.p, nx.pi, tr);
+        if (k == null) { nx.p.holdT = .4; dist = Math.min(dist, Math.max(0, rem - 34)); }
+        else if (k !== nx.p.state % cands.length) { nx.p.state = k; redrawPiece(nx.p); sfx.clack(); }
+      }
+    }
+  }
+  return dist;
+}
+function hzEntered(tr, pid0) {
+  const h = tr.head; if (h.pid === pid0) return;
+  const p = pieces.get(h.pid);
+  if (hasSig(p)) tr.res = null;
+  if (!p || !p.fx || !p.fx.smart) return;
+  const R = p.geo.routes[h.ri], pi = h.dir === 1 ? R.a : R.b, cands = facingRoutes(p, pi);
+  if (cands.length > 1) { p.state = (cands.indexOf(h.ri) + 1) % cands.length; redrawPiece(p); sfx.clack(); }
+}
+
+// ---------- obstacles on the track: 🐄 cow, 🪨 rocks, 🪵 fallen tree, ❄️ snowdrift
+function addObstacle(kind, x, y, z) {
+  if (obst.length > 14) return null;
+  const o = { kind, x, y, z, t: 0 };
+  o.g = el("g", { transform: `translate(${x.toFixed(1)} ${(y - z * E).toFixed(1)})` }, L.hz);
+  const tx = (s, fs, dx, dy, rot) => { const t = el("text", { x: dx || 0, y: dy || 0, "font-size": fs, "text-anchor": "middle", "dominant-baseline": "central" }, o.g); t.textContent = s; if (rot) t.setAttribute("transform", `rotate(${rot} ${dx || 0} ${dy || 0})`); return t; };
+  el("ellipse", { cx: 0, cy: 22, rx: 40, ry: 10, fill: "rgba(0,0,0,.2)" }, o.g);
+  if (kind === "vaca") tx("🐄", 64, 0, -6);
+  else if (kind === "rocas") { tx("🪨", 44, -20, 4); tx("🪨", 52, 14, -6); tx("🪨", 34, 4, 16); }
+  else if (kind === "tronco") { tx("🪵", 60, 0, 0, 20); tx("🍃", 30, 30, -18); tx("🍃", 26, -28, 14); }
+  else if (kind === "nieve") { el("ellipse", { cx: 0, cy: 4, rx: 48, ry: 26, fill: "#fff", stroke: "#cfe3f5", "stroke-width": 4 }, o.g); el("ellipse", { cx: -14, cy: -8, rx: 22, ry: 14, fill: "#fff" }, o.g); tx("❄️", 26, 18, -12); }
+  obst.push(o);
+  return o;
+}
+function removeObstacle(o, how) {
+  obst = obst.filter(k => k !== o);
+  const x = o.x, y = o.y - o.z * E;
+  if (o.kind === "vaca") {
+    slide(220, 140, .7, "sawtooth", .08); toast("🐄 " + LX("¡Muu!", "Moo!", "Meuh !"));
+    const side = Math.random() < .5 ? -1 : 1;
+    addFx(o.g, 1.4, (k, e) => { e.setAttribute("transform", `translate(${(x + side * 160 * k).toFixed(1)} ${(y - 20 * Math.sin(k * 9) * (1 - k)).toFixed(1)})${side < 0 ? " scale(-1 1)" : ""}`); e.setAttribute("opacity", k > .7 ? (1 - k) / .3 : 1); });
+    return;
+  }
+  if (how === "tap" && o.kind === "nieve") { burst(x, y, ["❄️", "💨", "❄️"], 6); sfx.whoosh(); o.g.remove(); return; }
+  // a crane lifts it away
+  const cr = el("text", { x, y: y - 120, "font-size": 70, "text-anchor": "middle", "dominant-baseline": "central" }, L.fx); cr.textContent = "🏗️";
+  sfx.clank();
+  addFx(cr, 1.3, (k, e) => e.setAttribute("opacity", k > .75 ? (1 - k) * 4 : 1));
+  addFx(o.g, 1.3, (k, e) => { const up = k < .3 ? 0 : (k - .3) / .7; e.setAttribute("transform", `translate(${x.toFixed(1)} ${(y - 140 * up).toFixed(1)})`); e.setAttribute("opacity", 1 - up); });
+}
+// something in front of the train: it brakes and whistles
+function hzBlocked(tr) {
+  if (tr.ambient) return false;
+  const q = posOf(tr.head), [hx, hy] = headingOf(tr.head);
+  const pts = obst.map(o => ({ o, x: o.x, y: o.y, z: o.z }));
+  pieces.forEach(p => { if (p.flood) { const m = routeMid(p); pts.push({ x: m.x, y: m.y, z: 0, flood: true }); } });
+  for (const k of pts) {
+    if (Math.abs(k.z - q.z) > .6) continue;
+    const dx = k.x - q.x, dy = k.y - q.y, d = Math.hypot(dx, dy);
+    if (d < 115 && d > 1 && (dx * hx + dy * hy) / d > .6) {
+      tr.blockT = (tr.blockT || 0) + 1 / 60;
+      if (!tr.honked) { tr.honked = true; hornOf(tr); if (k.flood) toast("🌊"); }
+      if (k.o && k.o.kind === "vaca" && tr.blockT > 1.8) { removeObstacle(k.o); tr.blockT = 0; }
+      return true;
+    }
+  }
+  tr.honked = false; tr.blockT = 0;
+  return false;
+}
+// a piece a few pieces in front of a train, for snow and random surprises
+function pieceAhead(minN, maxN) {
+  const list = trains.filter(t => !t.wreck && !t.ambient);
+  if (!list.length) return null;
+  const tr = list[Math.floor(Math.random() * list.length)], h = tr.head;
+  const ids = walkAhead(h.pid, h.ri, h.dir, maxN).slice(minN);
+  const ok = ids.map(id => pieces.get(id)).filter(p => p && p.geo.routes.length === 1 && !/^tunel/.test(p.type) && !obst.some(o => Math.hypot(o.x - routeMid(p).x, o.y - routeMid(p).y) < 60));
+  return ok.length ? ok[Math.floor(Math.random() * ok.length)] : null;
+}
+function dropOn(p, kind) { if (!p) return null; const m = routeMid(p); return addObstacle(kind, m.x, m.y, m.z); }
+
+// ---------- ✋ manual level crossings, and the cartoon BONK when the barrier was up
+function bonk(tr, car) {
+  tr.status = "bonk"; tr.wait = 3;
+  car.bonk = 3.2; car.spin = Math.random() < .5 ? -1 : 1;
+  const q = carPose(car);
+  sfx.bump(); setTimeout(() => sfx.beep && sfx.beep(), 150);
+  const t = el("text", { x: q.x, y: q.y - 40, "font-size": 56, "font-weight": 900, fill: "#ff6a00", stroke: "#fff", "stroke-width": 6, "paint-order": "stroke", "text-anchor": "middle" }, L.fx);
+  t.textContent = "BONK!";
+  addFx(t, 1.6, (k, e) => { e.setAttribute("y", q.y - 40 - 60 * k); e.setAttribute("opacity", k > .7 ? (1 - k) / .3 : 1); });
+  burst(q.x, q.y, ["💫", "⭐", "💫"], 6);
+  speak(LX("¡Bonk! La barrera estaba subida. Bájala cuando venga el tren.", "Bonk! The barrier was up. Put it down when the train comes.", "Bonk ! La barrière était levée. Baisse-la quand le train arrive."));
+}
+function checkBonks() {
+  cars.forEach(c => {
+    if (c.bonk) return;
+    const p = pieces.get(c.pid); if (!p || p.type !== "paso") return;
+    const k = carPose(c);
+    for (const tr of trains) {
+      if (tr.status !== "ok" || tr.wreck) continue;
+      if (carPoses(tr).some(q => Math.abs(q.z) < .5 && Math.hypot(q.x - k.x, q.y - k.y) < 52)) { bonk(tr, c); return; }
+    }
+  });
+}
+function towAway(c) {
+  const q = carPose(c), tw = el("text", { x: q.x - 160, y: q.y, "font-size": 58, "text-anchor": "middle", "dominant-baseline": "central" }, L.fx); tw.textContent = "🛻";
+  addFx(tw, 1.6, (k, e) => { e.setAttribute("x", q.x - 160 + 320 * k); e.setAttribute("opacity", k > .8 ? (1 - k) * 5 : 1); });
+}
+
+// ---------- 🔥 fire, and 🚒 fire engines that drive to it
+function burnable(p) { const d = DEFS[p.type]; return !!((d.deco && !d.water) || d.mon || p.type === "estacion"); }
+function startFire(p) {
+  if (!p || !burnable(p) || fires.some(f => f.pid === p.id) || fires.length >= 8) return null;
+  const f = { pid: p.id, hp: 100, t: 0, puff: 0, age: 0 };
+  const c = pieceCenter(p); f.x = c.x; f.y = c.y;
+  f.g = el("g", { "pointer-events": "none" }, L.hz);
+  f.fl = [[-22, -6, 54], [18, -14, 62], [0, -30, 48]].map(([dx, dy, s]) => { const t = el("text", { x: f.x + dx, y: f.y + dy, "font-size": s, "text-anchor": "middle", "dominant-baseline": "central" }, f.g); t.textContent = "🔥"; return t; });
+  (p.els || []).forEach(e => e.style.filter = "brightness(.55) sepia(.4)");
+  fires.push(f); fireRoads = null;
+  noise(.6, 900, .7, .12, "lowpass");
+  return f;
+}
+function putOut(f) {
+  fires = fires.filter(o => o !== f); fireRoads = null;
+  f.g.remove();
+  const p = pieces.get(f.pid); if (p) (p.els || []).forEach(e => e.style.filter = "");
+  burst(f.x, f.y - 20, ["💦", "✨", "💦"], 6);
+  cars.forEach(c => { if (c.hose) { c.hose.remove(); c.hose = null; } });
+  sfx.bell();
+  if (!fires.length) { toast("👏"); speak(LX("¡Fuego apagado! ¡Muy bien, bomberos!", "Fire's out! Well done, firefighters!", "Le feu est éteint ! Bravo, les pompiers !")); }
+}
+function fireAt(wx, wy) { let best = null, bd = 80; fires.forEach(f => { const d = Math.hypot(f.x - wx, f.y - 10 - wy); if (d < bd) { bd = d; best = f; } }); return best; }
+// distance (in road pieces) from every street to the fires
+let fireRoads = null;
+function roadDist() {
+  if (fireRoads) return fireRoads;
+  const dist = new Map(), q = [];
+  pieces.forEach(p => {
+    if (!p.geo.rroutes || !p.geo.rroutes.length) return;
+    if (fires.some(f => { const fp = pieces.get(f.pid); return fp && fp.geo.cells.some(([x, y]) => Math.max(Math.abs(x - p.c), Math.abs(y - p.r)) <= 2); })) { dist.set(p.id, 0); q.push(p); }
+  });
+  while (q.length) {
+    const p = q.shift(), d = dist.get(p.id);
+    p.geo.rports.forEach(pt => { const nx = roadConnectAt(pt.c + DX[pt.e], pt.r + DY[pt.e], opp(pt.e)); if (nx && !dist.has(nx.p.id)) { dist.set(nx.p.id, d + 1); q.push(nx.p); } });
+  }
+  return fireRoads = dist;
+}
+// at a junction a fire engine takes the street that gets closer to the fire
+function engineChoice(c, np, cands, pi) {
+  if (c.kind !== "bomberos" || !fires.length) return null;
+  const D = roadDist(); let best = null, bd = 1e9;
+  cands.forEach(ri => {
+    const Q = np.geo.rroutes[ri], ep = Q.a === pi ? Q.b : Q.a, pt = np.geo.rports[ep];
+    const nx = pt && roadConnectAt(pt.c + DX[pt.e], pt.r + DY[pt.e], opp(pt.e));
+    const d = nx && D.has(nx.p.id) ? D.get(nx.p.id) : 1e6;
+    if (d < bd) { bd = d; best = ri; }
+  });
+  return bd < 1e6 ? best : null;
+}
+function callEngine() {
+  const D = roadDist();
+  if (!D.size) return false;
+  if (!cars.some(c => c.kind === "bomberos")) {
+    let far = null, fd = -1; D.forEach((d, id) => { if (d > fd) { fd = d; far = id; } });
+    if (far != null && !addCar("bomberos", far, 0, 1, null, 0)) return false;
+  }
+  return true;
+}
+function engineNear(c) {
+  if (c.kind !== "bomberos" || !fires.length) return null;
+  const q = carPose(c); let best = null, bd = 240;
+  fires.forEach(f => { const d = Math.hypot(f.x - q.x, f.y - q.y); if (d < bd) { bd = d; best = f; } });
+  return best;
+}
+
+// ---------- 🌧️ ❄️ 💨 weather
+const wxDiv = document.createElement("div"); wxDiv.id = "weather"; svg.after(wxDiv);
+for (let i = 0; i < 9; i++) { const s = document.createElement("span"); s.textContent = "🍃"; s.style.top = (8 + i * 10) + "%"; s.style.animationDelay = (-i * .7) + "s"; s.style.animationDuration = (3 + (i % 3)) + "s"; wxDiv.appendChild(s); }
+function setWeather(w, quiet) {
+  if (w === weather) return;
+  weather = w; wxT = 0; hzSpawnT = 0;
+  wxDiv.className = w === "sol" ? "" : w;
+  if (w !== "lluvia") pieces.forEach(p => { if (p.flood) unflood(p); });
+  if (quiet) return;
+  ({ sol: () => sfx.ding(), lluvia: () => noise(1.2, 1800, .6, .1, "highpass"), nevada: () => sfx.whoosh(), viento: () => sfx.whoosh() })[w]();
+  speak({ sol: LX("¡Sale el sol!", "Here comes the sun!", "Voilà le soleil !"),
+    lluvia: LX("¡Llueve! Los trenes van más despacio. Si llueve mucho, el río se desborda: sube las vías con rampas.", "It's raining! Trains go slower. If it rains a lot the river floods: lift the tracks with ramps.", "Il pleut ! Les trains vont moins vite. S'il pleut beaucoup, la rivière déborde : monte les voies avec des rampes."),
+    nevada: LX("¡Nieva! Si la nieve tapa la vía, tócala para quitarla.", "It's snowing! If snow covers the track, tap it to clear it.", "Il neige ! Si la neige couvre la voie, touche-la pour l'enlever."),
+    viento: LX("¡Mucho viento! Si cae un árbol en la vía, tócalo y la grúa lo quita.", "Very windy! If a tree falls on the track, tap it and the crane takes it away.", "Beaucoup de vent ! Si un arbre tombe sur la voie, touche-le et la grue l'enlève.") }[w]);
+}
+function flood(p) {
+  p.flood = true; const m = routeMid(p);
+  p.floodEl = el("g", { "pointer-events": "none" }, L.hz);
+  el("rect", { x: p.c * T - 4, y: p.r * T - 4, width: T + 8, height: T + 8, rx: 18, fill: "#4aa3df", opacity: .75 }, p.floodEl);
+  el("path", { d: `M${p.c * T + 14} ${p.r * T + 40} q12 -10 24 0 t24 0 t24 0 M${p.c * T + 14} ${p.r * T + 70} q12 -10 24 0 t24 0 t24 0`, stroke: "#d6f0ff", "stroke-width": 5, fill: "none", "stroke-linecap": "round" }, p.floodEl);
+  void m;
+}
+function unflood(p) { p.flood = false; if (p.floodEl) { p.floodEl.remove(); p.floodEl = null; } }
+function floodRivers() {
+  const water = []; pieces.forEach(p => { if (DEFS[p.type].water) water.push(p); });
+  if (!water.length) return 0;
+  let n = 0;
+  pieces.forEach(p => {
+    if (p.flood || p.h !== 0 || !p.geo.routes.length || /^tunel/.test(p.type)) return;
+    if (p.geo.routes.some(R => Math.max(R.za, R.zb) > 0)) return; // ramps going up stay dry
+    if (p.geo.cells.some(([x, y]) => water.some(w => Math.abs(w.c - x) <= 1 && Math.abs(w.r - y) <= 1))) { flood(p); n++; }
+  });
+  return n;
+}
+function treeFall() {
+  const TREES = ["arbol", "pino", "palmera", "cerezo"], opts = [];
+  pieces.forEach(p => {
+    if (!TREES.includes(p.type)) return;
+    for (let e = 0; e < 4; e++) {
+      const q = pieceAtLevel(p.c + DX[e], p.r + DY[e], 0);
+      if (q && q.h === 0 && q.geo.routes.length) opts.push(q);
+    }
+  });
+  const free = opts.filter(q => !obst.some(o => Math.hypot(o.x - routeMid(q).x, o.y - routeMid(q).y) < 60));
+  if (!free.length) return false;
+  dropOn(free[Math.floor(Math.random() * free.length)], "tronco"); sfx.bump(); return true;
+}
+
+// ---------- every frame
+function hzTick(dt) {
+  if (running && crashTimer <= 0) {
+    // weather and random surprises
+    wxT += dt; hzSpawnT += dt;
+    if (weather === "lluvia" && wxT > 12) { if (floodRivers()) { toast("🌊"); speak(LX("¡El río se ha desbordado! Los trenes no pueden pasar por el agua. Haz un puente con rampas o pon el sol.", "The river has flooded! Trains can't go through the water. Build a bridge with ramps or bring out the sun.", "La rivière a débordé ! Les trains ne passent pas dans l'eau. Fais un pont avec des rampes ou mets le soleil.")); } wxT = -1e9; }
+    if (weather === "nevada" && hzSpawnT > 9) { hzSpawnT = 0; if (obst.filter(o => o.kind === "nieve").length < 3) dropOn(pieceAhead(3, 10), "nieve"); }
+    if (weather === "viento" && hzSpawnT > 11) { hzSpawnT = 0; if (obst.filter(o => o.kind === "tronco").length < 2) treeFall(); }
+    if (hzRnd && hzOn && !lvl) { rndT += dt; if (rndT > 40) { rndT = rnd(-15, 0); if (dropOn(pieceAhead(4, 10), Math.random() < .55 ? "vaca" : "rocas")) toast(Math.random() < .5 ? "🐄" : "⚠️"); } }
+    // fire spreads slowly to a neighbour
+    fires.forEach(f => {
+      f.age += dt;
+      if (f.age > 16 && fires.length < 4) {
+        f.age = 0; const p = pieces.get(f.pid); if (!p) return;
+        const nb = []; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) piecesIn(p.c + dx, p.r + dy).forEach(q => { if (q !== p && burnable(q) && !fires.some(o => o.pid === q.id)) nb.push(q); });
+        if (nb.length) startFire(nb[Math.floor(Math.random() * nb.length)]);
+      }
+    });
+    checkBonks();
+  }
+  // fire engines spray
+  cars.forEach(c => {
+    const f = engineNear(c);
+    if (!f) { if (c.hose) { c.hose.remove(); c.hose = null; } return; }
+    const q = carPose(c);
+    if (!c.hose) c.hose = el("line", { stroke: "#7fd3ff", "stroke-width": 8, "stroke-linecap": "round", "stroke-dasharray": "10 8", "pointer-events": "none" }, L.fx);
+    c.hose.setAttribute("x1", q.x); c.hose.setAttribute("y1", q.y); c.hose.setAttribute("x2", f.x); c.hose.setAttribute("y2", f.y - 10);
+    c.hose.setAttribute("stroke-dashoffset", -(performance.now() / 20) % 18);
+    if (running) { f.hp -= 28 * dt; if (Math.random() < dt * 6) burst(f.x + rnd(-20, 20), f.y - 20, ["💦"], 1); }
+  });
+  fires.slice().forEach(f => {
+    if (!pieces.has(f.pid)) { fires = fires.filter(o => o !== f); f.g.remove(); return; }
+    if (f.hp <= 0) { putOut(f); return; }
+    f.t += dt; const s = f.hp / 100;
+    f.fl.forEach((t, i) => { const k = .8 + .25 * Math.sin(f.t * 9 + i * 2) ; t.setAttribute("transform", `translate(${t.getAttribute("x")} ${t.getAttribute("y")}) scale(${(k * (.45 + .55 * s)).toFixed(2)}) translate(${-t.getAttribute("x")} ${-t.getAttribute("y")})`); });
+    f.puff -= dt;
+    if (f.puff <= 0) { f.puff = .35; const x = f.x + rnd(-15, 15), y = f.y - 50; const c = el("circle", { cx: x, cy: y, r: 10, fill: "#666", opacity: .55 }, L.smoke); addFx(c, 2.2, (k, e) => { e.setAttribute("r", 10 + 30 * k); e.setAttribute("cy", y - 90 * k); e.setAttribute("opacity", .55 * (1 - k)); }); }
+  });
+  // signal lamps, smart switch lights, bonked cars
+  pieces.forEach(p => {
+    if (p.holdT > 0) p.holdT -= dt;
+    if (p.lamp) p.lamp.setAttribute("fill", p.fx.man || p.holdT > 0 ? "#ff3b30" : "#2ecc40");
+  });
+  cars.forEach(c => { if (c.bonk > 0) { const was = c.bonk; c.bonk -= dt; if (was > 1.2 && c.bonk <= 1.2) towAway(c); if (c.bonk <= .4) { c.bonk = 0; resetCar(c); } } });
+  trains.forEach(tr => { if (tr.status === "bonk") { tr.wait -= running ? dt : 0; if (tr.wait <= 0) tr.status = "ok"; } });
+  snowCover.setAttribute("opacity", clamp(+snowCover.getAttribute("opacity") + (weather === "nevada" ? dt * .1 : -dt * .3), 0, .42).toFixed(3));
+}
+function hzReset() {
+  obst.forEach(o => o.g.remove()); obst = [];
+  fires.forEach(f => f.g.remove()); fires = []; fireRoads = null;
+  pieces.forEach(p => { if (p.flood) unflood(p); });
+  setWeather("sol", true); snowCover.setAttribute("opacity", 0); rndT = 0;
+}
+
+// ---------- taps
+// anything a child can tap to fix, with any tool, playing or not
+function hzTapFix(wx, wy) {
+  const o = obst.find(k => Math.hypot(k.x - wx, k.y - k.z * E - wy) < 62);
+  if (o) { removeObstacle(o, "tap"); return true; }
+  const f = fireAt(wx, wy);
+  if (f && (tool === "hand" || running || tool.startsWith("hz_"))) {
+    f.hp -= 34; burst(f.x, f.y - 20, ["💦", "💧"], 4); noise(.3, 2000, .6, .12, "highpass");
+    if (f.hp <= 0) putOut(f);
+    return true;
+  }
+  if (tool === "hand" || running) {
+    for (const p of pieces.values()) if (p.lamp && p.sigXY && Math.hypot(p.sigXY[0] - wx, p.sigXY[1] - wy) < 40) {
+      p.fx.man = p.fx.man ? 0 : 1; sfx.clack(); toast(p.fx.man ? "🔴" : "🟢"); autosave(); return true;
+    }
+    const p = pickTop(wx, wy);
+    if (p && p.type === "paso" && p.fx && p.fx.man) { p.manClosed = !p.manClosed; sfx.clack(); autosave(); return true; }
+  }
+  return false;
+}
+function hzToolTap(wx, wy) {
+  const id = tool, p = pickTop(wx, wy);
+  if (WX[id]) { toast({ sol: "☀️", lluvia: "🌧️", nevada: "❄️", viento: "💨" }[WX[id]] + " ▶️"); return; }
+  if (id === "hz_vaca" || id === "hz_rocas") {
+    if (!p || !p.geo.routes.length) { sfx.no(); toast("👉 🛤️"); return; }
+    const n = nearestOnPiece(p, wx, wy), R = p.geo.routes[n.ri], [x, y] = pointAt(R, n.d);
+    if (addObstacle(id === "hz_vaca" ? "vaca" : "rocas", x, y, zAt(R, n.d))) { id === "hz_vaca" ? slide(220, 140, .5, "sawtooth", .06) : sfx.bump(); } else sfx.no();
+    return;
+  }
+  if (id === "hz_fuego") {
+    if (!p || !burnable(p)) { sfx.no(); toast("👉 🏠"); return; }
+    if (!startFire(p)) { sfx.no(); return; }
+    if (callEngine()) { toast("🚒 ▶️"); speak(LX("¡Fuego! Pulsa ▶️ y los bomberos irán por la calle a apagarlo.", "Fire! Press ▶️ and the fire engine will drive down the street to put it out.", "Au feu ! Appuie sur ▶️ et les pompiers iront par la rue pour l'éteindre.")); }
+    else { toast("💦"); speak(LX("¡Fuego! No hay calle para los bomberos: tócalo con ✋ para echarle agua, o dibuja una calle hasta aquí.", "Fire! There's no street for the fire engine: tap it with ✋ to throw water, or draw a street up to here.", "Au feu ! Il n'y a pas de rue pour les pompiers : touche-le avec ✋ pour l'arroser, ou dessine une rue jusqu'ici.")); }
+    return;
+  }
+  if (id === "hz_senal") {
+    if (!p || p.geo.routes.length !== 1 || /^tunel/.test(p.type)) { sfx.no(); toast("👉 🛤️"); return; }
+    p.fx = Object.assign({}, p.fx); if (p.fx.sig) { delete p.fx.sig; delete p.fx.man; } else p.fx.sig = 1;
+    redrawPiece(p); sfx.clack(); autosave(); return;
+  }
+  if (id === "hz_listo") {
+    if (!p || !DEFS[p.type].sw) { sfx.no(); toast("👉 🔀"); return; }
+    p.fx = Object.assign({}, p.fx); if (p.fx.smart) delete p.fx.smart; else p.fx.smart = 1;
+    redrawPiece(p); sfx.clack(); toast(p.fx.smart ? "🧠" : "🔀"); autosave(); return;
+  }
+  if (id === "hz_barrera") {
+    if (!p || p.type !== "paso") { sfx.no(); toast("👉 🚧"); return; }
+    p.fx = Object.assign({}, p.fx); if (p.fx.man) delete p.fx.man; else p.fx.man = 1;
+    p.manClosed = false; redrawPiece(p); sfx.clack(); toast(p.fx.man ? "✋" : "🤖"); autosave(); return;
+  }
+}
+// badges for signals, smart switches and manual crossings (drawn on top of the piece)
+function drawHzBadges(p) {
+  const f = p.fx; if (!f) return;
+  const og = lvL(p.h).over, els = p.els || (p.els = []);
+  if (f.sig && p.geo.routes.length) {
+    const R = p.geo.routes[0], d = R.len / 2, [x, y] = pointAt(R, d), [ax, ay] = pointAt(R, d - 3), [bx, by] = pointAt(R, d + 3);
+    let tx = bx - ax, ty = by - ay; const l = Math.hypot(tx, ty) || 1; tx /= l; ty /= l;
+    const sx = x - ty * 40, sy = y + tx * 40 - zAt(R, d) * E;
+    const g = el("g", {}, og); els.push(g);
+    el("line", { x1: sx, y1: sy + 8, x2: sx, y2: sy - 30, stroke: "#333", "stroke-width": 5 }, g);
+    el("rect", { x: sx - 12, y: sy - 58, width: 24, height: 34, rx: 7, fill: "#222", stroke: "#fff", "stroke-width": 2 }, g);
+    p.lamp = el("circle", { cx: sx, cy: sy - 41, r: 8.5, fill: f.man ? "#ff3b30" : "#2ecc40" }, g);
+    p.sigXY = [sx, sy - 30];
+  } else p.lamp = null;
+  if (f.smart || (f.man && p.type === "paso")) {
+    const c = pieceCenter(p), g = el("g", { "pointer-events": "none" }, og); els.push(g);
+    el("circle", { cx: c.x + 32, cy: c.y - 32, r: 17, fill: "#fff", stroke: f.smart ? "#8e44ad" : "#e67e22", "stroke-width": 4 }, g);
+    const t = el("text", { x: c.x + 32, y: c.y - 31, "font-size": 21, "text-anchor": "middle", "dominant-baseline": "central" }, g); t.textContent = f.smart ? "🧠" : "✋";
+  }
+}
+function hzApplyCfg() {
+  const tb = document.querySelector('.tab[data-tab="sorpresas"]');
+  if (tb) tb.style.display = hzOn && !lvl ? "" : "none";
+  if (!hzOn) { obst.forEach(o => o.g.remove()); obst = []; fires.forEach(f => f.g.remove()); fires = []; setWeather("sol", true); }
+}
+
+// =====================================================================
 //  MAIN LOOP
 // =====================================================================
 let last = performance.now();
@@ -2678,9 +3155,9 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 function step(dt) {
-  if (running && crashTimer <= 0) { trains.forEach(tr => updateTrain(tr, dt)); checkCollisions(); updateCars(dt); }
+  if (running && crashTimer <= 0) { computeOcc(); trains.forEach(tr => updateTrain(tr, dt)); checkCollisions(); updateCars(dt); }
   else if (lvl && crashTimer <= 0) trains.forEach(tr => { if (tr.ambient) updateTrain(tr, dt); });
-  cowTick(dt);
+  cowTick(dt); hzTick(dt);
   updateWrecks(dt); updateCrossings(dt); updateFx(dt); renderTrains(); renderCars(); renderSlopeBtn(); drawMini(); tutTick(dt); guideTick(); lvlTick(); camTick(dt);
 }
 
@@ -2690,6 +3167,16 @@ function step(dt) {
 const INFO = {
   hand: ["✋", "Mano", "Arrastra para mover el tablero. Toca una pieza para girarla, un desvío para cambiar su camino (flecha verde) y un tren para darle la vuelta."],
   erase: ["🧽", "Borrar", "Toca una pieza o un tren para quitarlo. (Para cambiar una pieza no hace falta borrar: elige la nueva y tócala encima.)"],
+  hz_senal: ["🚦", "Señal", "Ponla en una vía. Se pone roja y para al tren si otro tren está todavía en el tramo de delante (hasta la próxima señal). Así los trenes no chocan. Tócala con ✋ para ponerla roja tú."],
+  hz_listo: ["🧠", "Desvío listo", "Toca un desvío para hacerlo listo. Después de cada tren cambia solo, y el siguiente va por el otro lado. Si un lado tiene un tren, manda el tren por el lado libre; si los dos están ocupados, el tren espera."],
+  hz_barrera: ["🚧", "Barrera a mano", "Toca un paso a nivel: ahora tú bajas y subes la barrera con ✋. Si viene el tren y la barrera está subida… ¡bonk! La grúa se lleva el coche."],
+  hz_fuego: ["🔥", "Fuego", "Toca una casa, un árbol o una estación y se prende fuego. Pulsa ▶️ y los bomberos 🚒 van por la calle a apagarlo. Sin calle, tócalo con ✋ para echar agua."],
+  hz_vaca: ["🐄", "Vaca en la vía", "Pon una vaca en la vía. El tren frena, pita y la vaca se aparta."],
+  hz_rocas: ["🪨", "Rocas en la vía", "Pon rocas en la vía. El tren se para delante: tócalas y la grúa las quita."],
+  hz_sol: ["☀️", "Sol", "Hace buen tiempo. El agua de las inundaciones se va."],
+  hz_lluvia: ["🌧️", "Lluvia", "Llueve y los trenes van más despacio. Si llueve mucho, el río se desborda y tapa las vías de al lado: súbelas con rampas o pon el sol."],
+  hz_nevada: ["❄️", "Nieve", "Nieva: los trenes van despacio y la nieve tapa la vía. Toca la nieve para quitarla."],
+  hz_viento: ["💨", "Viento", "Mucho viento: los árboles junto a la vía pueden caerse encima. Toca el árbol y la grúa lo quita."],
   lapizCalle: ["🖍️", "Lápiz de calles", "Arrastra el dedo y la calle se dibuja sola, con curvas y cruces. Si cruzas una vía recta, pone un paso a nivel. Si empiezas junto a una calle, se une a ella."],
   lapiz: ["✏️", "Lápiz de vías", "Arrastra el dedo por el tablero y la vía se dibuja sola, con rectas y curvas. Si empiezas junto a una vía suelta, se une a ella; si cruzas tu camino, pone un cruce. Vuelve atrás con el dedo para deshacer."],
   recta: [null, "Recta larga", "Vía recta de 2 casillas."],
@@ -2752,6 +3239,7 @@ const TABS = [
   { id: "suelos", ic: "🎨", nm: "Suelos", items: ["plaza", "arena", "parque", "nieve", "campo", "gris", "rosa", "naranja", "azul", "amarillo", "marron", "rojo", "agua"] },
   { id: "ciudad", ic: "🏙️", nm: "Ciudad", items: ["casa", "granja", "iglesia", "rascacielos", "tienda", "ciudad", "museo", "kiosco", "estadio", "fuente", "barco", "velero", "torre", "castillo", "torii", "templo", "estatua", "reloj", "noria", "atraccion", "tiovivo", "globo", "dragon"] },
   { id: "monumentos", ic: "🏛️", nm: "Monumentos", items: ["arco", "eiffel", "towerb", "bigben", "acueducto", "alcala", "toriiG", "obelisco", "faro", "monte"] },
+  { id: "sorpresas", ic: "⚡", nm: "Sorpresas", items: ["hz_senal", "hz_listo", "hz_barrera", "hz_fuego", "hz_vaca", "hz_rocas", "hz_sol", "hz_lluvia", "hz_nevada", "hz_viento"] },
   { id: "trenes", ic: "🚂", nm: "Trenes", items: [] },
 ];
 function nameOf(id) {
@@ -2900,6 +3388,7 @@ function levelPalette() {
   invChanged(); layoutUI();
 }
 function selectTab(id) {
+  hzApplyCfg();
   if (lvl) { curTab = id; levelPalette(); return; }
   curTab = id;
   document.querySelectorAll(".tab").forEach(e => e.classList.toggle("sel", e.dataset.tab === id));
@@ -2945,6 +3434,7 @@ function selectTab(id) {
 }
 function selectTool(id) {
   tool = id;
+  if (WX[id]) setWeather(WX[id]);
   document.querySelectorAll("#palette .it").forEach(e => e.classList.toggle("sel", e.dataset.id === id || (id === "train" && e.dataset.kind === trainKind)));
   showInfo(id);
   applyFloorLook();
@@ -3019,7 +3509,7 @@ const KEY = "constructor-trenes-v2";
 function sget(k) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
 function sset(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
 function serialize() {
-  return { v: 2, pieces: [...pieces.values()].map(p => [p.type, p.c, p.r, p.rot, p.state, p.h]),
+  return { v: 2, pieces: [...pieces.values()].map(p => p.fx && Object.keys(p.fx).length ? [p.type, p.c, p.r, p.rot, p.state, p.h, p.fx] : [p.type, p.c, p.r, p.rot, p.state, p.h]),
     trains: trains.map(t => { const p = pieces.get(t.start.pid); return p ? [t.kind, t.cars, p.c, p.r, p.h, t.start.ri, t.start.dir, Math.round(t.start.d || 0)] : null; }).filter(Boolean),
     cars: cars.map(c => { const p = pieces.get(c.start.pid); return p ? [c.kind, c.ci, p.c, p.r, c.start.ri, c.start.dir, Math.round(c.start.d || 0)] : null; }).filter(Boolean) };
 }
@@ -3029,13 +3519,14 @@ function clearBoard() {
   [...pieces.values()].forEach(removePiece);
   cellP.forEach(a => a.length = 0);
   L.fx.innerHTML = ""; L.smoke.innerHTML = ""; fx.length = 0; crashTimer = 0;
+  if (typeof hzReset === "function") hzReset();
   setRunning(false); refreshHints();
 }
 function loadData(data) {
   if (typeof fixPlan !== "undefined" && fixPlan) { if (fixPlan.marks) fixPlan.marks.remove(); fixPlan = null; $("fixbar").hidden = true; }
   clearBoard();
   if (!data || !Array.isArray(data.pieces)) return;
-  data.pieces.forEach(([t, c, r, rot, st, h]) => { if (t === "puente") t = "cruce"; if (DEFS[t]) addPiece(t, c, r, rot | 0, h | 0, st); });
+  data.pieces.forEach(([t, c, r, rot, st, h, fx]) => { if (t === "puente") t = "cruce"; if (!DEFS[t]) return; const p = addPiece(t, c, r, rot | 0, h | 0, st); if (p && fx && typeof fx === "object") { p.fx = Object.assign({}, fx); redrawPiece(p); } });
   (data.trains || []).forEach(tt => {
     let [k, n, c, r, h, ri, dir, d] = tt;
     if (data.v !== 2) { [k, n, c, r, ri, dir, d] = tt; h = 0; }
@@ -4325,6 +4816,11 @@ function openParents() {
     sw(r4, sfxOn, "Sonidos (trenes, pitos, golpes)", () => { setSfx(!sfxOn); openParents(); });
     sw(r4, voiceOn, "Voz que lee las consignas", () => { voiceOn = !voiceOn; saveCfg(); if (voiceOn) speak("Hola. Así suena la voz."); openParents(); });
     addEl(card, "p", "", "El botón 🔊 de arriba también apaga todo de golpe.").style.fontSize = "14px";
+    addEl(card, "h3", "", "⚡ Sorpresas y desastres");
+    const r5 = row(card);
+    sw(r5, hzOn, "Pestaña ⚡ Sorpresas (fuego, lluvia, vacas, señales…)", () => { hzOn = !hzOn; if (!hzOn) hzRnd = false; saveCfg(); hzApplyCfg(); if (!hzOn && curTab === "sorpresas") selectTab("vias"); openParents(); });
+    sw(r5, hzRnd, "Sorpresas al azar mientras juegan (vacas y rocas en la vía)", () => { hzRnd = !hzRnd; if (hzRnd) hzOn = true; saveCfg(); hzApplyCfg(); openParents(); });
+    addEl(card, "p", "", "Nadie se hace daño: los choques son de dibujos animados y siempre hay un rescate (bomberos, grúa…). Si a tu peque le asustan, apágalas aquí.").style.fontSize = "14px";
     addEl(card, "h3", "", "🌐 Idioma");
     langPicker(card, openParents);
     const close = mkBtn("✖️ Cerrar", "Cerrar", closeModal); close.style.width = "auto"; close.style.padding = "0 20px"; close.style.fontSize = "18px"; close.style.marginTop = "12px";
@@ -4475,7 +4971,8 @@ const I18N_ROWS = [
 ["Mano", "Hand", "Main"], ["Borrar", "Eraser", "Gomme"],
 ["Arrastra para mover el tablero. Toca una pieza para girarla, un desvío para cambiar su camino (flecha verde) y un tren para darle la vuelta.", "Drag to move the board. Tap a piece to turn it, a switch to change its way (green arrow) and a train to turn it around.", "Glisse pour déplacer le plateau. Touche une pièce pour la tourner, un aiguillage pour changer son chemin (flèche verte) et un train pour le faire demi-tour."],
 ["Toca una pieza o un tren para quitarlo. (Para cambiar una pieza no hace falta borrar: elige la nueva y tócala encima.)", "Tap a piece or a train to remove it. (To change a piece you don't need to erase: pick the new one and tap on top.)", "Touche une pièce ou un train pour l'enlever. (Pour changer une pièce, pas besoin d'effacer : choisis la nouvelle et touche dessus.)"],
-["Lápiz de vías", "Track pencil", "Crayon à voies"], ["Lápiz de calles", "Street pencil", "Crayon à rues"],
+["Lápiz de vías", "Track pencil", "Crayon à voies"],
+["Sorpresas", "Surprises", "Surprises"], ["Sorpresas y desastres", "Surprises and disasters", "Surprises et catastrophes"], ["Pestaña ⚡ Sorpresas (fuego, lluvia, vacas, señales…)", "⚡ Surprises tab (fire, rain, cows, signals…)", "Onglet ⚡ Surprises (feu, pluie, vaches, signaux…)"], ["Sorpresas al azar mientras juegan (vacas y rocas en la vía)", "Random surprises while they play (cows and rocks on the track)", "Surprises au hasard pendant le jeu (vaches et rochers sur la voie)"], ["Nadie se hace daño: los choques son de dibujos animados y siempre hay un rescate (bomberos, grúa…). Si a tu peque le asustan, apágalas aquí.", "Nobody gets hurt: crashes are cartoon-style and there's always a rescue (fire engine, crane…). If they scare your little one, turn them off here.", "Personne ne se fait mal : les chocs sont façon dessin animé et il y a toujours un sauvetage (pompiers, grue…). Si ça fait peur à ton petit, désactive-les ici."], ["Señal", "Signal", "Signal"], ["Ponla en una vía. Se pone roja y para al tren si otro tren está todavía en el tramo de delante (hasta la próxima señal). Así los trenes no chocan. Tócala con ✋ para ponerla roja tú.", "Put it on a track. It turns red and stops the train if another train is still in the stretch ahead (up to the next signal). That way trains don't crash. Tap it with ✋ to make it red yourself.", "Pose-le sur une voie. Il passe au rouge et arrête le train si un autre train est encore dans le tronçon devant (jusqu'au prochain signal). Comme ça les trains ne se percutent pas. Touche-le avec ✋ pour le mettre au rouge toi-même."], ["Desvío listo", "Smart switch", "Aiguillage malin"], ["Toca un desvío para hacerlo listo. Después de cada tren cambia solo, y el siguiente va por el otro lado. Si un lado tiene un tren, manda el tren por el lado libre; si los dos están ocupados, el tren espera.", "Tap a switch to make it smart. After each train it changes by itself, so the next one goes the other way. If one side has a train on it, it sends the train down the free side; if both are busy, the train waits.", "Touche un aiguillage pour le rendre malin. Après chaque train il change tout seul, et le suivant passe de l'autre côté. Si un côté a un train, il envoie le train du côté libre ; si les deux sont occupés, le train attend."], ["Barrera a mano", "Hand barrier", "Barrière à la main"], ["Toca un paso a nivel: ahora tú bajas y subes la barrera con ✋. Si viene el tren y la barrera está subida… ¡bonk! La grúa se lleva el coche.", "Tap a level crossing: now you lower and raise the barrier with ✋. If the train comes and the barrier is up… bonk! The tow truck takes the car away.", "Touche un passage à niveau : maintenant c'est toi qui baisses et lèves la barrière avec ✋. Si le train arrive et que la barrière est levée… bonk ! La dépanneuse emmène la voiture."], ["Fuego", "Fire", "Feu"], ["Toca una casa, un árbol o una estación y se prende fuego. Pulsa ▶️ y los bomberos 🚒 van por la calle a apagarlo. Sin calle, tócalo con ✋ para echar agua.", "Tap a house, a tree or a station and it catches fire. Press ▶️ and the fire engine 🚒 drives down the street to put it out. With no street, tap it with ✋ to throw water.", "Touche une maison, un arbre ou une gare et il prend feu. Appuie sur ▶️ et les pompiers 🚒 vont par la rue pour l'éteindre. Sans rue, touche-le avec ✋ pour l'arroser."], ["Vaca en la vía", "Cow on the track", "Vache sur la voie"], ["Pon una vaca en la vía. El tren frena, pita y la vaca se aparta.", "Put a cow on the track. The train brakes, toots and the cow moves away.", "Pose une vache sur la voie. Le train freine, siffle et la vache s'en va."], ["Rocas en la vía", "Rocks on the track", "Rochers sur la voie"], ["Pon rocas en la vía. El tren se para delante: tócalas y la grúa las quita.", "Put rocks on the track. The train stops in front: tap them and the crane takes them away.", "Pose des rochers sur la voie. Le train s'arrête devant : touche-les et la grue les enlève."], ["Sol", "Sun", "Soleil"], ["Hace buen tiempo. El agua de las inundaciones se va.", "Nice weather. The flood water goes away.", "Il fait beau. L'eau des inondations s'en va."], ["Lluvia", "Rain", "Pluie"], ["Llueve y los trenes van más despacio. Si llueve mucho, el río se desborda y tapa las vías de al lado: súbelas con rampas o pon el sol.", "It rains and trains go slower. If it rains a lot, the river floods the tracks next to it: lift them with ramps or bring out the sun.", "Il pleut et les trains vont moins vite. S'il pleut beaucoup, la rivière inonde les voies à côté : monte-les avec des rampes ou mets le soleil."], ["Nieve", "Snow", "Neige"], ["Nieva: los trenes van despacio y la nieve tapa la vía. Toca la nieve para quitarla.", "It snows: trains go slowly and snow covers the track. Tap the snow to clear it.", "Il neige : les trains vont lentement et la neige couvre la voie. Touche la neige pour l'enlever."], ["Viento", "Wind", "Vent"], ["Mucho viento: los árboles junto a la vía pueden caerse encima. Toca el árbol y la grúa lo quita.", "Very windy: trees next to the track can fall on it. Tap the tree and the crane takes it away.", "Beaucoup de vent : les arbres près de la voie peuvent tomber dessus. Touche l'arbre et la grue l'enlève."],  ["Lápiz de calles", "Street pencil", "Crayon à rues"],
 ["Arrastra el dedo y la calle se dibuja sola, con curvas y cruces. Si cruzas una vía recta, pone un paso a nivel. Si empiezas junto a una calle, se une a ella.", "Drag your finger and the street draws itself, with curves and junctions. If you cross a straight track, it adds a level crossing. If you start next to a street, it joins on.", "Glisse le doigt et la rue se dessine toute seule, avec des courbes et des carrefours. Si tu traverses une voie droite, il met un passage à niveau. Si tu commences à côté d'une rue, il s'y raccorde."],
 ["Arrastra el dedo por el tablero y la vía se dibuja sola, con rectas y curvas. Si empiezas junto a una vía suelta, se une a ella; si cruzas tu camino, pone un cruce. Vuelve atrás con el dedo para deshacer.", "Drag your finger across the board and the track draws itself, with straights and curves. Start next to a loose end and it joins it; cross your own path and it adds a crossing. Go back with your finger to undo.", "Glisse ton doigt sur le plateau et la voie se dessine toute seule, avec des droites et des courbes. Si tu commences près d'un bout libre, elle s'y raccorde ; si tu croises ton chemin, elle met un croisement. Reviens en arrière avec le doigt pour annuler."],
 ["Recta larga", "Long straight", "Grande droite"], ["Vía recta de 2 casillas.", "A straight track 2 squares long.", "Une voie droite de 2 cases."],
@@ -4818,7 +5315,7 @@ function langPicker(parent, after) {
 // =====================================================================
 //  START
 // =====================================================================
-{ const cfg = sget(KEY + "-cfg"); const nl = (navigator.language || "es").slice(0, 2); LANG = cfg && cfg.lang || (LANGS[nl] ? nl : "es"); if (cfg) { voiceOn = cfg.voice !== false; if (cfg.sfx === false) { sfxOn = false; $("mute").textContent = "🔇"; $("mute").classList.add("off"); } } }
+{ const cfg = sget(KEY + "-cfg"); const nl = (navigator.language || "es").slice(0, 2); LANG = cfg && cfg.lang || (LANGS[nl] ? nl : "es"); if (cfg) { hzOn = cfg.hz !== false; hzRnd = !!cfg.rnd; voiceOn = cfg.voice !== false; if (cfg.sfx === false) { sfxOn = false; $("mute").textContent = "🔇"; $("mute").classList.add("off"); } } }
 langPicker($("home")); setLang(LANG); buildTabs(); buildProjects(); markTutHome(); selectTab("vias"); selectTool("hand"); sizeMini(); layoutUI(); setFloor(0);
 (function start() {
   const auto = sget(KEY + "-auto");
