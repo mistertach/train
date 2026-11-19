@@ -1176,6 +1176,210 @@ Object.assign(SPRITES, {
 // emoji scenery that stays emoji: sized to sit well next to the track
 const DECO_FS = { pato: 40, oveja: 44, vaca: 50, elefante: 64, llama: 50, loro: 38, pinguino: 42, flores: 40, girasol: 48, cactus: 52, taxi: 44, bus: 52, tuktuk: 42, velero: 60, barco: 66, globo: 58, dragon: 72, fuente: 60, montana: 78 };
 const SPR_TOP = { rascacielos: -110, ciudad: -60, iglesia: -60, tienda: -10, museo: -10, palmera: -10, noria: -30, tiovivo: -10 };
+Object.assign(SPRITES, {
+  torre(g, X, Y) { // Tokyo Tower: red and white lattice
+    const cx = X + 50, gy = Y + 84;
+    sShadow(g, cx, gy, 30, 8);
+    const lvl = [[0, 30], [40, 18], [80, 10], [120, 5], [150, 2]];
+    for (let i = 0; i < lvl.length - 1; i++) {
+      const [y0, w0] = lvl[i], [y1, w1] = lvl[i + 1], col = i % 2 ? "#fff" : "#e8432f";
+      face(g, `M${cx - w0} ${gy - y0}L${cx - w1} ${gy - y1}L${cx - w1 + 4} ${gy - y1}L${cx - w0 + 6} ${gy - y0}Z M${cx + w0} ${gy - y0}L${cx + w1} ${gy - y1}L${cx + w1 - 4} ${gy - y1}L${cx + w0 - 6} ${gy - y0}Z`, col, { "stroke-width": 1.4 });
+      el("path", { d: `M${cx - w0 + 4} ${gy - y0}L${cx + w1 - 2} ${gy - y1}M${cx + w0 - 4} ${gy - y0}L${cx - w1 + 2} ${gy - y1}`, stroke: col === "#fff" ? "#e8432f" : "#fff", "stroke-width": 1.5, opacity: .8 }, g);
+    }
+    block(g, cx - 14, cx + 14, gy - 50, gy - 40, 1.3, 1.6, "#fff", "#e8432f");
+    block(g, cx - 8, cx + 8, gy - 92, gy - 86, 2.9, 3.1, "#fff", "#e8432f");
+    el("line", { x1: cx, y1: gy - 150, x2: cx, y2: gy - 172, stroke: "#e8432f", "stroke-width": 3 }, g);
+  },
+  castillo(g, X, Y) { // Japanese castle: stacked white floors with dark curved roofs
+    const cx = X + 50, gy = Y + 84;
+    sShadow(g, cx, gy, 44, 10);
+    face(g, `M${X + 6} ${gy}L${X + 14} ${gy - 22}H${X + 86}L${X + 94} ${gy}Z`, "#a39a8a");
+    for (let y = gy - 4; y > gy - 22; y -= 6) el("line", { x1: X + 10, y1: y, x2: X + 90, y2: y, stroke: "rgba(0,0,0,.15)", "stroke-width": 1.5 }, g);
+    [[36, 22, 26], [28, 48, 22], [20, 70, 20]].forEach(([w, y, h], i) => {
+      face(g, rectP(cx - w, gy - y - h, cx + w, gy - y), "#fbfaf6");
+      for (let k = -1; k <= 1; k++) el("rect", { x: cx + k * (w * .6) - 3, y: gy - y - h + 6, width: 6, height: 8, fill: "#3b3b3b" }, g);
+      face(g, `M${cx - w - 10} ${gy - y - h + 2}Q${cx - w} ${gy - y - h - 2} ${cx - w + 4} ${gy - y - h - 8}H${cx + w - 4}Q${cx + w} ${gy - y - h - 2} ${cx + w + 10} ${gy - y - h + 2}Z`, "#3c4a5e");
+    });
+    el("path", { d: `M${cx - 6} ${gy - 96}l-4 -6M${cx + 6} ${gy - 96}l4 -6`, stroke: "#d4a017", "stroke-width": 3, "stroke-linecap": "round" }, g);
+  },
+  torii(g, X, Y) {
+    const gy = Y + 82;
+    sShadow(g, X + 50, gy, 40, 7);
+    face(g, rectP(X + 22, gy - 70, X + 31, gy), "#e2402c"); face(g, rectP(X + 69, gy - 70, X + 78, gy), "#e2402c");
+    face(g, rectP(X + 20, gy - 4, X + 33, gy), "#2b2b2b"); face(g, rectP(X + 67, gy - 4, X + 80, gy), "#2b2b2b");
+    face(g, rectP(X + 16, gy - 58, X + 84, gy - 51), "#e2402c");
+    face(g, `M${X + 4} ${gy - 78}Q${X + 50} ${gy - 70} ${X + 96} ${gy - 78}L${X + 92} ${gy - 68}Q${X + 50} ${gy - 62} ${X + 8} ${gy - 68}Z`, "#2b2b2b");
+    face(g, `M${X + 8} ${gy - 68}Q${X + 50} ${gy - 62} ${X + 92} ${gy - 68}L${X + 90} ${gy - 62}Q${X + 50} ${gy - 57} ${X + 10} ${gy - 62}Z`, "#e2402c");
+    face(g, rectP(X + 46, gy - 64, X + 54, gy - 51), "#e2402c");
+  },
+  templo(g, X, Y) { // Thai temple: tiered roofs and a golden spire
+    const cx = X + 50, gy = Y + 84;
+    sShadow(g, cx, gy, 44, 10);
+    block(g, X + 8, X + 92, gy - 40, gy, 0, .35, "#efe6d2", "#e0d2b4");
+    block(g, X + 18, X + 82, gy - 36, gy - 6, .35, 1.4, "#f7f0e0", "#fbf6ea");
+    [[0, "#c0392b"], [1, "#2e6db4"], [2, "#c0392b"]].forEach(([i, c]) => face(g, `M${X + 10 + i * 9} ${gy - 6 - Zp(1.4) - i * 13}L${cx} ${gy - 6 - Zp(1.4) - 26 - i * 13}L${X + 90 - i * 9} ${gy - 6 - Zp(1.4) - i * 13}Z`, c));
+    face(g, `M${cx - 6} ${gy - 6 - Zp(1.4) - 50}L${cx} ${gy - 6 - Zp(1.4) - 86}L${cx + 6} ${gy - 6 - Zp(1.4) - 50}Z`, "#f2c230");
+    door(g, cx - 7, gy - 6, 14, 24, "#a8742d");
+    [X + 26, X + 68].forEach(x => face(g, rectP(x, gy - 6 - Zp(1.2), x + 6, gy - 6), "#f2c230"));
+  },
+  estatua(g, X, Y) { // Statue of Liberty on its plinth
+    const cx = X + 50, gy = Y + 84;
+    sShadow(g, cx, gy, 28, 8);
+    block(g, cx - 22, cx + 22, gy - 26, gy, 0, 1.2, "#e2dccd", "#d1c8b4");
+    block(g, cx - 14, cx + 14, gy - 22, gy - 4, 1.2, 1.6, "#cfc6b0", "#bfb59d");
+    const top = gy - 4 - Zp(1.6), G = "#6fb8a2", D = "#4c9481";
+    face(g, `M${cx - 12} ${top}L${cx - 7} ${top - 52}H${cx + 7}L${cx + 12} ${top}Z`, G);
+    el("path", { d: `M${cx - 4} ${top}L${cx - 2} ${top - 48}M${cx + 4} ${top}L${cx + 3} ${top - 48}`, stroke: D, "stroke-width": 2 }, g);
+    face(g, rectP(cx - 13, top - 40, cx - 7, top - 28), D);
+    face(g, `M${cx + 6} ${top - 46}L${cx + 12} ${top - 78}L${cx + 17} ${top - 77}L${cx + 11} ${top - 44}Z`, G);
+    el("circle", { cx, cy: top - 58, r: 7, fill: G, stroke: "rgba(40,25,10,.45)", "stroke-width": 2 }, g);
+    for (let i = 0; i < 7; i++) { const a = Math.PI + i * Math.PI / 6; el("line", { x1: cx + Math.cos(a) * 7, y1: top - 60 + Math.sin(a) * 7, x2: cx + Math.cos(a) * 14, y2: top - 60 + Math.sin(a) * 14, stroke: G, "stroke-width": 2.5 }, g); }
+    face(g, `M${cx + 10} ${top - 80}h8l-1 4h-6Z`, "#d4a017"); el("path", { d: `M${cx + 14} ${top - 80}q-5 -6 0 -12q5 6 0 12`, fill: "#ffb300" }, g);
+  },
+  reloj(g, X, Y) { // clock tower (Big Ben style)
+    const cx = X + 50, gy = Y + 84;
+    sShadow(g, cx, gy, 26, 8);
+    block(g, cx - 18, cx + 18, gy - 30, gy, 0, 4, "#d9c49a", "#e6d3a8");
+    for (let z = .5; z < 3; z += .55) for (let i = -1; i <= 1; i++) el("rect", { x: cx + i * 10 - 2.5, y: gy - Zp(z) - 8, width: 5, height: 8, fill: "#7a6a4e" }, g);
+    const cy = gy - Zp(3.4);
+    el("circle", { cx, cy, r: 14, fill: "#fff8e0", stroke: "#8a6d1d", "stroke-width": 3 }, g);
+    el("path", { d: `M${cx} ${cy}V${cy - 9}M${cx} ${cy}L${cx + 6} ${cy + 3}`, stroke: "#222", "stroke-width": 2.2, "stroke-linecap": "round" }, g);
+    face(g, `M${cx - 20} ${gy - Zp(4)}L${cx} ${gy - Zp(4) - 44}L${cx + 20} ${gy - Zp(4)}Z`, "#4b5d6e");
+    el("line", { x1: cx, y1: gy - Zp(4) - 44, x2: cx, y2: gy - Zp(4) - 56, stroke: "#d4a017", "stroke-width": 3 }, g);
+  },
+  atraccion(g, X, Y) { // roller coaster
+    const gy = Y + 84;
+    sShadow(g, X + 50, gy, 46, 9);
+    const track = `M${X + 4} ${gy - 16}Q${X + 22} ${gy - 86} ${X + 40} ${gy - 30}Q${X + 54} ${gy + 2} ${X + 66} ${gy - 46}Q${X + 80} ${gy - 92} ${X + 96} ${gy - 22}`;
+    [12, 28, 40, 54, 66, 80, 92].forEach(x => el("line", { x1: X + x, y1: gy, x2: X + x, y2: gy - 60, stroke: "#c7cbd1", "stroke-width": 3 }, g));
+    el("path", { d: track, stroke: "#e74c3c", "stroke-width": 7, fill: "none", "stroke-linecap": "round" }, g);
+    el("path", { d: track, stroke: "#fff", "stroke-width": 2, fill: "none", "stroke-dasharray": "4 5" }, g);
+    [[18, -66, "#3498db"], [27, -70, "#f1c40f"]].forEach(([x, y, c]) => el("rect", { x: X + x - 6, y: gy + y - 6, width: 12, height: 9, rx: 3, fill: c, stroke: "rgba(0,0,0,.4)", "stroke-width": 1.5 }, g));
+  },
+  globo(g, X, Y) { // hot-air balloon floating above its shadow
+    const cx = X + 50, gy = Y + 84, by = Y + 18;
+    sShadow(g, cx, gy, 18, 5);
+    const cols = ["#e74c3c", "#f1c40f", "#3498db", "#2ecc71", "#e74c3c"];
+    for (let i = 0; i < 5; i++) { const x0 = cx - 26 + i * 10.4; face(g, `M${cx} ${by + 34}Q${x0 - 6} ${by + 10} ${x0 + 2} ${by - 18}Q${x0 + 5} ${by - 24} ${x0 + 10.4} ${by - 18}Q${x0 + 14} ${by + 10} ${cx} ${by + 34}Z`, cols[i], { "stroke-width": 1.2 }); }
+    el("path", { d: `M${cx - 7} ${by + 34}L${cx - 6} ${by + 46}M${cx + 7} ${by + 34}L${cx + 6} ${by + 46}`, stroke: "#6b4a2a", "stroke-width": 1.5 }, g);
+    face(g, rectP(cx - 7, by + 46, cx + 7, by + 56), "#a87a42");
+  },
+  dragon(g, X, Y) { // a friendly dragon sitting down
+    const cx = X + 50, gy = Y + 82, G = "#3fae5a", D = "#2b8443";
+    sShadow(g, cx, gy, 36, 8);
+    el("path", { d: `M${cx - 16} ${gy - 6}Q${cx - 46} ${gy - 2} ${cx - 42} ${gy - 26}`, stroke: G, "stroke-width": 9, fill: "none", "stroke-linecap": "round" }, g);
+    face(g, `M${cx - 44} ${gy - 26}l-6 -8l10 2z`, "#f5c518");
+    face(g, `M${cx - 6} ${gy - 44}Q${cx - 34} ${gy - 66} ${cx - 30} ${gy - 30}Z`, "#8fd6a0");
+    el("ellipse", { cx, cy: gy - 20, rx: 22, ry: 20, fill: G, stroke: "rgba(0,0,0,.35)", "stroke-width": 2 }, g);
+    el("ellipse", { cx: cx + 4, cy: gy - 16, rx: 12, ry: 13, fill: "#bfe8b0" }, g);
+    el("ellipse", { cx: cx + 12, cy: gy - 50, rx: 15, ry: 12, fill: G, stroke: "rgba(0,0,0,.35)", "stroke-width": 2 }, g);
+    el("ellipse", { cx: cx + 24, cy: gy - 46, rx: 8, ry: 6, fill: G, stroke: "rgba(0,0,0,.35)", "stroke-width": 2 }, g);
+    el("circle", { cx: cx + 10, cy: gy - 54, r: 4, fill: "#fff" }, g); el("circle", { cx: cx + 11, cy: gy - 54, r: 2.2, fill: "#111" }, g);
+    face(g, `M${cx + 2} ${gy - 60}l-4 -10l8 6z M${cx + 12} ${gy - 62}l0 -11l6 9z`, "#f5c518");
+    [[cx - 12, gy - 2], [cx + 12, gy - 2]].forEach(([x, y]) => el("ellipse", { cx: x, cy: y, rx: 8, ry: 4, fill: D }, g));
+    el("path", { d: `M${cx + 30} ${gy - 46}q8 -6 12 0`, stroke: "#ff8a3d", "stroke-width": 3, fill: "none", "stroke-linecap": "round" }, g);
+  },
+  barco(g, X, Y) { // ferry
+    const cx = X + 50, cy = Y + 60;
+    el("ellipse", { cx, cy: cy + 14, rx: 46, ry: 9, fill: "rgba(255,255,255,.45)" }, g);
+    face(g, `M${X + 6} ${cy}H${X + 94}L${X + 84} ${cy + 14}H${X + 14}Z`, "#2e5fa8");
+    el("rect", { x: X + 10, y: cy + 1, width: 80, height: 3, fill: "#fff" }, g);
+    block(g, X + 22, X + 78, cy - 12, cy, 0, .75, "#fff", "#f4f6fb");
+    for (let i = 0; i < 6; i++) el("circle", { cx: X + 28 + i * 9, cy: cy - Zp(.4), r: 2.8, fill: "#5aa9e6" }, g);
+    block(g, X + 34, X + 62, cy - 12, cy - 4, .75, 1.3, "#fff", "#f4f6fb");
+    block(g, X + 64, X + 72, cy - 10, cy - 4, .75, 1.8, "#333", "#d63a2f");
+  },
+  velero(g, X, Y) { // sailboat
+    const cx = X + 50, cy = Y + 66;
+    el("ellipse", { cx, cy: cy + 10, rx: 34, ry: 7, fill: "rgba(255,255,255,.45)" }, g);
+    face(g, `M${cx - 30} ${cy}H${cx + 30}L${cx + 20} ${cy + 11}H${cx - 22}Z`, "#c0392b");
+    el("line", { x1: cx, y1: cy, x2: cx, y2: cy - 72, stroke: "#6b4a2a", "stroke-width": 3 }, g);
+    face(g, `M${cx + 3} ${cy - 70}L${cx + 3} ${cy - 6}L${cx + 34} ${cy - 6}Z`, "#fff");
+    face(g, `M${cx - 3} ${cy - 60}L${cx - 3} ${cy - 6}L${cx - 26} ${cy - 6}Z`, "#f6f0e2");
+    el("path", { d: `M${cx + 3} ${cy - 40}L${cx + 20} ${cy - 22}`, stroke: "#5aa9e6", "stroke-width": 3 }, g);
+    face(g, `M${cx} ${cy - 72}l12 4l-12 4z`, "#f1c40f");
+  },
+  pato(g, X, Y, k) {
+    const cx = X + 50, cy = Y + 62, f = k % 2 ? -1 : 1, t = el("g", { transform: `translate(${cx} ${cy}) scale(${f} 1)` }, g);
+    el("ellipse", { cx: 0, cy: 12, rx: 18, ry: 4, fill: "rgba(30,50,20,.2)" }, t);
+    el("ellipse", { cx: -2, cy: 0, rx: 16, ry: 10, fill: "#fff", stroke: "rgba(0,0,0,.3)", "stroke-width": 1.5 }, t);
+    el("path", { d: "M-16 -2 l-6 -5 l2 8z", fill: "#fff", stroke: "rgba(0,0,0,.3)", "stroke-width": 1.2 }, t);
+    el("path", { d: "M-8 -2 q6 -6 12 0 q-6 4 -12 0", fill: "#e8e8e8" }, t);
+    el("circle", { cx: 12, cy: -10, r: 7.5, fill: "#2f8f4f", stroke: "rgba(0,0,0,.3)", "stroke-width": 1.5 }, t);
+    el("rect", { x: 8, y: -4, width: 8, height: 3, fill: "#fff" }, t);
+    el("path", { d: "M18 -11 h8 l-2 4 h-6z", fill: "#ff9f1a" }, t);
+    el("circle", { cx: 14, cy: -12, r: 1.5, fill: "#111" }, t);
+  },
+  elefante(g, X, Y, k) {
+    const cx = X + 48, cy = Y + 56, f = k % 2 ? -1 : 1, t = el("g", { transform: `translate(${cx} ${cy}) scale(${f} 1)` }, g), C = "#9aa4b1";
+    el("ellipse", { cx: 2, cy: 24, rx: 34, ry: 7, fill: "rgba(30,50,20,.22)" }, t);
+    [-22, -10, 8, 20].forEach(x => el("rect", { x, y: 6, width: 9, height: 18, rx: 3, fill: "#8a94a1" }, t));
+    el("ellipse", { cx: 0, cy: 0, rx: 30, ry: 18, fill: C, stroke: "rgba(0,0,0,.35)", "stroke-width": 2 }, t);
+    el("path", { d: "M-30 -2 q-6 4 -4 12", stroke: C, "stroke-width": 3, fill: "none" }, t);
+    el("circle", { cx: 28, cy: -8, r: 14, fill: C, stroke: "rgba(0,0,0,.35)", "stroke-width": 2 }, t);
+    el("ellipse", { cx: 22, cy: -6, rx: 9, ry: 12, fill: "#b9c1cb", stroke: "rgba(0,0,0,.3)", "stroke-width": 1.5 }, t);
+    el("path", { d: "M38 -4 q8 10 2 22 q-2 4 2 6", stroke: C, "stroke-width": 7, fill: "none", "stroke-linecap": "round" }, t);
+    el("circle", { cx: 33, cy: -12, r: 2, fill: "#111" }, t);
+    el("path", { d: "M36 2 l6 2", stroke: "#fffaf0", "stroke-width": 3, "stroke-linecap": "round" }, t);
+  },
+  llama(g, X, Y, k) {
+    const cx = X + 48, cy = Y + 60, f = k % 2 ? -1 : 1, t = el("g", { transform: `translate(${cx} ${cy}) scale(${f} 1)` }, g), C = "#f3e3c3";
+    el("ellipse", { cx: 0, cy: 20, rx: 22, ry: 5, fill: "rgba(30,50,20,.22)" }, t);
+    [-14, -6, 6, 13].forEach(x => el("rect", { x, y: 2, width: 5, height: 18, rx: 2.5, fill: "#d9c39b" }, t));
+    el("ellipse", { cx: 0, cy: 0, rx: 20, ry: 11, fill: C, stroke: "rgba(0,0,0,.3)", "stroke-width": 1.5 }, t);
+    el("path", { d: "M-8 -4 h16 v6 h-16z", fill: "#e74c3c" }, t); el("path", { d: "M-8 -1 h16", stroke: "#f1c40f", "stroke-width": 2 }, t);
+    el("rect", { x: 12, y: -34, width: 9, height: 30, rx: 4.5, fill: C, stroke: "rgba(0,0,0,.3)", "stroke-width": 1.5 }, t);
+    el("ellipse", { cx: 20, cy: -34, rx: 9, ry: 6, fill: C, stroke: "rgba(0,0,0,.3)", "stroke-width": 1.5 }, t);
+    el("path", { d: "M13 -38 l-1 -8 l4 6 M18 -39 l1 -8 l3 7", fill: C, stroke: "rgba(0,0,0,.3)", "stroke-width": 1.2 }, t);
+    el("circle", { cx: 21, cy: -36, r: 1.6, fill: "#111" }, t);
+  },
+  loro(g, X, Y) { // parrot on a perch
+    const cx = X + 50, gy = Y + 82;
+    sShadow(g, cx, gy, 14, 4);
+    el("path", { d: `M${cx} ${gy}V${gy - 34}M${cx - 16} ${gy - 34}H${cx + 16}`, stroke: "#8a5a2b", "stroke-width": 4, "stroke-linecap": "round" }, g);
+    face(g, `M${cx - 2} ${gy - 36}L${cx - 8} ${gy - 16}L${cx + 2} ${gy - 20}Z`, "#2e6db4", { "stroke-width": 1.2 });
+    el("ellipse", { cx: cx + 2, cy: gy - 46, rx: 9, ry: 13, fill: "#e8432f", stroke: "rgba(0,0,0,.35)", "stroke-width": 1.5 }, g);
+    el("path", { d: `M${cx - 4} ${gy - 48} q-4 10 6 14`, fill: "#f5c518" }, g);
+    el("circle", { cx: cx + 4, cy: gy - 58, r: 7, fill: "#e8432f", stroke: "rgba(0,0,0,.35)", "stroke-width": 1.5 }, g);
+    el("circle", { cx: cx + 6, cy: gy - 59, r: 2.6, fill: "#fff" }, g); el("circle", { cx: cx + 6.5, cy: gy - 59, r: 1.3, fill: "#111" }, g);
+    el("path", { d: `M${cx + 10} ${gy - 58} q6 1 3 7 q-3 -2 -4 -4z`, fill: "#444" }, g);
+  },
+  pinguino(g, X, Y) {
+    const cx = X + 50, gy = Y + 80;
+    sShadow(g, cx, gy, 16, 5);
+    el("ellipse", { cx, cy: gy - 22, rx: 15, ry: 22, fill: "#2b2f3a", stroke: "rgba(0,0,0,.4)", "stroke-width": 1.5 }, g);
+    el("ellipse", { cx, cy: gy - 18, rx: 10, ry: 16, fill: "#fff" }, g);
+    el("circle", { cx, cy: gy - 44, r: 11, fill: "#2b2f3a" }, g);
+    [-4, 4].forEach(dx => { el("circle", { cx: cx + dx, cy: gy - 46, r: 3, fill: "#fff" }, g); el("circle", { cx: cx + dx, cy: gy - 46, r: 1.4, fill: "#111" }, g); });
+    face(g, `M${cx - 4} ${gy - 41}h8l-4 6z`, "#ffa726", { "stroke-width": 1 });
+    [-1, 1].forEach(s => el("path", { d: `M${cx + s * 14} ${gy - 30} q${s * 8} 10 ${s * 2} 18`, stroke: "#2b2f3a", "stroke-width": 5, fill: "none", "stroke-linecap": "round" }, g));
+    [-6, 6].forEach(dx => el("ellipse", { cx: cx + dx, cy: gy, rx: 6, ry: 2.5, fill: "#ffa726" }, g));
+  },
+});
+// parked road vehicles as scenery reuse the ones that drive
+["taxi", "bus", "tuktuk"].forEach(k => { SPRITES[k] = (g, X, Y) => { el("ellipse", { cx: X + 50, cy: Y + 62, rx: CARS[k].len / 2 + 4, ry: 7, fill: "rgba(30,50,20,.2)" }, g); drawVehicle(el("g", { transform: `translate(${X + 50} ${Y + 52}) scale(1.15)` }, g), k, CARS[k].colors[0]); }; });
+Object.assign(SPR_TOP, { torre: -100, castillo: -30, templo: -50, estatua: -60, reloj: -110, globo: -20, atraccion: -20, dragon: -10 });
+
+// little people, crates and logs for the stations (drawn, not emoji)
+const SKIN = ["#f1c7a5", "#d9a27a", "#a86f4c", "#7a4b2e", "#f6d5b8"], CLOTH = ["#e74c3c", "#3498db", "#2ecc71", "#9b59b6", "#f39c12", "#1abc9c", "#ff6fb5"], HAIR = ["#3b2a1a", "#6b4a2a", "#e0b04a", "#222", "#b5651d", "#999"];
+function miniPerson(parent, x, y, k) {
+  const g = el("g", { transform: `translate(${x} ${y})` }, parent), kid = k % 4 === 2, sc = kid ? .78 : 1;
+  const t = el("g", { transform: `scale(${sc})` }, g);
+  el("ellipse", { cx: 0, cy: 14, rx: 8, ry: 2.5, fill: "rgba(0,0,0,.2)" }, t);
+  el("path", { d: "M-4 13V5M4 13V5", stroke: "#2b3a55", "stroke-width": 3.5, "stroke-linecap": "round" }, t);
+  el("rect", { x: -7, y: -9, width: 14, height: 16, rx: 6, fill: pick(CLOTH, k * 3 + 1) }, t);
+  el("circle", { cx: 0, cy: -14, r: 6.5, fill: pick(SKIN, k) }, t);
+  el("path", { d: "M-6.5 -15 q1 -8 6.5 -7.5 q6 -.5 6.5 7.5 q-3 -4 -6.5 -4 q-3.5 0 -6.5 4z", fill: pick(HAIR, k * 2 + 1) }, t);
+  if (k % 5 === 3) el("rect", { x: 6, y: -2, width: 7, height: 9, rx: 1.5, fill: "#8a5a2b" }, t); // a suitcase
+  return g;
+}
+function miniCargo(parent, x, y, log) {
+  const g = el("g", { transform: `translate(${x} ${y})` }, parent);
+  el("ellipse", { cx: 0, cy: 11, rx: 12, ry: 3, fill: "rgba(0,0,0,.2)" }, g);
+  if (log) { [[-5, 4], [5, 4], [0, -4]].forEach(([dx, dy]) => { el("rect", { x: dx - 9, y: dy - 4, width: 18, height: 8, rx: 4, fill: "#b9783c", stroke: "#7a4a1e", "stroke-width": 1.2 }, g); el("circle", { cx: dx + 8, cy: dy, r: 3.6, fill: "#e6b980", stroke: "#7a4a1e", "stroke-width": 1 }, g); }); }
+  else { el("rect", { x: -10, y: -8, width: 20, height: 18, rx: 2, fill: "#d9a35b", stroke: "#8a5a2b", "stroke-width": 1.8 }, g); el("path", { d: "M-10 -8L10 10M10 -8L-10 10", stroke: "#a8742d", "stroke-width": 1.6 }, g); el("rect", { x: -10, y: -8, width: 20, height: 4, fill: "rgba(255,255,255,.25)" }, g); }
+  return g;
+}
 function spriteIcon(id) {
   const top = SPR_TOP[id] || 0, s = el("svg", { xmlns: NS, viewBox: `0 ${top} 100 ${100 - top}` });
   SPRITES[id](s, 0, 0, 0); return s;
@@ -3168,9 +3372,9 @@ function addObstacle(kind, x, y, z) {
   o.g = el("g", { transform: `translate(${x.toFixed(1)} ${(y - z * E).toFixed(1)})` }, L.hz);
   const tx = (s, fs, dx, dy, rot) => { const t = el("text", { x: dx || 0, y: dy || 0, "font-size": fs, "text-anchor": "middle", "dominant-baseline": "central" }, o.g); t.textContent = s; if (rot) t.setAttribute("transform", `rotate(${rot} ${dx || 0} ${dy || 0})`); return t; };
   el("ellipse", { cx: 0, cy: 22, rx: 40, ry: 10, fill: "rgba(0,0,0,.2)" }, o.g);
-  if (kind === "vaca") tx("🐄", 64, 0, -6);
-  else if (kind === "rocas") { tx("🪨", 44, -20, 4); tx("🪨", 52, 14, -6); tx("🪨", 34, 4, 16); }
-  else if (kind === "tronco") { tx("🪵", 60, 0, 0, 20); tx("🍃", 30, 30, -18); tx("🍃", 26, -28, 14); }
+  if (kind === "vaca") SPRITES.vaca(o.g, -50, -64, obst.length);
+  else if (kind === "rocas") [[-20, 6, 17, "#8d949c"], [14, -4, 21, "#a2a9b1"], [2, 14, 13, "#7d848c"]].forEach(([dx, dy, r, c]) => { face(o.g, `M${dx - r} ${dy + r * .5}L${dx - r * .7} ${dy - r * .5}L${dx - r * .1} ${dy - r * .9}L${dx + r * .8} ${dy - r * .4}L${dx + r} ${dy + r * .5}Z`, c); el("path", { d: `M${dx - r * .5} ${dy - r * .4}L${dx - r * .1} ${dy - r * .7}`, stroke: "rgba(255,255,255,.4)", "stroke-width": 3, "stroke-linecap": "round" }, o.g); });
+  else if (kind === "tronco") { const t2 = el("g", { transform: "rotate(18)" }, o.g); el("rect", { x: -44, y: -11, width: 84, height: 22, rx: 11, fill: "#a86f3c", stroke: "#6b4224", "stroke-width": 2 }, t2); el("path", { d: "M-30 -4h22M0 4h24", stroke: "#7a4a24", "stroke-width": 2 }, t2); el("ellipse", { cx: 40, cy: 0, rx: 8, ry: 11, fill: "#e6b980", stroke: "#6b4224", "stroke-width": 2 }, t2); el("ellipse", { cx: 40, cy: 0, rx: 3.5, ry: 5, fill: "none", stroke: "#a86f3c", "stroke-width": 1.5 }, t2); [[-24, -18], [8, -20], [-6, 16]].forEach(([x, y]) => { el("circle", { cx: x, cy: y, r: 9, fill: "#3f9a3f", stroke: "rgba(20,60,20,.4)", "stroke-width": 1.5 }, t2); el("circle", { cx: x - 3, cy: y - 3, r: 3.5, fill: "#6cc35a" }, t2); }); }
   else if (kind === "nieve") { el("ellipse", { cx: 0, cy: 4, rx: 48, ry: 26, fill: "#fff", stroke: "#cfe3f5", "stroke-width": 4 }, o.g); el("ellipse", { cx: -14, cy: -8, rx: 22, ry: 14, fill: "#fff" }, o.g); tx("❄️", 26, 18, -12); }
   obst.push(o);
   return o;
@@ -3615,14 +3819,15 @@ function drawWaiting(p) {
   if (p.waitEl) p.waitEl.remove();
   const n = (p.pax || 0), b = (p.box || 0); if (!n && !b) { p.waitEl = null; return; }
   const s = stationSpot(p), g = el("g", { "pointer-events": "none" }, L.hz); p.waitEl = g;
-  const PEOPLE = ["🧍", "🧍‍♀️", "🧒", "👵", "🧑‍🦯", "👨‍👧"];
-  for (let i = 0; i < n; i++) { const t = el("text", { x: s.x + s.nx * 58 + s.tx * (i - (n - 1) / 2) * 24, y: s.y + s.ny * 58 + s.ty * (i - (n - 1) / 2) * 24, "font-size": 30, "text-anchor": "middle", "dominant-baseline": "central" }, g); t.textContent = PEOPLE[(p.id + i) % PEOPLE.length]; }
-  for (let i = 0; i < b; i++) { const t = el("text", { x: s.x - s.nx * 60 + s.tx * (i - (b - 1) / 2) * 28, y: s.y - s.ny * 60 + s.ty * (i - (b - 1) / 2) * 28, "font-size": 28, "text-anchor": "middle", "dominant-baseline": "central" }, g); t.textContent = i % 2 ? "🪵" : "📦"; }
+
+  for (let i = 0; i < n; i++) miniPerson(g, s.x + s.nx * 58 + s.tx * (i - (n - 1) / 2) * 22, s.y + s.ny * 58 + s.ty * (i - (n - 1) / 2) * 22, p.id * 3 + i);
+  for (let i = 0; i < b; i++) miniCargo(g, s.x - s.nx * 60 + s.tx * (i - (b - 1) / 2) * 26, s.y - s.ny * 60 + s.ty * (i - (b - 1) / 2) * 26, i % 2 === 1);
 }
 function hop(emoji, x0, y0, x1, y1, delay) {
-  const t = el("text", { x: x0, y: y0, "font-size": 30, "text-anchor": "middle", "dominant-baseline": "central", opacity: 0 }, L.fx); t.textContent = emoji;
+  const w = el("g", { opacity: 0 }, L.fx), k = Math.floor(Math.random() * 30);
+  const inner = emoji === "📦" ? miniCargo(w, 0, 0, false) : emoji === "🪵" ? miniCargo(w, 0, 0, true) : miniPerson(w, 0, 0, k); void inner;
   const d0 = delay || 0;
-  addFx(t, .7 + d0, (k, e) => { const u = clamp((k * (.7 + d0) - d0) / .7, 0, 1); e.setAttribute("opacity", u <= 0 ? 0 : u > .85 ? (1 - u) / .15 : 1); e.setAttribute("x", x0 + (x1 - x0) * u); e.setAttribute("y", y0 + (y1 - y0) * u - 50 * Math.sin(Math.PI * u)); });
+  addFx(w, .7 + d0, (kk, e) => { const u = clamp((kk * (.7 + d0) - d0) / .7, 0, 1); e.setAttribute("opacity", u <= 0 ? 0 : u > .85 ? (1 - u) / .15 : 1); e.setAttribute("transform", `translate(${(x0 + (x1 - x0) * u).toFixed(1)} ${(y0 + (y1 - y0) * u - 50 * Math.sin(Math.PI * u)).toFixed(1)})`); });
 }
 function stationStop(tr, p) {
   if (!p || tr.ambient || lvl) return;
