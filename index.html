@@ -170,7 +170,9 @@
     background: rgba(255,248,232,.96); border-radius: 26px; padding: 8px 10px; box-shadow: 0 3px 12px rgba(0,0,0,.25); }
   body.playing #drive.on { display: flex; }
   body.playing.driving #playHint { display: none; }
-  #drive .dname svg { width: 64px; height: 36px; display: block; }
+  #drive .dname { display: flex; flex-direction: column; align-items: center; }
+  #drive .dname svg { width: 64px; height: 30px; display: block; }
+  #drive .dname b { font-size: 15px; line-height: 1; color: #6b4219; }
   #drive .turbo { position: relative; overflow: hidden; }
   #drive .turbo i { position: absolute; left: 0; bottom: 0; height: 7px; background: #ff9800; }
   #drive .turbo.ready { box-shadow: 0 0 0 4px #ffb300; }
@@ -1644,6 +1646,7 @@ function addTrain(kind, cars, pid, ri, dir, d, paint) {
   const bi = el("g", { class: "resetbtn" }, tr.btn);
   el("circle", { cx: 0, cy: 0, r: 40, fill: "#fff", stroke: "#ff9800", "stroke-width": 7 }, bi);
   const bt = el("text", { x: 0, y: 2, "font-size": 46, "text-anchor": "middle", "dominant-baseline": "central" }, bi); bt.textContent = "🔄";
+  tr.name = typeof nameFor === "function" ? nameFor(kind) : kind;
   trains.push(tr);
   resetTrain(tr);
   return tr;
@@ -1751,6 +1754,7 @@ function updateTrain(tr, dt) {
 
 // ---------- derail & crash
 function derail(tr) {
+  if (typeof say === "function") say(tr, "derail", true);
   const poses = carPoses(tr), v0 = BASE * Math.max(.7, speed);
   const o = tr.head.out, fell = o ? !inB(o.c + DX[o.e], o.r + DY[o.e]) : false;
   const side = Math.random() < .5 ? -1 : 1;
@@ -1766,6 +1770,7 @@ function derail(tr) {
   burst(q.x + Math.cos(q.a * Math.PI / 180) * 60, q.y - q.z * E + Math.sin(q.a * Math.PI / 180) * 60, ["💫", "⭐", "💨"], 6);
 }
 function crash(A, B, x, y, z) {
+  if (typeof say === "function") { say(A, "crash", true); say(B, "crash"); }
   [A, B].forEach(tr => {
     tr.wreck = carPoses(tr).map(q => {
       let dx = q.x - x, dy = q.y - y; const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
@@ -2364,7 +2369,7 @@ function handleTap0(wx, wy) {
   if (hzTapFix(wx, wy)) return;
   const tr = trainAt(wx, wy), car = carAt(wx, wy);
   if (running) { // while playing: only switches, horns and honks
-    if (tr && !tr.wreck) { hornOf(tr); drvSelect(tr); return; }
+    if (tr && !tr.wreck) { hornOf(tr); drvSelect(tr); say(tr, "hi", true); return; }
     if (car) { sfx.beep(); return; }
     const p = pickTop(wx, wy);
     if (p && DEFS[p.type].sw) { p.state = (p.state + 1) % 2; redrawPiece(p); sfx.clack(); autosave(); }
@@ -2383,7 +2388,7 @@ function handleTap0(wx, wy) {
   if (tr && (tool === "hand" || tool === "train")) {
     if (tr.wreck) { if (tr.status === "derailed") resetTrain(tr); return; }
     if (lvl) { hornOf(tr); return; }
-    turnInPlace(tr); hornOf(tr); autosave(); return;
+    turnInPlace(tr); hornOf(tr); say(tr, "hi", true); autosave(); return;
   }
   if (car && (tool === "hand" || tool.startsWith("car_"))) {
     const R = pieces.get(car.pid).geo.rroutes[car.ri];
@@ -3058,14 +3063,14 @@ const SAYS = {
   en: { "🏁": " the finish ", "🪙": " coin ", "✋": " the hand ", "▶️": " the green button ", "⏸️": " pause ", "🧱": " pieces ", "⭐": " star ", "🛑": "", "🐄": " cow " },
   fr: { "🏁": " l'arrivée ", "🪙": " pièce d'or ", "✋": " la main ", "▶️": " le bouton vert ", "⏸️": " pause ", "🧱": " pièces ", "⭐": " étoile ", "🛑": "", "🐄": " vache " } };
 const VOICE = { es: ["es-ES", /^es(-|_)ES/i, /^es/i], en: ["en-GB", /^en(-|_)GB/i, /^en/i], fr: ["fr-FR", /^fr(-|_)FR/i, /^fr/i] };
-function speak(text) {
+function speak(text, o) {
   if (!sfxOn || !voiceOn) return;
   try {
     const ss = window.speechSynthesis; if (!ss) return;
-    let t = trn(text); for (const [k, v] of Object.entries(SAYS[LANG])) t = t.split(k).join(v);
+    let t = o && o.raw ? text : trn(text); for (const [k, v] of Object.entries(SAYS[LANG])) t = t.split(k).join(v);
     t = t.replace(/\p{Extended_Pictographic}|\uFE0F|\u20E3/gu, " ").replace(/\s+/g, " ").trim();
     ss.cancel();
-    const [ul, r1, r2] = VOICE[LANG]; const u = new SpeechSynthesisUtterance(t); u.lang = ul; u.rate = .95; u.pitch = 1.1;
+    const [ul, r1, r2] = VOICE[LANG]; const u = new SpeechSynthesisUtterance(t); u.lang = ul; u.rate = o && o.rate || .95; u.pitch = o && o.pitch || 1.1;
     const v = ss.getVoices().find(x => r1.test(x.lang)) || ss.getVoices().find(x => r2.test(x.lang));
     if (v) u.voice = v;
     ss.speak(u);
@@ -3406,12 +3411,12 @@ function hzBlocked(tr) {
     const dx = k.x - q.x, dy = k.y - q.y, d = Math.hypot(dx, dy);
     if (d < 115 && d > 1 && (dx * hx + dy * hy) / d > .6) {
       tr.blockT = (tr.blockT || 0) + 1 / 60;
-      if (!tr.honked) { tr.honked = true; hornOf(tr); if (k.flood) toast("🌊"); }
+      if (!tr.honked) { tr.honked = true; hornOf(tr); if (k.flood) toast("🌊"); tr.blockKind = k.flood ? "flood" : k.o && k.o.kind === "vaca" ? "vaca" : "cosa"; }
       if (k.o && k.o.kind === "vaca" && tr.blockT > 1.8) { removeObstacle(k.o); tr.blockT = 0; }
       return true;
     }
   }
-  tr.honked = false; tr.blockT = 0;
+  tr.honked = false; tr.blockT = 0; tr.blockKind = null;
   return false;
 }
 // a piece a few pieces in front of a train, for snow and random surprises
@@ -3427,6 +3432,7 @@ function dropOn(p, kind) { if (!p) return null; const m = routeMid(p); return ad
 
 // ---------- ✋ manual level crossings, and the cartoon BONK when the barrier was up
 function bonk(tr, car) {
+  say(tr, "bonk", true);
   tr.status = "bonk"; tr.wait = 3;
   car.bonk = 3.2; car.spin = Math.random() < .5 ? -1 : 1;
   const q = carPose(car);
@@ -3764,11 +3770,11 @@ function drvAction(a) {
   if (a === "turbo") {
     if ((tr.tm || 0) < .3 || tr.turbo > 0) { sfx.no(); return; }
     tr.turbo = 3.2 * tr.tm; tr.tm = 0; if (tr.thr === 0) tr.thr = tr.prevThr || 1;
-    sfx.whoosh(); slide(300, 1400, .6, "sawtooth", .06);
+    sfx.whoosh(); slide(300, 1400, .6, "sawtooth", .06); say(tr, "turbo", true);
   }
   if (a === "jump") {
     if (tr.jumpT >= 0) return;
-    tr.jumpT = 0; slide(320, 980, .3, "sine", .14);
+    tr.jumpT = 0; slide(320, 980, .3, "sine", .14); say(tr, "jump", true);
   }
   if (a === "rev") { reverseTrain(tr); tr.thr = Math.min(tr.thr || .5, .5) || .5; tr.vm = Math.min(tr.vm, .3); tr.revBeep = 2.5; tr.res = null; }
   drvRefresh();
@@ -3784,6 +3790,7 @@ function drvSelect(tr) {
     if (drvSel.thr == null) { drvSel.thr = 1; drvSel.vm = 1; drvSel.tm = 1; }
     drv.querySelector(".dname").textContent = "";
     drv.querySelector(".dname").appendChild(trainIcon(drvSel.kind, 1, drvSel.c1, drvSel.c2));
+    const nb = document.createElement("b"); nb.textContent = drvSel.name; drv.querySelector(".dname").appendChild(nb);
   }
   drvRefresh();
 }
@@ -3806,7 +3813,7 @@ function drvTick() {
 { const cf = $("camFollow").onclick, cc = $("camCab").onclick;
   const pick = () => { if (camMode !== "free") { const l = camTrains(); drvSelect(l[camIdx % Math.max(1, l.length)] || null); } };
   $("camFollow").onclick = () => { cf(); pick(); }; $("camCab").onclick = () => { cc(); pick(); }; }
-{ const rt0 = removeTrain; removeTrain = function (tr) { if (tr.badge) tr.badge.remove(); rt0(tr); if (drvSel === tr) drvSelect(null); }; }
+{ const rt0 = removeTrain; removeTrain = function (tr) { if (tr.badge) tr.badge.remove(); if (tr.bubble) tr.bubble.remove(); rt0(tr); if (drvSel === tr) drvSelect(null); }; }
 
 // =====================================================================
 //  🧍 PASSENGERS & 📦 CARGO: people and boxes wait at stations; trains carry them to the next one
@@ -3840,9 +3847,9 @@ function stationStop(tr, p) {
   if (off) { delivered[fr ? "box" : "pax"] += off; pay(off * (fr ? 2 : 1), s.x, s.y); }
   // nobody gets on by themselves: the child taps each passenger or box to load it
   const key = fr ? "box" : "pax";
-  if (off) { tr.wait = 1.6 + .3 * off; updateHud(); }
+  if (off) { tr.wait = 1.6 + .3 * off; updateHud(); say(tr, "deliver"); }
   if ((p[key] || 0) > 0 && tr.load.length < capOf(tr)) {
-    tr.wait = Math.max(tr.wait, 4); p.boardTr = tr; showTapHint(p, fr);
+    tr.wait = Math.max(tr.wait, 4); p.boardTr = tr; showTapHint(p, fr); if (!off) say(tr, "station");
     if (!stationStop.told) { stationStop.told = true; speak(fr ? LX("¡Toca las cajas para cargarlas en el tren!", "Tap the boxes to load them onto the train!", "Touche les caisses pour les charger dans le train !") : LX("¡Toca a los pasajeros para que suban al tren!", "Tap the passengers so they get on the train!", "Touche les voyageurs pour qu'ils montent dans le train !")); }
   }
   const tot = delivered.pax + delivered.box;
@@ -4013,7 +4020,7 @@ function playHzTap(wx, wy) {
   playHz = null; refreshHzPlay();
   return true;
 }
-function drvHzTick(dt) { faceTick(dt); drvTick(); stationTick(dt); boardingTick(); fireTrainTick(dt); trainBadges(); nightTick(dt); }
+function drvHzTick(dt) { faceTick(dt); bubbleTick(dt); drvTick(); stationTick(dt); boardingTick(); fireTrainTick(dt); trainBadges(); nightTick(dt); }
 
 // =====================================================================
 //  🏪 SHOP: spend the coins earned by carrying passengers and boxes
@@ -4094,6 +4101,7 @@ function fireTrainTick(dt) {
     if (!tr.wreck) { const q = carPoses(tr)[Math.min(1, tr.cars)]; fires.forEach(f => { const d = Math.hypot(f.x - q.x, f.y - (q.y - q.z * E)); if (d < bd) { bd = d; best = f; } }); if (best) tr.hq = q; }
     if (!best) { if (tr.hose) { tr.hose.remove(); tr.hose = null; } return; }
     const q = tr.hq, y = q.y - q.z * E;
+    if (!tr.hose) say(tr, "fire");
     if (!tr.hose) tr.hose = el("line", { stroke: "#7fd3ff", "stroke-width": 9, "stroke-linecap": "round", "stroke-dasharray": "10 8", "pointer-events": "none" }, L.fx);
     tr.hose.setAttribute("x1", q.x); tr.hose.setAttribute("y1", y); tr.hose.setAttribute("x2", best.x); tr.hose.setAttribute("y2", best.y - 10);
     tr.hose.setAttribute("stroke-dashoffset", -(performance.now() / 20) % 18);
@@ -4148,12 +4156,92 @@ function faceTick(dt) {
     const blink = tr.blinkT < 0 && tr.blinkT > -.14;
     if (tr.blinkT < -.14) tr.blinkT = rnd(2, 5);
     const mood = moodOf(tr), key = mood + (blink ? "b" : "");
+    if (tr.lastMood !== mood) { if (tr.lastMood) moodTalk(tr, tr.lastMood, mood); tr.lastMood = mood; }
     if (tr.faceKey === key && tr.faceG && tr.faceG.parentNode === tr.gs[0]) return;
     tr.faceKey = key;
     if (tr.faceG) tr.faceG.remove();
     tr.faceG = el("g", { "pointer-events": "none" }, tr.gs[0]);
     drawFace(tr.faceG, loco, mood, blink);
   });
+}
+
+// =====================================================================
+//  🗣️ CHARACTERS: every engine has a name, a personality and its own voice
+// =====================================================================
+const CHAR = {
+  vapor:      { names: ["Coco", "Rufo", "Lila", "Pancho"], pitch: .75, rate: .9,  hi: ["¡Chu-chu! Soy el más veterano de las vías.", "Choo-choo! I'm the oldest engine on the tracks.", "Tchou-tchou ! Je suis la plus ancienne locomotive."], go: ["¡Chu-chu! ¡Allá vamos!", "Choo-choo! Off we go!", "Tchou-tchou ! C'est parti !"] },
+  pasajeros:  { names: ["Nina", "Max", "Tito", "Sol"], pitch: 1.05, rate: 1, hi: ["Me encanta llevar a la gente de paseo.", "I love taking people for a ride.", "J'adore promener les gens."], go: ["¡Buenos días a todos!", "Good morning, everyone!", "Bonjour tout le monde !"] },
+  mercancias: { names: ["Bruno", "Greta", "Oso", "Gus"], pitch: .5, rate: .82, hi: ["Soy fuerte. Puedo llevar lo que sea.", "I'm strong. I can carry anything.", "Je suis fort. Je peux tout porter."], go: ["Despacito... pero siempre llego.", "Slowly... but I always get there.", "Doucement... mais j'arrive toujours."] },
+  bala:       { names: ["Zip", "Luna", "Flash", "Kiko"], pitch: 1.35, rate: 1.25, hi: ["¡Fiuuu! ¡Soy el más rápido del mundo!", "Whoosh! I'm the fastest in the world!", "Fiouuu ! Je suis le plus rapide du monde !"], go: ["¡Agarraos fuerte!", "Hold on tight!", "Accrochez-vous !"] },
+  metro:      { names: ["Pip", "Mia", "Leo", "Tina"], pitch: 1.2, rate: 1.1, hi: ["Me gusta ir por debajo de la ciudad.", "I like going under the city.", "J'aime passer sous la ville."], go: ["¡Próxima parada: la diversión!", "Next stop: fun!", "Prochain arrêt : l'amusement !"] },
+  tranvia:    { names: ["Dora", "Bimba", "Toto", "Rosi"], pitch: 1.5, rate: .88, hi: ["¡Ding-ding! Voy con calma, sin prisa.", "Ding-ding! I take it nice and slow.", "Ding-ding ! Je prends mon temps."], go: ["¡Ding-ding! Con calma, que llegamos.", "Ding-ding! Nice and easy.", "Ding-ding ! Tout doucement."] },
+  oro:        { names: ["Goldi"], pitch: 1.1, rate: .92, hi: ["¡Mira cómo brillo!", "Look how I shine!", "Regarde comme je brille !"], go: ["¡Paso brillante!", "Shiny coming through!", "Attention, je brille !"] },
+  arcoiris:   { names: ["Iris"], pitch: 1.45, rate: 1.05, hi: ["¡Tengo todos los colores!", "I've got every colour!", "J'ai toutes les couleurs !"], go: ["¡Colores para todos!", "Colours for everyone!", "Des couleurs pour tout le monde !"] },
+  dragonT:    { names: ["Draco"], pitch: .45, rate: .9, hi: ["¡Grrr! Soy un dragón muy simpático.", "Grrr! I'm a very friendly dragon.", "Grrr ! Je suis un dragon très gentil."], go: ["¡Grrr! ¡A volar por las vías!", "Grrr! Let's fly down the tracks!", "Grrr ! On s'envole sur les rails !"] },
+  bomberosT:  { names: ["Rocco"], pitch: .9, rate: 1.1, hi: ["Si hay fuego, ¡yo lo apago!", "If there's a fire, I'll put it out!", "S'il y a du feu, je l'éteins !"], go: ["¡Bomberos al rescate!", "Fire train to the rescue!", "Les pompiers à la rescousse !"] },
+};
+const LINES = {
+  station: [["¡Suban, por favor!", "All aboard, please!", "En voiture, s'il vous plaît !"], ["¡Tocad para subir!", "Tap to get on!", "Touchez pour monter !"]],
+  deliver: [["¡Gracias por viajar conmigo!", "Thanks for riding with me!", "Merci d'avoir voyagé avec moi !"], ["¡Hemos llegado!", "Here we are!", "Nous voilà arrivés !"]],
+  vaca: [["¡Uy, una vaca! ¡Muuu-évete!", "Oh, a cow! Moo-ve, please!", "Oh, une vache ! Pousse-toi !"]],
+  cosa: [["¡Algo tapa la vía! ¡Ayuda!", "Something's on the track! Help!", "Quelque chose bloque la voie ! À l'aide !"]],
+  flood: [["¡Hay agua! ¡No sé nadar!", "Water! I can't swim!", "De l'eau ! Je ne sais pas nager !"]],
+  red: [["Espero mi turno.", "I'll wait my turn.", "J'attends mon tour."], ["Luz roja: me paro.", "Red light: I stop.", "Feu rouge : je m'arrête."]],
+  turbo: [["¡Yujuuu!", "Wheee!", "Youpiii !"], ["¡Más rápido!", "Faster!", "Plus vite !"]],
+  jump: [["¡Hop!", "Hop!", "Hop !"], ["¡Allá voy!", "Here I go!", "J'y vais !"]],
+  derail: [["¡Ay, ay, ay! ¡Me caí!", "Whoops! I fell off!", "Oh là là ! Je suis tombé !"]],
+  crash: [["¡Ay! ¡Qué golpe!", "Ouch! What a bump!", "Aïe ! Quel choc !"]],
+  bonk: [["¡Uy, perdón, coche!", "Oops, sorry, car!", "Oups, pardon la voiture !"]],
+  fire: [["¡Agua va!", "Here comes the water!", "Attention, de l'eau !"]],
+  sleep: [["Qué sueño... buenas noches.", "So sleepy... good night.", "J'ai sommeil... bonne nuit."]],
+};
+const charOf = tr => CHAR[tr.kind] || CHAR.vapor;
+const L3 = a => LANG === "en" ? a[1] : LANG === "fr" ? a[2] : a[0];
+function nameFor(kind) {
+  const C = CHAR[kind] || CHAR.vapor, used = new Set(trains.map(t => t.name));
+  const free = C.names.find(n => !used.has(n)); if (free) return free;
+  for (let i = 2; ; i++) { const n = C.names[0] + " " + i; if (!used.has(n)) return n; }
+}
+let voiceT = 0;
+// a speech bubble over the engine; the voice too when it matters (the engine you drive, a tap, a mishap)
+function say(tr, ev, force) {
+  if (!tr || !trains.includes(tr) || tr.ambient) return;
+  const now = performance.now() / 1000;
+  if (!force && tr.saidT && now - tr.saidT < 5) return;
+  tr.saidT = now;
+  let text;
+  if (ev === "hi") text = LX(`¡Hola! Soy ${tr.name}. `, `Hi! I'm ${tr.name}. `, `Salut ! Je suis ${tr.name}. `) + L3(charOf(tr).hi);
+  else if (ev === "go") text = L3(charOf(tr).go);
+  else { const opts = LINES[ev]; if (!opts) return; text = L3(opts[Math.floor(Math.random() * opts.length)]); }
+  showBubble(tr, text);
+  const loud = force || tr === drvSel || ["derail", "crash", "bonk"].includes(ev);
+  if (loud && (force || now - voiceT > 3)) { voiceT = now; const C = charOf(tr); speak(text, { pitch: C.pitch, rate: C.rate, raw: true }); }
+}
+function showBubble(tr, text) {
+  if (tr.bubble) tr.bubble.remove();
+  const g = el("g", { "pointer-events": "none" }, L.ui), w = Math.min(420, 30 + text.length * 10.5);
+  const lines = text.length > 34 ? splitLine(text) : [text], h = 18 + lines.length * 24, bw = Math.min(420, 30 + Math.max(...lines.map(l => l.length)) * 10.5);
+  void w;
+  el("path", { d: `M${-bw / 2} ${-h - 14}h${bw}a12 12 0 0 1 12 12v${h - 24}a12 12 0 0 1 -12 12h${-bw / 2 + 16}l-14 14l-2 -14h${-bw / 2 + 2}a12 12 0 0 1 -12 -12v${-(h - 24)}a12 12 0 0 1 12 -12z`, fill: "#fff", stroke: "#3b2a18", "stroke-width": 3 }, g);
+  const nm = el("text", { x: -bw / 2 + 4, y: -h - 20, "font-size": 15, "font-weight": 900, fill: "#a8743d" }, g); nm.textContent = tr.name;
+  lines.forEach((l, i) => { const t = el("text", { x: 0, y: -h + 6 + i * 24, "font-size": 20, "font-weight": 700, fill: "#3b2a18", "text-anchor": "middle" }, g); t.textContent = l; });
+  tr.bubble = g; tr.bubbleT = 2.6 + text.length * .03;
+}
+function splitLine(t) { const words = t.split(" "), out = [""]; words.forEach(w => { if ((out[out.length - 1] + " " + w).trim().length > 30 && out[out.length - 1]) out.push(w); else out[out.length - 1] = (out[out.length - 1] + " " + w).trim(); }); return out.slice(0, 3); }
+function bubbleTick(dt) {
+  trains.forEach(tr => {
+    if (!tr.bubble) return;
+    tr.bubbleT -= dt;
+    if (tr.bubbleT <= 0 || !trains.includes(tr)) { tr.bubble.remove(); tr.bubble = null; return; }
+    const P = tr.wreck || carPoses(tr), q = P[tr.flip ? P.length - 1 : 0], sc = clamp(.8 / view.z, .55, 1.6);
+    tr.bubble.setAttribute("transform", `translate(${q.x.toFixed(1)} ${(q.y - q.z * E - 36 - jumpLift(tr, 0)).toFixed(1)}) scale(${sc.toFixed(2)})`);
+    tr.bubble.setAttribute("opacity", Math.min(1, tr.bubbleT * 2).toFixed(2));
+  });
+}
+// moods that change on their own make the engine say something
+function moodTalk(tr, prev, mood) {
+  if (mood === "worried") say(tr, tr.blockKind || "red");
+  else if (mood === "sleep" && running) say(tr, "sleep");
 }
 
 // =====================================================================
@@ -4294,7 +4382,7 @@ $("play").onclick = () => {
   if (!running && !trains.length) { toast("🚂❓"); selectTab("trenes"); return; }
   if (!running && lvl && trains.every(t => t.ambient || t.atStart || t.status === "arrived")) { trains.forEach(t => { if (t.status === "arrived") resetTrain(t); }); lvlResetRun(); }
   setRunning(!running);
-  if (running) trains.forEach((tr, i) => setTimeout(() => hornOf(tr), i * 380));
+  if (running) trains.forEach((tr, i) => setTimeout(() => { hornOf(tr); if (i < 3) say(tr, "go", i === 0); }, i * 380));
 };
 $("resetAll").onclick = () => { trains.forEach(resetTrain); cars.forEach(resetCar); crashTimer = 0; setRunning(false); lvlResetRun(); sfx.toc(); };
 $("speed").oninput = e => { speed = +e.target.value; };
@@ -4536,7 +4624,7 @@ function sget(k) { try { const v = localStorage.getItem(k); return v ? JSON.pars
 function sset(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
 function serialize() {
   return { v: 2, pieces: [...pieces.values()].map(p => p.fx && Object.keys(p.fx).length ? [p.type, p.c, p.r, p.rot, p.state, p.h, p.fx] : [p.type, p.c, p.r, p.rot, p.state, p.h]),
-    trains: trains.map(t => { const p = pieces.get(t.start.pid); return p ? [t.kind, t.cars, p.c, p.r, p.h, t.start.ri, t.start.dir, Math.round(t.start.d || 0), t.c1] : null; }).filter(Boolean),
+    trains: trains.map(t => { const p = pieces.get(t.start.pid); return p ? [t.kind, t.cars, p.c, p.r, p.h, t.start.ri, t.start.dir, Math.round(t.start.d || 0), t.c1, t.name] : null; }).filter(Boolean),
     cars: cars.map(c => { const p = pieces.get(c.start.pid); return p ? [c.kind, c.ci, p.c, p.r, c.start.ri, c.start.dir, Math.round(c.start.d || 0)] : null; }).filter(Boolean) };
 }
 function clearBoard() {
@@ -4557,7 +4645,7 @@ function loadData(data) {
     let [k, n, c, r, h, ri, dir, d] = tt;
     if (data.v !== 2) { [k, n, c, r, ri, dir, d] = tt; h = 0; }
     const p = piecesIn(c, r).find(q => q.c === c && q.r === r && q.h === h && q.geo.routes.length);
-    if (p && KINDS[k]) addTrain(k, clamp(n | 0, 0, 9), p.id, ri | 0, dir === -1 ? -1 : 1, d, typeof tt[8] === "string" ? tt[8] : null);
+    if (p && KINDS[k]) { const t2 = addTrain(k, clamp(n | 0, 0, 9), p.id, ri | 0, dir === -1 ? -1 : 1, d, typeof tt[8] === "string" ? tt[8] : null); if (t2 && typeof tt[9] === "string") t2.name = tt[9].slice(0, 20); }
   });
   (data.cars || []).forEach(([k, ci, c, r, ri, dir, d]) => {
     const p = piecesIn(c, r).find(q => q.c === c && q.r === r && q.geo.rroutes.length);
