@@ -192,6 +192,10 @@
 .langpick b.on { opacity: 1; border-color: #f5b301; background: #fff7d6; }
 #home > .langpick { position: absolute; left: calc(10px + env(safe-area-inset-left)); top: calc(8px + env(safe-area-inset-top)); margin: 0; gap: 4px; }
 #home > .langpick b { font-size: 26px; }
+.drawpick .proj { flex: 1 1 130px; } .drawpick .big { font-size: 64px; }
+  #home { overflow-y: auto; justify-content: safe center; }
+  @media (max-width: 1100px) { .mode { width: min(250px, 80vw); padding: 14px; } .mode .big { font-size: 64px; } .mode b { font-size: 24px; } }
+  @media (max-width: 600px) { #home .modes { gap: 12px; } .mode { width: min(150px, 44vw); padding: 10px; border-width: 5px; } .mode .big { font-size: 46px; } .mode b { font-size: 19px; } .mode span { display: none; } }
 @media (max-height: 1000px) { #home { gap: 16px; } #home .tutc { padding: 8px 18px; } #home .tutc .big { font-size: 42px; } #home .tutc b { font-size: 22px; } }
 </style>
 </head>
@@ -274,6 +278,7 @@
   <div class="modes">
     <div class="mode" id="goAdv"><div class="big">🗺️</div><b>Aventura</b><span>Viaja por el mundo: lleva el tren de la estación A hasta la 🏁 construyendo la vía.</span></div>
     <div class="mode" id="goFree"><div class="big">🧱</div><b>Juego libre</b><span>Construye lo que quieras, con todas las piezas, trenes, coches y monumentos.</span></div>
+    <div class="mode" id="goDraw"><div class="big">🐘</div><b>Dibujos</b><span>Haz un elefante, un gato o un corazón con vías, y el tren da la vuelta.</span></div>
   </div>
   <div class="tutrow">
     <div id="goTut" class="tutc"><div class="big">🎓</div><div><b>Aprender a jugar</b><span>Un tutorial paso a paso, con voz, para antes de la aventura o del juego libre.</span></div></div>
@@ -325,10 +330,23 @@ const WE = () => seg(-50, 0, 50, 0), NSg = () => seg(0, -50, 0, 50), LONG = () =
 const CWN = () => arc(-50, -50, -50, 0, 0, -50), CWS = () => arc(-50, 50, -50, 0, 0, 50);
 const CEN = () => arc(50, -50, 50, 0, 0, -50), CES = () => arc(50, 50, 50, 0, 0, 50);
 const P1 = [[0, 0]], P2 = [[0, 0], [1, 0]];
+// an S-bend: leaves going the same way, shifted over by one square (for slanted lines)
+function bez(x0, y0, x1, y1, k) {
+  const a = [], n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 3) + 4;
+  for (let i = 0; i <= n; i++) {
+    const t = i / n, u = 1 - t, b0 = u * u * u, b1 = 3 * u * u * t, b2 = 3 * u * t * t, b3 = t * t * t;
+    a.push([b0 * x0 + b1 * (x0 + k) + b2 * (x1 - k) + b3 * x1, b0 * y0 + b1 * y0 + b2 * y1 + b3 * y1]);
+  }
+  return a;
+}
 const DEFS = {
   recta:   { cells: P2, ports: [[0, 0, 3], [1, 0, 1]], routes: [{ a: 0, b: 1, g: LONG }] },
   corta:   { cells: P1, ports: [[0, 0, 3], [0, 0, 1]], routes: [{ a: 0, b: 1, g: WE }] },
   curva:   { cells: P1, ports: [[0, 0, 3], [0, 0, 0]], routes: [{ a: 0, b: 1, g: CWN }] },
+  sesgoI:  { cells: [[0, 0], [1, -1]], ports: [[0, 0, 3], [1, -1, 1]], routes: [{ a: 0, b: 1, g: () => bez(-50, 0, 150, -100, 100) }] },
+  sesgoD:  { cells: [[0, 0], [1, 1]], ports: [[0, 0, 3], [1, 1, 1]], routes: [{ a: 0, b: 1, g: () => bez(-50, 0, 150, 100, 100) }] },
+  sesgoLI: { cells: [[0, 0], [1, 0], [1, -1], [2, -1]], ports: [[0, 0, 3], [2, -1, 1]], routes: [{ a: 0, b: 1, g: () => bez(-50, 0, 250, -100, 150) }] },
+  sesgoLD: { cells: [[0, 0], [1, 0], [1, 1], [2, 1]], ports: [[0, 0, 3], [2, 1, 1]], routes: [{ a: 0, b: 1, g: () => bez(-50, 0, 250, 100, 150) }] },
   curvaL:  { cells: [[0, 0], [1, 0], [1, -1]], ports: [[0, 0, 3], [1, -1, 0]], routes: [{ a: 0, b: 1, g: () => arc(-50, -150, -50, 0, 100, -150) }] },
   desvioI: { sw: true, cells: P1, ports: [[0, 0, 3], [0, 0, 1], [0, 0, 0]], routes: [{ a: 0, b: 1, g: WE }, { a: 0, b: 2, g: CWN }] },
   desvioD: { sw: true, cells: P1, ports: [[0, 0, 3], [0, 0, 1], [0, 0, 2]], routes: [{ a: 0, b: 1, g: WE }, { a: 0, b: 2, g: CWS }] },
@@ -378,7 +396,8 @@ const CIUDAD = [["casa", "🏠", "Casa"], ["granja", "🏡", "Casa con jardín"]
   ["taxi", "🚕", "Taxi"], ["bus", "🚌", "Autobús"], ["tuktuk", "🛺", "Tuk-tuk"], ["barco", "⛴️", "Ferri"], ["velero", "⛵", "Velero"], ["dragon", "🐉", "Dragón"],
   ["fuente", "⛲", "Fuente"], ["estadio", "🏟️", "Estadio"], ["museo", "🏛️", "Museo"], ["kiosco", "🏪", "Tienda"], ["globo", "🎈", "Globo"]];
 const GTILES = [["plaza", "Plaza (adoquines)", "#d9d3c7"], ["arena", "Arena de playa", "#f2d98d"], ["parque", "Parque con flores", "#5fb04f"],
-  ["nieve", "Nieve o sal", "#f3f7fb"], ["campo", "Campo de cultivo", "#b9c45a"]];
+  ["nieve", "Nieve o sal", "#f3f7fb"], ["campo", "Campo de cultivo", "#b9c45a"],
+  ["gris", "Suelo gris", "#a7acb4"], ["rosa", "Suelo rosa", "#f6a6c1"], ["naranja", "Suelo naranja", "#f5a84e"], ["azul", "Suelo azul", "#86c8f2"], ["amarillo", "Suelo amarillo", "#ffd95a"], ["marron", "Suelo marrón", "#6e4a2c"]];
 const DECO_NAME = {};
 GTILES.forEach(([id, nm, col]) => { DEFS[id] = { gtile: col, cells: P1, ports: [], routes: [] }; });
 [...CAMPO, ...CIUDAD].forEach(([id, em, nm]) => { DEFS[id] = { deco: em || " ", water: id === "agua", cells: P1, ports: [], routes: [] }; DECO_NAME[id] = nm; });
@@ -1546,7 +1565,7 @@ function jBack(m) { // undo planning steps, putting back the very same piece obj
     else { const p = x.d; p.geo.cells.forEach(([cx, cy]) => cellP[cy * COLS + cx].push(p)); pieces.set(p.id, p); if (!noDraw) drawPiece(p); }
   }
 }
-const FIX_OK = new Set(["corta", "curva", "rampa", "subeI", "subeD", "recta", "curvaG", "curvaL", "tope"]);
+const FIX_OK = new Set(["corta", "curva", "rampa", "subeI", "subeD", "recta", "curvaG", "curvaL", "tope", "sesgoI", "sesgoD", "sesgoLI", "sesgoLD"]);
 let fixTrainAt = new Set();
 const fixKey = p => p.type + "," + p.c + "," + p.r + "," + p.h;
 const fixable = p => !p.fixed && FIX_OK.has(p.type) && !fixTrainAt.has(fixKey(p));
@@ -1835,8 +1854,21 @@ function handleTap0(wx, wy) {
   if (!inB(c, r)) return;
   placePiece(type, c, r, f, { replace: !!here });                                    // another piece: swap it
 }
+// the diagonals turn through 8 positions: 4 one way, then 4 mirrored
+const MIRROR = { sesgoI: "sesgoD", sesgoD: "sesgoI", sesgoLI: "sesgoLD", sesgoLD: "sesgoLI" };
 function rotatePiece(p) {
   if (p.fixed) { lockedFx(); return; }
+  if (MIRROR[p.type]) {
+    const base = p.type.endsWith("I") ? p.type : MIRROR[p.type], cur = (p.type === base ? 0 : 4) + p.rot;
+    for (let k = 1; k < 8; k++) {
+      const idx = (cur + k) % 8, t = idx < 4 ? base : MIRROR[base], rot = idx % 4;
+      if (!fits(t, p.c, p.r, rot, p.h, p.id)) continue;
+      if (t === p.type) { setRot(p, rot); afterEdit(p, false); }
+      else { const q = replaceAt(t, p.c, p.r, rot, p.h, [p]); if (!q) continue; afterEdit(q, false); }
+      sfx.toc(); return;
+    }
+    sfx.no(); return;
+  }
   if (DEFS[p.type].deco || DEFS[p.type].mon || DEFS[p.type].gtile) { sfx.no(); return; }
   for (let k = 1; k <= 3; k++) {
     const nr = (p.rot + k) % 4;
@@ -1888,12 +1920,14 @@ function placePiece(type, c, r, f, opts) {
   opts = opts || {};
   const d = DEFS[type];
   let best = null, bs = -1e9;
-  const tg = tutGhostFor(type, c, r), cands = [];
-  if (tg) cands.push({ rot: tg.rot, h: tg.h, ac: tg.c, ar: tg.r, ci: 0 });
-  else (isSlope(type) ? [f, f - 1] : [f]).forEach(h => {
-    for (let rot = 0; rot < 4; rot++) d.cells.forEach(([lx, ly], ci) => { const [ox, oy] = rotP(lx, ly, rot); cands.push({ rot, h, ac: c - ox, ar: r - oy, ci }); });
-  });
+  const tg = tutGhostFor(type, c, r) || (MIRROR[type] && tutGhostFor(MIRROR[type], c, r)), cands = [];
+  if (tg) cands.push({ t: tg.type, rot: tg.rot, h: tg.h, ac: tg.c, ar: tg.r, ci: 0 });
+  else (isSlope(type) ? [f, f - 1] : [f]).forEach(h => [type, MIRROR[type]].filter(Boolean).forEach(t => {
+    for (let rot = 0; rot < 4; rot++) DEFS[t].cells.forEach(([lx, ly], ci) => { const [ox, oy] = rotP(lx, ly, rot); cands.push({ t, rot, h, ac: c - ox, ar: r - oy, ci }); });
+  }));
+  const type0 = type;
   cands.forEach(k => {
+    const type = k.t;
     if (d.mon && k.rot) return;
     const conf = conflictsFor(type, k.ac, k.ar, k.rot, k.h);
     if (!conf) return;
@@ -1906,7 +1940,7 @@ function placePiece(type, c, r, f, opts) {
     if (sc > bs) { bs = sc; best = Object.assign({ conf }, k); }
   });
   if (!best) { sfx.no(); return null; }
-  c = best.ac; r = best.ar;
+  c = best.ac; r = best.ar; type = best.t; void type0;
   const p = best.conf.length ? replaceAt(type, c, r, best.rot, best.h, best.conf) : addPiece(type, c, r, best.rot, best.h, 0);
   if (!p) { sfx.no(); refreshHints(); return null; }
   lastRot[type] = best.rot;
@@ -2225,19 +2259,61 @@ function paintPath(g) {
   if (n) sfx.toc(); else sfx.no();
   autosave();
 }
-function commitDraw(g) {
-  clearDrawLine();
-  const P = g.path, n = P.length, want = new Map();
+// the pieces for a path of squares (shared by the pencil and the pictures)
+function pathPieces(P, closed, ends) {
+  const n = P.length, want = new Map();
   for (let i = 0; i < n; i++) {
-    const cur = P[i], prev = i > 0 ? P[i - 1] : g.closed ? P[n - 1] : null, next = i < n - 1 ? P[i + 1] : g.closed ? P[0] : null;
+    const cur = P[i], prev = i > 0 ? P[i - 1] : closed ? P[n - 1] : null, next = i < n - 1 ? P[i + 1] : closed ? P[0] : null;
     let e1 = prev ? edgeTo(cur, prev) : null, e2 = next ? edgeTo(cur, next) : null;
-    if (e1 == null) { const j = joinEdge(cur, e2); e1 = j != null ? j : opp(e2); }
-    if (e2 == null) { const j = joinEdge(cur, e1); e2 = j != null ? j : opp(e1); }
+    if (e1 == null) { const j = ends ? ends(cur, e2) : null; e1 = j != null ? j : opp(e2); }
+    if (e2 == null) { const j = ends ? ends(cur, e1) : null; e2 = j != null ? j : opp(e1); }
     let spec = pieceForEdges(e1, e2);
     const key = cur.join(","), old = want.get(key);
     if (old && old.type === "corta" && spec.type === "corta" && old.rot !== spec.rot) spec = { type: "cruce", rot: 0 }; // crossing your own path
     want.set(key, Object.assign({ c: cur[0], r: cur[1] }, spec));
   }
+  // slanted strokes (two steps one way, one to the side, one the first way again) become a smooth S-bend
+  if (n >= 4) {
+    const seen = new Map(); P.forEach(p => { const k = p.join(","); seen.set(k, (seen.get(k) || 0) + 1); });
+    const at = i => P[((i % n) + n) % n], step = i => edgeTo(at(i), at(i + 1));
+    const used = new Set();
+    for (let i = closed ? 0 : 1; i < (closed ? n : n - 3); i++) {
+      const A = at(i), B = at(i + 1), C = at(i + 2), a = step(i - 1);
+      if (a == null || step(i) !== a || step(i + 2) !== a) continue;
+      const b = step(i + 1); if (b == null || b % 2 === a % 2) continue;
+      const ks = [A, B, C].map(p => p.join(","));
+      if (ks.some(k => seen.get(k) > 1 || used.has(k))) continue;
+      const rot = (a + 3) % 4, type = b === (a + 3) % 4 ? "sesgoI" : "sesgoD";
+      ks.forEach(k => { used.add(k); want.delete(k); });
+      want.set(ks[0], { c: A[0], r: A[1], type, rot });
+      i += 2;
+    }
+  }
+  return want;
+}
+// a stroke that starts (or ends) next to a loose end pointing elsewhere: bend that last piece to meet it
+function strokeExtend(P, atStart) {
+  const cell = atStart ? P[0] : P[P.length - 1], nb = P.length > 1 ? (atStart ? P[1] : P[P.length - 2]) : null;
+  if (joinEdge(cell, nb ? edgeTo(cell, nb) : null) != null) return null;
+  for (let e = 0; e < 4; e++) {
+    const N = [cell[0] + DX[e], cell[1] + DY[e]];
+    if (P.some(p => p[0] === N[0] && p[1] === N[1])) continue;
+    const q = pieceAtLevel(N[0], N[1], floor);
+    if (!q || q.fixed || !(q.type === "corta" || q.type === "curva") || q.h !== floor) continue;
+    const open = q.geo.ports.filter(portOpen), linked = q.geo.ports.filter(pt => !portOpen(pt));
+    if (open.length === 1 && linked.length === 1) return { N, keep: linked[0].e };
+  }
+  return null;
+}
+function commitDraw(g) {
+  clearDrawLine();
+  let P = g.path; const ext = [];
+  if (!g.closed && P.length) {
+    const a = strokeExtend(P, true); if (a) { P = [a.N, ...P]; ext.push(a); }
+    const b = strokeExtend(P, false); if (b) { P = [...P, b.N]; ext.push(b); }
+  }
+  const ends = (cur, av) => { const x = ext.find(o => o.N[0] === cur[0] && o.N[1] === cur[1]); return x ? x.keep : joinEdge(cur, av); };
+  const want = pathPieces(P, g.closed, ends);
   let placed = 0;
   want.forEach(w => {
     const here = pieceAtLevel(w.c, w.r, floor);
@@ -2553,6 +2629,16 @@ const INFO = {
   lapiz: ["✏️", "Lápiz de vías", "Arrastra el dedo por el tablero y la vía se dibuja sola, con rectas y curvas. Si empiezas junto a una vía suelta, se une a ella; si cruzas tu camino, pone un cruce. Vuelve atrás con el dedo para deshacer."],
   recta: [null, "Recta larga", "Vía recta de 2 casillas."],
   corta: [null, "Recta corta", "Vía recta de 1 casilla, para rellenar huecos."],
+  gris: [null, "Suelo gris", "Pinta el suelo de color. Arrastra el dedo para pintar muchas casillas."],
+  rosa: [null, "Suelo rosa", "Pinta el suelo de color. Arrastra el dedo para pintar muchas casillas."],
+  naranja: [null, "Suelo naranja", "Pinta el suelo de color. Arrastra el dedo para pintar muchas casillas."],
+  azul: [null, "Suelo azul", "Pinta el suelo de color. Arrastra el dedo para pintar muchas casillas."],
+  marron: [null, "Suelo marrón", "Pinta el suelo de color. Arrastra el dedo para pintar muchas casillas."],
+  amarillo: [null, "Suelo amarillo", "Pinta el suelo de color. Arrastra el dedo para pintar muchas casillas."],
+  sesgoI: [null, "Vía en diagonal", "Se desplaza una casilla hacia un lado. Pon varias seguidas para hacer una línea inclinada, como la trompa de un elefante. Tócala con la misma pieza o con ✋ para girarla: tiene 8 posiciones. El lápiz ✏️ también las pone solo al dibujar líneas inclinadas."],
+  sesgoD: [null, "Vía en diagonal (al otro lado)", "Como la diagonal, pero hacia el otro lado. Pon varias seguidas para hacer una línea inclinada."],
+  sesgoLI: [null, "Diagonal larga", "Una diagonal más suave, de 3 casillas de largo. Muy buena para trenes rápidos. Tócala para girarla: tiene 8 posiciones."],
+  sesgoLD: [null, "Diagonal larga (al otro lado)", "La diagonal larga hacia el otro lado."],
   curva: [null, "Curva", "Gira un cuarto de vuelta. Cuatro curvas hacen un círculo pequeño."],
   curvaL: [null, "Curva grande", "Curva suave que ocupa 2×2 casillas. Ideal para trenes largos."],
   desvioI: [null, "Desvío a la izquierda", "La vía se divide: recto o a la izquierda. Con ✋ se cambia el camino; la flecha verde indica por dónde irá el tren."],
@@ -2591,13 +2677,13 @@ const INFO = {
   train: ["🚂", "Trenes", "Elige un tren y toca una vía para ponerlo. Toca el tren para cambiar su dirección. Con ➖ ➕ eliges cuántos vagones lleva."],
 };
 const TABS = [
-  { id: "vias", ic: "🛤️", nm: "Vías", items: ["lapiz", "recta", "corta", "curva", "curvaL"] },
+  { id: "vias", ic: "🛤️", nm: "Vías", items: ["lapiz", "recta", "corta", "curva", "curvaL", "sesgoI", "sesgoLI"] },
   { id: "cruces", ic: "🔀", nm: "Desvíos", items: ["desvioI", "desvioD", "desvioY", "cruce"] },
   { id: "subir", ic: "⛰️", nm: "Rampas", items: ["rampa", "subeI", "subeD"] },
   { id: "especial", ic: "🚉", nm: "Especiales", items: ["estacion", "tunel", "tunelL", "tope", "paso"] },
   { id: "campo", ic: "🌳", nm: "Campo", items: CAMPO.map(d => d[0]) },
   { id: "calles", ic: "🚗", nm: "Calles", items: ["calle", "calleC", "calleT", "calleX", "paso", "calleVia", "calleViaC", "car_coche", "car_taxi", "car_bus", "car_policia", "car_bomberos", "car_tuktuk"] },
-  { id: "suelos", ic: "🎨", nm: "Suelos", items: ["plaza", "arena", "parque", "nieve", "campo", "agua"] },
+  { id: "suelos", ic: "🎨", nm: "Suelos", items: ["plaza", "arena", "parque", "nieve", "campo", "gris", "rosa", "naranja", "azul", "amarillo", "marron", "agua"] },
   { id: "ciudad", ic: "🏙️", nm: "Ciudad", items: ["casa", "granja", "iglesia", "rascacielos", "tienda", "ciudad", "museo", "kiosco", "estadio", "fuente", "barco", "velero", "torre", "castillo", "torii", "templo", "estatua", "reloj", "noria", "atraccion", "tiovivo", "globo", "dragon"] },
   { id: "monumentos", ic: "🏛️", nm: "Monumentos", items: ["arco", "eiffel", "towerb", "bigben", "acueducto", "alcala", "toriiG", "obelisco", "faro", "monte"] },
   { id: "trenes", ic: "🚂", nm: "Trenes", items: [] },
@@ -2921,6 +3007,7 @@ function loadNamed(data, name) { clearUndo(); loadData(data); curName = name; us
 function openSaves() {
   openModal(card => {
     h2(card, "💾 Proyectos y guardados");
+    { const dr = mkBtn("🎨 Dibujos con vías", "Dibujos con vías", () => openDrawings()); dr.style.width = "auto"; dr.style.padding = "0 18px"; dr.style.fontSize = "18px"; card.appendChild(dr); }
     addEl(card, "h3", "", "⭐ Proyectos listos para jugar");
     addEl(card, "p", "", "Toca uno para cargarlo y pulsa ▶️. Todos traen trenes preparados.");
     const g1 = addEl(card, "div", "grid");
@@ -3020,6 +3107,120 @@ $("helpBtn").onclick = () => openModal(card => {
 });
 
 
+
+// =====================================================================
+//  🎨 PICTURES: outlines to trace with track (elephant, person, cat…)
+// =====================================================================
+// each outline is a polygon on the squares of the board (x right, y down), drawn as one loop
+const DRAWINGS = [
+  { id: "corazon", em: "❤️", nm: "Corazón", tile: "rosa", poly: [[12, 18], [3, 9], [2, 6], [3, 3], [6, 2], [9, 3], [12, 6], [15, 3], [18, 2], [21, 3], [22, 6], [21, 9]],
+    deco: [["flores", 12, 10], ["flores", 7, 6], ["flores", 17, 6]] },
+  { id: "pez", em: "🐟", nm: "Pez", poly: [[2, 8], [6, 4], [13, 3], [19, 6], [24, 2], [24, 14], [19, 10], [13, 13], [6, 12]],
+    paint: [["nieve", 6, 6, 2, 2], ["marron", 6, 6, 1, 1], ["amarillo", 11, 5, 1, 7], ["amarillo", 15, 5, 1, 6]],
+    deco: [], tile: "naranja", around: "agua" },
+  { id: "gato", em: "🐱", nm: "Gato", tile: "naranja", poly: [[5, 19], [2, 15], [2, 9], [3, 0], [8, 6], [15, 6], [20, 0], [21, 9], [21, 15], [18, 19], [11, 20]],
+    paint: [["parque", 6, 10, 2, 2], ["parque", 15, 10, 2, 2], ["rosa", 11, 14, 1, 1], ["rosa", 4, 3, 1, 2], ["rosa", 19, 3, 1, 2]],
+    deco: [] },
+  { id: "elefante", em: "🐘", nm: "Elefante", artEn: "an", tile: "gris",
+    poly: [[12, 3], [20, 2], [27, 3], [31, 6], [32, 10], [32, 20], [28, 20], [28, 16], [20, 16], [20, 20], [16, 20], [16, 15], [13, 15], [10, 17], [10, 21], [6, 21], [6, 16], [7, 10], [9, 5]],
+    paint: [["plaza", 13, 6, 4, 6], ["marron", 10, 8, 1, 1], ["nieve", 12, 14, 1, 1]], deco: [["palmera", 35, 18]] },
+  { id: "persona", em: "🧍", nm: "Persona", art: "una", artFr: "une", tile: "azul",
+    paint: [["rosa", 8, 1, 7, 6], ["marron", 9, 3, 1, 1], ["marron", 13, 3, 1, 1], ["naranja", 10, 5, 3, 1], ["marron", 8, 1, 7, 1]], poly: [[13, 0], [15, 2], [15, 5], [13, 7], [13, 8], [17, 8], [20, 14], [18, 15], [16, 11], [16, 17], [17, 24], [13, 24], [11, 18], [9, 24], [5, 24], [6, 17], [6, 11], [4, 15], [2, 14], [5, 8], [9, 8], [9, 7], [7, 5], [7, 2], [9, 0]],
+    deco: [] },
+  { id: "estrella", em: "⭐", nm: "Estrella", art: "una", artFr: "une", tile: "amarillo", poly: [[13, 0], [16, 8], [25, 8], [18, 13], [21, 22], [13, 17], [5, 22], [8, 13], [1, 8], [10, 8]],
+    deco: [] },
+];
+// 4-connected squares along a straight segment, keeping slants evenly spread
+function rasterSeg(a, b, out) {
+  let [x, y] = a; const dx = b[0] - x, dy = b[1] - y, sx = Math.sign(dx), sy = Math.sign(dy), ax = Math.abs(dx), ay = Math.abs(dy);
+  let ix = 0, iy = 0;
+  while (ix < ax || iy < ay) {
+    if (iy >= ay || (ix < ax && (ix + 1) * ay <= (iy + 1) * ax)) { x += sx; ix++; } else { y += sy; iy++; }
+    out.push([x, y]);
+  }
+}
+function drawingPath(D) {
+  const P = [D.poly[0].slice()];
+  for (let i = 0; i < D.poly.length; i++) rasterSeg(D.poly[i], D.poly[(i + 1) % D.poly.length], P);
+  P.pop(); // back at the start
+  // tidy: no going straight back, no square visited twice (cut the little loop)
+  for (let changed = true; changed;) {
+    changed = false;
+    for (let i = 0; i < P.length && P.length > 4; i++) {
+      const n = P.length, a = P[(i + n - 1) % n], c = P[(i + 1) % n];
+      if (a[0] === c[0] && a[1] === c[1]) { P.splice(i, 1); const j = i % P.length; P.splice(j, 1); changed = true; break; }
+    }
+    const seen = new Map();
+    for (let i = 0; i < P.length && !changed; i++) {
+      const k = P[i].join(",");
+      if (seen.has(k)) { const j = seen.get(k); if (i - j < P.length / 2) P.splice(j, i - j); else { P.splice(i); P.splice(0, j); } changed = true; }
+      else seen.set(k, i);
+    }
+  }
+  return P;
+}
+function drawingBox(D) { const xs = D.poly.map(p => p[0]), ys = D.poly.map(p => p[1]); return [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]; }
+function drawingPieces(D) {
+  const [x0, x1, y0, y1] = drawingBox(D), ox = Math.round((COLS - (x1 - x0 + 1)) / 2) - x0, oy = Math.round((ROWS - (y1 - y0 + 1)) / 2) - y0;
+  const P = drawingPath(D).map(([x, y]) => [x + ox, y + oy]);
+  const specs = [...pathPieces(P, true).values()].map(w => ({ type: w.type, c: w.c, r: w.r, rot: w.rot, h: 0 }));
+  // the squares inside the outline (and on it), to paint the picture in colour
+  const onPath = new Set(P.map(p => p.join(","))), X0 = x0 + ox - 1, X1 = x1 + ox + 1, Y0 = y0 + oy - 1, Y1 = y1 + oy + 1, out = new Set(), st = [[X0, Y0]];
+  while (st.length) { const [x, y] = st.pop(), k = x + "," + y; if (x < X0 || x > X1 || y < Y0 || y > Y1 || out.has(k) || onPath.has(k)) continue; out.add(k); st.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]); }
+  const fill = [], ring = [];
+  for (let y = Y0; y <= Y1; y++) for (let x = X0; x <= X1; x++) { const k = x + "," + y; if (!out.has(k)) fill.push([x, y]); else if (x > X0 && x < X1 && y > Y0 && y < Y1) ring.push([x, y]); }
+  return { specs, ox, oy, fill, ring, box: [x0 + ox, x1 + ox + 1, y0 + oy, y1 + oy + 1] };
+}
+// in a picture, any track on the yellow square counts (the pencil may pick another piece)
+function ghostCovered(g) { return cellsFor(g.type, g.c, g.r, g.rot).every(([x, y]) => piecesIn(x, y).some(q => q.geo.routes.length && q.h === 0)); }
+let drawAuto = null;
+function drawAutoBuild(specs) {
+  if (drawAuto) return;
+  const todo = specs.filter(g => !ghostCovered(g)); let i = 0;
+  drawAuto = setInterval(() => {
+    for (let k = 0; k < 2 && i < todo.length; k++, i++) {
+      const g = todo[i], conf = conflictsFor(g.type, g.c, g.r, g.rot, 0);
+      if (conf && !conf.some(q => q.fixed || DEFS[q.type].mon)) { const p = conf.length ? replaceAt(g.type, g.c, g.r, g.rot, 0, conf) : addPiece(g.type, g.c, g.r, g.rot, 0, 0); if (p) sfx.toc(); }
+    }
+    if (i >= todo.length) { clearInterval(drawAuto); drawAuto = null; refreshHints(); autosave(); }
+  }, 70);
+}
+function drawingSteps(D) {
+  const B = drawingPieces(D), nm = trn(D.nm);
+  const done = () => looseEnds().length === 0 && B.specs.filter(ghostCovered).length >= .85 * B.specs.length;
+  return [
+    { em: D.em, tx: LX(`¡Vamos a hacer ${D.art || "un"} ${nm.toLowerCase()} con vías! Sigue el dibujo amarillo con el lápiz ✏️ o con piezas. Si quieres, pulsa ✨ y lo hago yo.`,
+        `Let's make ${D.artEn || "a"} ${nm.toLowerCase()} out of track! Follow the yellow picture with the pencil ✏️ or with pieces. If you like, press ✨ and I'll do it.`,
+        `Faisons ${D.artFr || "un"} ${nm.toLowerCase()} avec des voies ! Suis le dessin jaune avec le crayon ✏️ ou avec des pièces. Si tu veux, appuie sur ✨ et je le fais.`),
+      ghosts: B.specs, fitBox: B.box, extra: ["✨ Hazlo tú", () => drawAutoBuild(B.specs)],
+      onEnter: () => {
+        selectTab("vias"); selectTool("lapiz");
+        if (D.tile) B.fill.forEach(([x, y]) => inB(x, y) && paintAt(D.tile, x, y));
+        (D.paint || []).forEach(([t, x, y, w, h]) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (inB(x + i + B.ox, y + j + B.oy)) paintAt(t, x + i + B.ox, y + j + B.oy); });
+        if (D.around) B.ring.forEach(([x, y]) => inB(x, y) && !piecesIn(x, y).length && addPiece(D.around, x, y, 0, 0, 0));
+        (D.deco || []).forEach(([t, x, y]) => { if (DEFS[t]) addPiece(t, x + B.ox, y + B.oy, 0, 0, 0); });
+      },
+      hi: () => tool === "lapiz" ? null : curTab === "vias" ? '.it[data-id="lapiz"]' : '.tab[data-tab="vias"]',
+      done, hold: 2.5, doneSay: LX("¡Qué bonito te ha quedado!", "That looks lovely!", "Que c'est joli !") },
+    { em: "🚂", tx: LX("Ahora pon un tren en la vía y pulsa ▶️ para que dé la vuelta al dibujo.", "Now put a train on the track and press ▶️ so it goes all the way round the picture.", "Maintenant pose un train sur la voie et appuie sur ▶️ pour qu'il fasse le tour du dessin."),
+      hi: () => trains.length ? "#play" : tool === "train" ? null : '.tab[data-tab="trenes"]', done: () => trains.length > 0 && running },
+    { em: "🎉", tx: LX("¡Chu-chu! Cuando quieras, pulsa ⏸️ para parar.", "Choo-choo! Whenever you like, press ⏸️ to stop.", "Tchou-tchou ! Quand tu veux, appuie sur ⏸️ pour arrêter."), hi: () => "#play", done: () => !running, minTime: 3 },
+    { em: "🏆", tx: LX("¡Lo has hecho muy bien! ¿Hacemos otro dibujo?", "Well done! Shall we make another picture?", "Bravo ! On fait un autre dessin ?"), end: true, again: true },
+  ];
+}
+function openDrawings() {
+  if (running) setRunning(false);
+  openModal(card => {
+    h2(card, "🎨 Dibujos con vías");
+    addEl(card, "p", "", "Elige un dibujo: lo haces con vías y luego el tren da la vuelta.");
+    const g = addEl(card, "div", "tutpick drawpick");
+    DRAWINGS.forEach(D => {
+      const c = addEl(g, "div", "proj"); c.onclick = () => { unlockAudio(); sfx.whistleShort(); startTutorial("draw:" + D.id); };
+      addEl(c, "div", "big", D.em); addEl(c, "div", "nm", D.nm);
+    });
+  });
+}
+
 // =====================================================================
 //  TUTORIAL (step by step, with yellow lights on what to touch)
 // =====================================================================
@@ -3035,7 +3236,7 @@ const TUT_SPIRAL = [G("subeI", 12, -3, 0), { type: "subeI", c: TC + 12, r: TR - 
 const TUT_SPTOP = [{ type: "tope", c: TC + 12, r: TR - 3, rot: 0, h: 4 }];
 function tutStub() { if (!pieceAtLevel(TC + 6, TR - 3, 0)) { addPiece("corta", TC + 6, TR - 3, 0, 0, 0); addPiece("tope", TC + 5, TR - 3, 2, 0, 0); refreshHints(); } setFloor(0); }
 const STRAIGHTS = ["corta", "recta", "estacion", "tunel", "tunelL", "paso"];
-function ghostDone(g) { const p = pieceAtLevel(g.c, g.r, g.h); return !!p && (p.type === g.type || (g.type === "corta" && STRAIGHTS.includes(p.type))); }
+function ghostDone(g) { if (tut && tut.draw) return ghostCovered(g); const p = pieceAtLevel(g.c, g.r, g.h); return !!p && (p.type === g.type || (g.type === "corta" && STRAIGHTS.includes(p.type))); }
 const TUT_BASIC = [
   { em: "👋", tx: "¡Hola! Vamos a construir juntos un circuito de tren. Sigue las luces amarillas: te dicen qué tocar.", btn: "¡Empezamos!" },
   { em: "🛤️", tx: "Abajo están las pestañas con las piezas. Toca la pestaña 🛤️ Vías.", hi: () => '.tab[data-tab="vias"]', done: () => curTab === "vias" },
@@ -3084,7 +3285,7 @@ const TUT_HIGH = [
   { em: "🏆", tx: "¡Ya sabes subir y bajar! Con rampas haces puentes sobre ríos y calles, y con espirales subes muy alto. ¡Pruébalo en la aventura, en Machu Picchu!", hi: () => ["#floorBox"], end: true },
 ];
 let TUT = TUT_BASIC;
-let tut = null;
+let tut = null, tutStashKeep = null;
 function tutGhostFor(type, c, r) {
   if (!tut || !tut.ghosts) return null;
   return tut.ghosts.find(g => g.type === type && cellsFor(g.type, g.c, g.r, g.rot).some(([x, y]) => x === c && y === r)) || null;
@@ -3092,14 +3293,16 @@ function tutGhostFor(type, c, r) {
 function startTutorial(kind) {
   closeModal(); $("home").hidden = true; $("advmap").hidden = true;
   if (lvl) enterFree();
-  const keep = tut && tut.stash;
+  const keep = (tut && tut.stash) || tutStashKeep; tutStashKeep = null;
   if (tut) endTutorial(false);
-  TUT = kind === "alto" ? TUT_HIGH : TUT_BASIC;
+  const D = kind && kind.startsWith("draw:") && DRAWINGS.find(x => "draw:" + x.id === kind);
+  TUT = D ? null : kind === "alto" ? TUT_HIGH : TUT_BASIC;
   const stash = keep || (pieces.size ? { data: serialize(), name: curName } : null);
   clearBoard(); setFloor(0); curName = "";
   if (running) setRunning(false);
   selectTab("campo"); selectTool("hand");
-  tut = { i: 0, t: 0, drawn: 0, stash, hiT: 0, kind: kind === "alto" ? "alto" : "basic" };
+  tut = { i: 0, t: 0, drawn: 0, stash, hiT: 0, kind: D ? kind : kind === "alto" ? "alto" : "basic", draw: !!D };
+  if (D) TUT = drawingSteps(D);
   sset(KEY + "-tut", 1);
   showTutStep();
   tutFit();
@@ -3107,7 +3310,7 @@ function startTutorial(kind) {
 // show the practice area between the tutorial card and the piece bar
 function tutFit(alt) {
   const top = $("tut").getBoundingClientRect().bottom + 10, bot = innerHeight - bottomH() - 10;
-  const [x0, x1, y0, y1] = alt === "spiral" ? [(TC + 5) * T, (TC + 14) * T, (TR - 6) * T, (TR - 1.5) * T] : alt ? [(TC + 4) * T, (TC + 14) * T, (TR - 5) * T, (TR - 1) * T] : [(TC - 3) * T, (TC + 7) * T, (TR - 1) * T, (TR + 4) * T];
+  const [x0, x1, y0, y1] = Array.isArray(alt) ? alt.map((v, i) => v * T + (i % 2 ? T : -T) * .5) : alt === "spiral" ? [(TC + 5) * T, (TC + 14) * T, (TR - 6) * T, (TR - 1.5) * T] : alt ? [(TC + 4) * T, (TC + 14) * T, (TR - 5) * T, (TR - 1) * T] : [(TC - 3) * T, (TC + 7) * T, (TR - 1) * T, (TR + 4) * T];
   view.z = clamp(Math.min((innerWidth - 90) / (x1 - x0), Math.max(120, bot - top) / (y1 - y0)), minZ(), 1);
   view.x = (innerWidth - 70) / 2 - (x0 + x1) / 2 * view.z; view.y = (top + bot) / 2 - (y0 + y1) / 2 * view.z;
   userMoved = true; applyView();
@@ -3139,9 +3342,11 @@ function showTutStep() {
   const bt = box.querySelector(".tbtns"); bt.innerHTML = "";
   const btn = (txt, cls, fn) => { const b = document.createElement("button"); b.className = "tb " + cls; b.textContent = txt; b.onclick = () => { unlockAudio(); fn(); }; bt.appendChild(b); };
   btn("🔊", "", () => speak(S.tx));
+  if (S.extra) btn(S.extra[0], "go", S.extra[1]);
   if (S.btn) btn(S.btn, "go", nextTutStep);
   if (S.end) {
     if (S.next) btn("⛰️ Subir y bajar", "go", () => startTutorial(S.next));
+    if (S.again) { btn("🎨 Otro dibujo", "go", () => { const st = tut.stash; endTutorial(false); if (st) tutStashKeep = st; openDrawings(); }); }
     btn("🗺️ ¡A la aventura!", S.next ? "" : "go", () => { endTutorial(!!tut.stash); openMap(); });
     btn("🏁 Terminar", "", () => endTutorial(false));
     if (tut.stash) btn("↩️ Volver a mi circuito", "", () => endTutorial(true));
@@ -3149,9 +3354,11 @@ function showTutStep() {
   box.style.top = ($("top").offsetHeight + 16) + "px";
   drawGhosts(); clearTutHi(); tut.hiT = 0;
   if (S.view && !tut.viewed) { tut.viewed = true; setTimeout(() => tutFit(true), 50); }
+  if (S.fitBox) setTimeout(() => tut && tutFit(S.fitBox), 350);
 }
 function nextTutStep() { sfx.bell(); tut.i++; if (tut.i >= TUT.length) endTutorial(false); else showTutStep(); }
 function endTutorial(restore) {
+  if (drawAuto) { clearInterval(drawAuto); drawAuto = null; }
   const st = tut && tut.stash;
   tut = null; $("tut").hidden = true; L.tut.innerHTML = ""; clearTutHi();
   if (restore && st) { loadData(st.data); curName = st.name; userMoved = false; fitAll(); autosave(); }
@@ -3835,6 +4042,7 @@ function goHome() { if (running) setRunning(false); if (tut) endTutorial(!!tut.s
 $("homeBtn").onclick = () => { unlockAudio(); sfx.click(); goHome(); };
 $("parentBtn").onclick = () => goParents();
 $("goTut").onclick = () => { unlockAudio(); sfx.whistleShort(); startTutorial("basic"); };
+$("goDraw").onclick = () => { unlockAudio(); sfx.whistleShort(); openDrawings(); };
 $("goTut2").onclick = () => { unlockAudio(); sfx.whistleShort(); startTutorial("alto"); };
 function markTutHome() { $("goTut").classList.toggle("new", !sget(KEY + "-tut")); }
 $("goAdv").onclick = () => { unlockAudio(); sfx.click(); openMap(); };
@@ -4349,6 +4557,20 @@ I18N_ROWS.push(
 ["Rampas, puentes y espirales. Para niños más mayores.", "Ramps, bridges and spirals. For older kids.", "Rampes, ponts et spirales. Pour les plus grands."],
 ["Piezas, trenes y el lápiz. Para empezar.", "Pieces, trains and the pencil. To get started.", "Pièces, trains et crayon. Pour commencer."],
 );
+I18N_ROWS.push(
+["Corazón", "Heart", "Cœur"], ["Pez", "Fish", "Poisson"], ["Gato", "Cat", "Chat"], ["Persona", "Person", "Personne"], ["Estrella", "Star", "Étoile"],
+["Dibujos", "Pictures", "Dessins"], ["✨ Hazlo tú", "✨ You do it", "✨ Fais-le, toi"], ["🎨 Dibujos con vías", "🎨 Track pictures", "🎨 Dessins en voies"], ["Dibujos con vías", "Track pictures", "Dessins en voies"], ["🎨 Otro dibujo", "🎨 Another picture", "🎨 Un autre dessin"],
+["Elige un dibujo: lo haces con vías y luego el tren da la vuelta.", "Pick a picture: you make it out of track and then the train goes round it.", "Choisis un dessin : tu le fais avec des voies et ensuite le train en fait le tour."],
+["Haz un elefante, un gato o un corazón con vías, y el tren da la vuelta.", "Make an elephant, a cat or a heart out of track, and the train goes round it.", "Fais un éléphant, un chat ou un cœur avec des voies, et le train en fait le tour."],
+["Vía en diagonal", "Diagonal track", "Voie en diagonale"], ["Vía en diagonal (al otro lado)", "Diagonal track (other way)", "Voie en diagonale (autre sens)"],
+["Diagonal larga", "Long diagonal", "Longue diagonale"], ["Diagonal larga (al otro lado)", "Long diagonal (other way)", "Longue diagonale (autre sens)"],
+["Se desplaza una casilla hacia un lado. Pon varias seguidas para hacer una línea inclinada, como la trompa de un elefante. Tócala con la misma pieza o con ✋ para girarla: tiene 8 posiciones. El lápiz ✏️ también las pone solo al dibujar líneas inclinadas.", "Shifts over by one square. Put several in a row to make a slanted line, like an elephant's trunk. Tap it with the same piece or with ✋ to turn it: it has 8 positions. The pencil ✏️ also puts them in by itself when you draw slanted lines.", "Elle se décale d'une case sur le côté. Mets-en plusieurs à la suite pour faire une ligne penchée, comme la trompe d'un éléphant. Touche-la avec la même pièce ou avec ✋ pour la tourner : elle a 8 positions. Le crayon ✏️ les met aussi tout seul quand tu dessines des lignes penchées."],
+["Como la diagonal, pero hacia el otro lado. Pon varias seguidas para hacer una línea inclinada.", "Like the diagonal, but the other way. Put several in a row to make a slanted line.", "Comme la diagonale, mais dans l'autre sens. Mets-en plusieurs à la suite pour faire une ligne penchée."],
+["Una diagonal más suave, de 3 casillas de largo. Muy buena para trenes rápidos. Tócala para girarla: tiene 8 posiciones.", "A gentler diagonal, 3 squares long. Great for fast trains. Tap it to turn it: it has 8 positions.", "Une diagonale plus douce, de 3 cases de long. Très bien pour les trains rapides. Touche-la pour la tourner : elle a 8 positions."],
+["La diagonal larga hacia el otro lado.", "The long diagonal, the other way.", "La longue diagonale, dans l'autre sens."],
+);
+I18N_ROWS.push(["Suelo gris", "Grey ground", "Sol gris"], ["Suelo rosa", "Pink ground", "Sol rose"], ["Suelo naranja", "Orange ground", "Sol orange"], ["Suelo azul", "Blue ground", "Sol bleu"], ["Suelo amarillo", "Yellow ground", "Sol jaune"], ["Suelo marrón", "Brown ground", "Sol marron"],
+["Pinta el suelo de color. Arrastra el dedo para pintar muchas casillas.", "Paints the ground a colour. Drag your finger to paint lots of squares.", "Peint le sol en couleur. Glisse le doigt pour peindre beaucoup de cases."]);
 const LANGS = { es: "🇪🇸", en: "🇬🇧", fr: "🇫🇷" };
 const I18N = new Map();
 I18N_ROWS.forEach(([es, en, fr]) => I18N.set(es.trim(), { en, fr }));
