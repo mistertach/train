@@ -146,7 +146,9 @@
     border-radius: 18px; padding: 8px 16px; font-size: 17px; box-shadow: 0 3px 10px rgba(0,0,0,.2); white-space: nowrap; }
   body.playing #playHint { display: block; }
   body.cab { background: linear-gradient(#7cc8f5 0%, #c9ecff 38%, #83c96f 38%); }
-  body.cab #world { transform-origin: 50% 72%; transform: perspective(620px) rotateX(56deg) scale(1.25); pointer-events: none; }
+  body.cab #world { visibility: hidden; pointer-events: none; }
+  #cab3d { position: fixed; inset: 0; width: 100%; height: 100%; display: none; z-index: 2; pointer-events: none; }
+  body.cab #cab3d { display: block; }
   body.cab #world .lv-hud { display: none; }
   body.lvlmode #tabs { display: none !important; }
   body.lvlmode #shopBtn,
@@ -870,6 +872,7 @@ function drawPiece(p, lay) {
       // boats sitting on water rock gently (and have no grass shadow under them)
       const onWater = d.float && piecesIn(p.c, p.r).some(q => DEFS[q.type].water);
       let dg = bk > 1 ? el("g", { transform: `translate(${cx} ${cy}) scale(${bk}) translate(${-cx} ${-cy})` }, sg) : sg;
+      if (ROAM.has(p.type) && !onWater) { const st = `animation-duration:${(9 + seeded(p.c, p.r, 3) * 6).toFixed(1)}s;animation-delay:${(-seeded(p.c, p.r, 4) * 12).toFixed(1)}s`; dg = el("g", { class: "roamf", style: st }, el("g", { class: "roam", style: st }, dg)); }
       if (onWater) dg = el("g", { class: "bob", style: `animation-delay:${(-(p.c * .53 + p.r * .31) % 3).toFixed(2)}s` }, dg);
       if (p.faceL) dg = el("g", { transform: `translate(${cx} 0) scale(-1 1) translate(${-cx} 0)` }, dg);
       spr(dg, cx - 50, cy - 50, p.c * 7 + p.r * 13);
@@ -3489,7 +3492,7 @@ function carAt(wx, wy) {
 let camMode = "free", camIdx = 0, camAng = null;
 const camTrains = () => { const m = trains.filter(t => !t.ambient); return m.length ? m : trains; };
 function setCam(m) {
-  camMode = m; camAng = null;
+  camMode = m; camAng = null; if (typeof c3Ang !== "undefined") c3Ang = null;
   document.body.classList.toggle("cab", m === "cab");
   $("camFollow").classList.toggle("on", m === "follow"); $("camCab").classList.toggle("on", m === "cab");
   if (m === "free") applyView();
@@ -3511,14 +3514,282 @@ function camTick(dt) {
     view.z += (z - view.z) * k;
     view.x += (innerWidth / 2 - x * view.z - view.x) * k; view.y += (innerHeight * .52 - y * view.z - view.y) * k;
     cam.setAttribute("transform", `translate(${view.x.toFixed(1)} ${view.y.toFixed(1)}) scale(${view.z.toFixed(4)})`);
-  } else {
-    const target = -(P[0].a) - 90;
-    if (camAng == null) camAng = target;
-    let d = target - camAng; while (d > 180) d -= 360; while (d < -180) d += 360;
-    camAng += d * (1 - Math.exp(-dt * 3));
-    cam.setAttribute("transform", `translate(${innerWidth / 2} ${innerHeight * .7}) rotate(${camAng.toFixed(2)}) scale(1.35) translate(${-x.toFixed(1)} ${-y.toFixed(1)})`);
-  }
+  } else render3D(dt);
 }
+// =====================================================================
+//  👀 CAB VIEW IN 3D: a real first-person view from the driver's seat.
+//  Everything on the board is projected in perspective onto a canvas:
+//  ground tiles, water, roads, track (with bridges and ramps), stations,
+//  tunnels, other trains, cars and the scenery (as standing pictures).
+// =====================================================================
+const cab3d = document.createElement("canvas"); cab3d.id = "cab3d"; document.body.appendChild(cab3d);
+const c3 = cab3d.getContext("2d");
+const FH = 44, NEAR = 6, FAR = 1900, EYE = 40;
+const C3 = { x: 0, y: 0, z: 0, hx: 1, hy: 0, foc: 600, W: 0, H: 0, hor: 0, t: 0 };
+const c3Img = {};
+let c3Ang = null, c3Smoke = [], c3Drops = [], c3Hills = null, c3Stars = null;
+
+function c3Size() {
+  const dpr = Math.min(2, devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+  if (cab3d.width !== Math.round(W * dpr) || cab3d.height !== Math.round(H * dpr)) { cab3d.width = Math.round(W * dpr); cab3d.height = Math.round(H * dpr); }
+  c3.setTransform(dpr, 0, 0, dpr, 0, 0);
+  C3.W = W; C3.H = H; C3.hor = H * .42; C3.foc = Math.max(W, H * 1.25) * .56;
+}
+// world (x, y on the board; z up, in 3D units) → camera space
+const c3Cam = (x, y, z) => { const dx = x - C3.x, dy = y - C3.y; return [-dx * C3.hy + dy * C3.hx, dx * C3.hx + dy * C3.hy, z - C3.z]; };
+const c3Scr = q => [C3.W / 2 + q[0] * C3.foc / q[1], C3.hor - q[2] * C3.foc / q[1]];
+function c3Clip(ps) { // keep the part of a polygon in front of the near plane
+  const out = [];
+  for (let i = 0; i < ps.length; i++) {
+    const a = ps[i], b = ps[(i + 1) % ps.length], ia = a[1] >= NEAR, ib = b[1] >= NEAR;
+    if (ia) out.push(a);
+    if (ia !== ib) { const t = (NEAR - a[1]) / (b[1] - a[1]); out.push([a[0] + (b[0] - a[0]) * t, NEAR, a[2] + (b[2] - a[2]) * t]); }
+  }
+  return out;
+}
+function c3Poly(pts, fill, stroke, lw) { // pts: world [x, y, z]
+  const cp = c3Clip(pts.map(p => c3Cam(p[0], p[1], p[2])));
+  if (cp.length < 3) return;
+  c3.beginPath(); cp.forEach((q, i) => { const [sx, sy] = c3Scr(q); i ? c3.lineTo(sx, sy) : c3.moveTo(sx, sy); }); c3.closePath();
+  c3.fillStyle = fill; c3.fill();
+  if (stroke) { c3.strokeStyle = stroke; c3.lineWidth = lw || 1; c3.stroke(); }
+}
+function c3Line(a, b, col, w) { // a 3D line whose width shrinks with distance
+  let p = c3Cam(a[0], a[1], a[2]), q = c3Cam(b[0], b[1], b[2]);
+  if (p[1] < NEAR && q[1] < NEAR) return;
+  if (p[1] < NEAR) { const t = (NEAR - p[1]) / (q[1] - p[1]); p = [p[0] + (q[0] - p[0]) * t, NEAR, p[2] + (q[2] - p[2]) * t]; }
+  if (q[1] < NEAR) { const t = (NEAR - q[1]) / (p[1] - q[1]); q = [q[0] + (p[0] - q[0]) * t, NEAR, q[2] + (p[2] - q[2]) * t]; }
+  const [x1, y1] = c3Scr(p), [x2, y2] = c3Scr(q);
+  c3.strokeStyle = col; c3.lineWidth = Math.max(.6, w * C3.foc / ((p[1] + q[1]) / 2)); c3.beginPath(); c3.moveTo(x1, y1); c3.lineTo(x2, y2); c3.stroke();
+}
+// colours fade into the haze far away
+const c3RGB = {};
+function c3Fog(hex, f) {
+  const k = clamp((f - FAR * .35) / (FAR * .65), 0, .75); if (k <= 0) return hex;
+  const c = c3RGB[hex] || (c3RGB[hex] = [1, 3, 5].map(i => parseInt(hex.length === 4 ? hex[(i + 1) / 2] + hex[(i + 1) / 2] : hex.slice(i, i + 2), 16)));
+  const fog = night ? [20, 30, 60] : [205, 232, 246];
+  return `rgb(${c.map((v, i) => Math.round(v + (fog[i] - v) * k)).join(",")})`;
+}
+const c3Vis = (x, y, m) => { const q = c3Cam(x, y, 0); return q[1] > -(m || 0) && q[1] < FAR + (m || 0) && Math.abs(q[0]) < q[1] * 1.7 + 160 + (m || 0); };
+// a picture of a sprite or monument, turned into an image once
+function c3Pic(key, make) {
+  if (c3Img[key]) return c3Img[key].ok ? c3Img[key] : null;
+  const rec = c3Img[key] = { ok: false };
+  try {
+    const { svg, top, w, h } = make(); svg.setAttribute("width", Math.round(w * 2)); svg.setAttribute("height", Math.round(h * 2));
+    const img = new Image(); img.onload = () => { rec.ok = true; }; rec.img = img; rec.top = top; rec.w = w; rec.h = h;
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(svg));
+  } catch (e) {}
+  return null;
+}
+const c3Sprite = id => c3Pic("s:" + id, () => { const top = SPR_TOP[id] || 0, svg = el("svg", { xmlns: NS, viewBox: `0 ${top} 100 ${100 - top}` }); SPRITES[id](svg, 0, 0, 0); return { svg, top, w: 100, h: 100 - top }; });
+const c3Mon = id => c3Pic("m:" + id, () => {
+  const m = MONS[id], tmp = el("svg", { xmlns: NS, width: 10, height: 10, style: "position:absolute;left:-9999px" }, document.body), g = el("g", {}, tmp);
+  m.draw(g, 0, 0); const b = g.getBBox(); tmp.remove();
+  const svg = el("svg", { xmlns: NS, viewBox: `${b.x} ${b.y} ${b.width} ${b.height}` }); m.draw(svg, 0, 0);
+  return { svg, top: b.y, w: b.width, h: b.height, bx: b.x };
+});
+// track samples along a route, made once per route
+function c3Samples(R) {
+  if (R._s3) return R._s3;
+  const n = Math.max(2, Math.ceil(R.len / 12)), out = [];
+  for (let i = 0; i <= n; i++) { const d = R.len * i / n, [x, y] = pointAt(R, d), [ax, ay] = pointAt(R, Math.max(0, d - 2)), [bx, by] = pointAt(R, Math.min(R.len, d + 2)); const l = Math.hypot(bx - ax, by - ay) || 1; out.push({ x, y, z: zAt(R, d) * FH, nx: -(by - ay) / l, ny: (bx - ax) / l }); }
+  return (R._s3 = out);
+}
+// the train's own path, front first, with headings in the board plane
+function c3Poses(tr) {
+  const t = tr.trail, cum = trailCum(t), out = [];
+  for (let i = 0; i <= tr.cars; i++) {
+    const d = i * SP, c = trailAt(t, cum, d), f = trailAt(t, cum, d - 14), b = trailAt(t, cum, d + 14);
+    out.push({ x: c.x, y: c.y, z: c.z, a: Math.atan2(f.y - b.y, f.x - b.x) });
+  }
+  return out;
+}
+function c3Box(prims, x, y, z, a, len, wid, ht, col, extra) { // a car or building block as a lit box
+  const ca = Math.cos(a), sa = Math.sin(a), L2 = len / 2, W2 = wid / 2;
+  const P = [[L2, W2], [L2, -W2], [-L2, -W2], [-L2, W2]].map(([u, v]) => [x + u * ca - v * sa, y + u * sa + v * ca]);
+  const d = c3Cam(x, y, z)[1];
+  prims.push({ d, draw: () => {
+    const faces = [];
+    for (let i = 0; i < 4; i++) { const p = P[i], q = P[(i + 1) % 4], mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2; faces.push({ d: c3Cam(mx, my, z)[1], pts: [[p[0], p[1], z], [q[0], q[1], z], [q[0], q[1], z + ht], [p[0], p[1], z + ht]], shade: [.82, .62, .74, .94][i], front: i === 0 }); }
+    faces.sort((u, v) => v.d - u.d);
+    faces.forEach(fc => c3Poly(fc.pts, c3Fog(c3Shade(col, fc.shade), fc.d), "rgba(0,0,0,.35)", .8));
+    c3Poly(P.map(p => [p[0], p[1], z + ht]), c3Fog(c3Shade(col, 1.08), d), "rgba(0,0,0,.3)", .8);
+    if (extra) extra(P, faces);
+  } });
+}
+function c3Shade(hex, k) {
+  const c = c3RGB[hex] || (c3RGB[hex] = [1, 3, 5].map(i => parseInt(hex.length === 4 ? hex[(i + 1) / 2] + hex[(i + 1) / 2] : hex.slice(i, i + 2), 16)));
+  const h = c.map(v => clamp(Math.round(v * k), 0, 255).toString(16).padStart(2, "0")).join(""); return "#" + h;
+}
+
+function render3D(dt) {
+  const list = camTrains(), tr = list[camIdx % Math.max(1, list.length)];
+  if (!tr || !tr.trail || tr.trail.length < 2) return;
+  c3Size(); C3.t += dt;
+  const P0 = c3Poses(tr)[0];
+  if (c3Ang == null) c3Ang = P0.a;
+  let da = P0.a - c3Ang; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
+  c3Ang += da * (1 - Math.exp(-dt * 6));
+  C3.hx = Math.cos(c3Ang); C3.hy = Math.sin(c3Ang);
+  const spd = running && !(tr.wait > 0) && tr.thr !== 0 && !tr.wreck ? 1 : 0;
+  C3.x = P0.x - C3.hx * 6; C3.y = P0.y - C3.hy * 6; C3.z = P0.z * FH + EYE + Math.sin(C3.t * 11) * .7 * spd;
+  const W = C3.W, H = C3.H, hor = C3.hor;
+  // sky, sun or stars, distant hills turning with the heading
+  const sky = c3.createLinearGradient(0, 0, 0, hor);
+  if (night) { sky.addColorStop(0, "#060b26"); sky.addColorStop(1, "#24356b"); } else { sky.addColorStop(0, weather === "lluvia" ? "#8fa4b5" : "#6fb8ee"); sky.addColorStop(1, weather === "lluvia" ? "#c9d3da" : "#d6efff"); }
+  c3.fillStyle = sky; c3.fillRect(0, 0, W, hor + 1);
+  const azPx = C3.foc, az = c3Ang;
+  if (night) { if (!c3Stars) c3Stars = Array.from({ length: 90 }, () => [Math.random() * Math.PI * 2, Math.random() * .9, Math.random() * 1.6 + .4]); c3.fillStyle = "#fff"; c3Stars.forEach(([a, h, r]) => { let d = a - az; d = ((d + Math.PI * 3) % (Math.PI * 2)) - Math.PI; const x = W / 2 + Math.tan(clamp(d, -1.3, 1.3)) * azPx; if (Math.abs(d) < 1.3) { c3.globalAlpha = .5 + .5 * Math.sin(C3.t * 2 + a * 9); c3.fillRect(x, hor * h, r, r); } }); c3.globalAlpha = 1; }
+  else { let d = 1.1 - az; d = ((d + Math.PI * 3) % (Math.PI * 2)) - Math.PI; if (Math.abs(d) < 1.2) { const x = W / 2 + Math.tan(d) * azPx; c3.fillStyle = "rgba(255,240,170,.35)"; c3.beginPath(); c3.arc(x, hor * .28, 46, 0, 7); c3.fill(); c3.fillStyle = "#fff4b8"; c3.beginPath(); c3.arc(x, hor * .28, 28, 0, 7); c3.fill(); } }
+  if (!c3Hills) { c3Hills = []; for (let i = 0; i < 3; i++) { const pts = []; for (let k = 0; k <= 72; k++) pts.push(.05 + .1 * Math.abs(Math.sin(k * .7 + i * 2.1)) * (1 + Math.sin(k * .23 + i)) / 2 + (i === 0 ? .06 : 0)); c3Hills.push(pts); } }
+  [["#9cc4d9", "#4a6188", 0], ["#86b7a3", "#2f4a5a", 1], ["#7fb06d", "#24402d", 2]].forEach(([dayC, nightC, i]) => {
+    c3.fillStyle = night ? nightC : dayC; c3.beginPath(); c3.moveTo(0, hor + 1);
+    for (let x = 0; x <= W; x += 8) { const a = az + Math.atan((x - W / 2) / azPx) * (1 + i * .15), k = ((a / (Math.PI * 2)) % 1 + 1) % 1 * 72, k0 = Math.floor(k), f = k - k0, hgt = c3Hills[i][k0] * (1 - f) + c3Hills[i][(k0 + 1) % 72] * f; c3.lineTo(x, hor + 1 - hgt * H * (.5 - i * .12)); }
+    c3.lineTo(W, hor + 1); c3.closePath(); c3.fill();
+  });
+  // the ground
+  const gr = c3.createLinearGradient(0, hor, 0, H);
+  if (night) { gr.addColorStop(0, "#1d3b25"); gr.addColorStop(1, "#2c5a33"); } else { gr.addColorStop(0, weather === "nevada" ? "#e8f0f5" : "#a9d48c"); gr.addColorStop(1, weather === "nevada" ? "#ffffff" : "#6db552"); }
+  c3.fillStyle = gr; c3.fillRect(0, hor, W, H - hor);
+
+  const ground = [], prims = [];
+  const cx = Math.floor(C3.x / T), cy = Math.floor(C3.y / T), RAD = Math.ceil(FAR / T) + 1;
+  const seen = new Set();
+  for (let r = cy - RAD; r <= cy + RAD; r++) for (let c = cx - RAD; c <= cx + RAD; c++) {
+    if (!inB(c, r) || !c3Vis((c + .5) * T, (r + .5) * T, 90)) continue;
+    piecesIn(c, r).forEach(p => {
+      const d = DEFS[p.type];
+      if (d.gtile || d.water) { // flat squares of colour on the ground
+        const fq = c3Cam((c + .5) * T, (r + .5) * T, 0)[1], col = d.water ? "#47a1dd" : d.gtile;
+        ground.push({ d: fq, draw: () => { c3Poly([[c * T, r * T, 0], [c * T + T, r * T, 0], [c * T + T, r * T + T, 0], [c * T, r * T + T, 0]], c3Fog(col, fq)); if (d.water && fq < 900) { c3.globalAlpha = .5; c3Line([c * T + 20, r * T + 40 + Math.sin(C3.t * 2 + c) * 6, 1], [c * T + 60, r * T + 40 + Math.sin(C3.t * 2 + c) * 6, 1], "#d8f1ff", 3); c3.globalAlpha = 1; } } });
+        return;
+      }
+      if (seen.has(p.id)) return; seen.add(p.id);
+      if (d.road || (p.geo.rroutes && p.geo.rroutes.length)) p.geo.rroutes.forEach(R => { const S = c3Samples(R); for (let i = 0; i < S.length - 1; i++) { const a = S[i], b = S[i + 1], fq = c3Cam((a.x + b.x) / 2, (a.y + b.y) / 2, 0)[1]; ground.push({ d: fq, draw: () => c3Poly([[a.x + a.nx * 34, a.y + a.ny * 34, .5], [b.x + b.nx * 34, b.y + b.ny * 34, .5], [b.x - b.nx * 34, b.y - b.ny * 34, .5], [a.x - a.nx * 34, a.y - a.ny * 34, .5]], c3Fog("#6d6d6d", fq)) }); } });
+      if (p.geo.routes.length && !d.road) { // track: ballast, sleepers and rails; pillars under bridges
+        const tun = p.type === "tunel" || p.type === "tunelL";
+        p.geo.routes.forEach(R => {
+          const S = c3Samples(R);
+          for (let i = 0; i < S.length - 1; i++) {
+            const a = S[i], b = S[i + 1], fq = c3Cam((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2)[1];
+            if (fq < -30 || fq > FAR) continue;
+            prims.push({ d: fq + .01, draw: () => {
+              const up = (a.z > .5 || b.z > .5);
+              if (up && i % 3 === 0) c3Poly([[a.x - a.ny * 5, a.y + a.nx * 5, 0], [a.x + a.ny * 5, a.y - a.nx * 5, 0], [a.x + a.ny * 5, a.y - a.nx * 5, a.z - 6], [a.x - a.ny * 5, a.y + a.nx * 5, a.z - 6]], c3Fog("#9a9087", fq), "rgba(0,0,0,.3)", .6);
+              if (up) { c3Poly([[a.x + a.nx * 26, a.y + a.ny * 26, a.z - 7], [b.x + b.nx * 26, b.y + b.ny * 26, b.z - 7], [b.x + b.nx * 26, b.y + b.ny * 26, b.z], [a.x + a.nx * 26, a.y + a.ny * 26, a.z]], c3Fog("#8a5a2b", fq)); c3Poly([[a.x - a.nx * 26, a.y - a.ny * 26, a.z - 7], [b.x - b.nx * 26, b.y - b.ny * 26, b.z - 7], [b.x - b.nx * 26, b.y - b.ny * 26, b.z], [a.x - a.nx * 26, a.y - a.ny * 26, a.z]], c3Fog("#8a5a2b", fq)); }
+              c3Poly([[a.x + a.nx * 24, a.y + a.ny * 24, a.z + .5], [b.x + b.nx * 24, b.y + b.ny * 24, b.z + .5], [b.x - b.nx * 24, b.y - b.ny * 24, b.z + .5], [a.x - a.nx * 24, a.y - a.ny * 24, a.z + .5]], c3Fog(tun ? "#4a3a2a" : "#c9a06a", fq));
+              if (i % 2 === 0) { const s = .45, mx = a.x + (b.x - a.x) * s, my = a.y + (b.y - a.y) * s, mz = a.z + (b.z - a.z) * s, tx = (b.x - a.x) * .2, ty = (b.y - a.y) * .2; c3Poly([[mx + a.nx * 18 - tx, my + a.ny * 18 - ty, mz + 1.5], [mx + a.nx * 18 + tx, my + a.ny * 18 + ty, mz + 1.5], [mx - a.nx * 18 + tx, my - a.ny * 18 + ty, mz + 1.5], [mx - a.nx * 18 - tx, my - a.ny * 18 - ty, mz + 1.5]], c3Fog("#7a4a22", fq)); }
+              [-10, 10].forEach(o => c3Line([a.x + a.nx * o, a.y + a.ny * o, a.z + 3], [b.x + b.nx * o, b.y + b.ny * o, b.z + 3], c3Fog("#9aa6b2", fq), 2.2));
+            } });
+          }
+        });
+        if (tun) { // a grassy hill with a dark mouth at each end
+          const R = p.geo.routes[0], S = c3Samples(R), m = S[Math.floor(S.length / 2)], fq = c3Cam(m.x, m.y, 0)[1];
+          prims.push({ d: fq + 30, draw: () => {
+            const q = c3Cam(m.x, m.y, m.z), s = C3.foc / Math.max(NEAR, q[1]); if (q[1] < NEAR) return; const [sx, sy] = c3Scr(q), rw = (R.len / 2 + 50) * s, rh = 80 * s;
+            c3.fillStyle = c3Fog("#5e9e45", fq); c3.beginPath(); c3.ellipse(sx, sy, rw, rh, 0, Math.PI, 0); c3.fill(); c3.fillStyle = c3Fog("#79bd5b", fq); c3.beginPath(); c3.ellipse(sx - rw * .2, sy - rh * .55, rw * .45, rh * .25, 0, 0, 7); c3.fill();
+          } });
+          [S[0], S[S.length - 1]].forEach(e => { const fq2 = c3Cam(e.x, e.y, 0)[1]; prims.push({ d: fq2, draw: () => { const pts = [], pts2 = []; for (let k = 0; k <= 12; k++) { const t = Math.PI * k / 12; pts.push([e.x + e.nx * Math.cos(t) * 40, e.y + e.ny * Math.cos(t) * 40, e.z + Math.sin(t) * 46]); pts2.push([e.x + e.nx * Math.cos(t) * 30, e.y + e.ny * Math.cos(t) * 30, e.z + Math.sin(t) * 36]); } c3Poly(pts, c3Fog("#b8afa2", fq2), "rgba(0,0,0,.35)", 1); c3Poly(pts2, "#1f140a"); } }); });
+        }
+        if (p.type === "estacion") { const R = p.geo.routes[0], S = c3Samples(R), a = S[0], b = S[S.length - 1], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, ang = Math.atan2(b.y - a.y, b.x - a.x);
+          c3Box(prims, mx + a.nx * 52, my + a.ny * 52, a.z, ang, R.len - 10, 40, 12, "#d9d3c7");
+          c3Box(prims, mx + a.nx * 66, my + a.ny * 66, a.z + 12, ang, R.len - 40, 12, 46, "#c0392b"); }
+      }
+      if (d.deco && !d.water) { // scenery: standing pictures that always face you
+        const bk = d.big || 1, x = (p.c + bk / 2) * T, y = (p.r + bk / 2) * T, fq = c3Cam(x, y, 0)[1], id = d.base || p.type;
+        if (fq < NEAR + 4) return;
+        prims.push({ d: fq, draw: () => {
+          const q = c3Cam(x, y, 0), s = C3.foc / q[1], [sx, sy] = c3Scr(q);
+          c3.fillStyle = "rgba(20,40,10,.18)"; c3.beginPath(); c3.ellipse(sx, sy, 34 * bk * s, 9 * bk * s, 0, 0, 7); c3.fill();
+          const pic = SPRITES[id] && c3Sprite(id);
+          if (pic) { const w = 100 * bk * s, h = pic.h * bk * s; c3.globalAlpha = fq > FAR * .6 ? 1 - (fq - FAR * .6) / (FAR * .55) : 1; c3.drawImage(pic.img, sx - w / 2, sy - (84 - pic.top) * bk * s, w, h); c3.globalAlpha = 1; }
+          else if (!SPRITES[id] && d.deco.trim()) { const fs = (DECO_FS[id] || 70) * 1.3 * bk * s; c3.font = `${fs}px sans-serif`; c3.textAlign = "center"; c3.textBaseline = "bottom"; c3.fillText(d.deco, sx, sy + fs * .1); }
+        } });
+      }
+      if (d.mon) { // monuments as big standing pictures
+        const m = d.mon, x = (p.c + m.w / 2) * T, y = (p.r + m.d) * T - 6, fq = c3Cam(x, y, 0)[1];
+        if (fq < NEAR + 10) return;
+        prims.push({ d: fq + 4, draw: () => { const pic = c3Mon(p.type); if (!pic) return; const q = c3Cam(x, y, 0), s = C3.foc / q[1], [sx, sy] = c3Scr(q), w = pic.w * s, h = pic.h * s; c3.drawImage(pic.img, sx - w / 2, sy - h, w, h); } });
+      }
+    });
+  }
+  // other trains as boxes (cars on the roads too)
+  trains.forEach(t2 => {
+    if (!t2.trail || t2.trail.length < 2) return;
+    const K = KINDS[t2.kind];
+    c3Poses(t2).forEach((q, i) => {
+      if (t2 === tr && i === 0) return;
+      if (!c3Vis(q.x, q.y, 80)) return;
+      const z = q.z * FH + 4, col = carColor(K, i, t2.c1);
+      c3Box(prims, q.x, q.y, 0 + z - 4, q.a, 26, 26, 8, "#2b2b2b");
+      c3Box(prims, q.x, q.y, z + 4, q.a, 60, 32, i === 0 ? 34 : 30, /^#[0-9a-f]{6}$/i.test(col) ? col : "#d63a2f", i === 0 && t2 !== tr ? (Pt, faces) => {
+        const fr = faces.find(f => f.front); if (!fr || c3Cam(q.x + Math.cos(q.a) * 40, q.y + Math.sin(q.a) * 40, z)[1] > c3Cam(q.x, q.y, z)[1]) return;
+        const fx = q.x + Math.cos(q.a) * 31, fy = q.y + Math.sin(q.a) * 31, nx = -Math.sin(q.a), ny = Math.cos(q.a);
+        [-8, 8].forEach(o => { const e = c3Cam(fx + nx * o, fy + ny * o, z + 26); if (e[1] < NEAR) return; const [ex, ey] = c3Scr(e), r = 5 * C3.foc / e[1]; c3.fillStyle = "#fff"; c3.beginPath(); c3.arc(ex, ey, r, 0, 7); c3.fill(); c3.fillStyle = "#2b1d12"; c3.beginPath(); c3.arc(ex, ey, r * .55, 0, 7); c3.fill(); });
+      } : null);
+    });
+  });
+  cars.forEach(car => { try { const q = carPose(car); if (!c3Vis(q.x, q.y, 50)) return; c3Box(prims, q.x, q.y, 2, Math.atan2(q.ty, q.tx), (CARS[car.kind] || CARS.coche).len, 22, 18, car.color || "#3498db"); } catch (e) {} });
+  obst.forEach(o => { const fq = c3Cam(o.x, o.y, 0)[1]; if (fq < NEAR + 4 || !c3Vis(o.x, o.y, 40)) return; prims.push({ d: fq, draw: () => { const q = c3Cam(o.x, o.y, o.z * FH), s = C3.foc / q[1], [sx, sy] = c3Scr(q), fs = 60 * s; c3.font = `${fs}px sans-serif`; c3.textAlign = "center"; c3.textBaseline = "bottom"; c3.fillText(({ vaca: "🐄", rocas: "🪨", tronco: "🪵", nieve: "❄️" })[o.kind] || "⚠️", sx, sy); } }); });
+
+  ground.sort((a, b) => b.d - a.d).forEach(g => g.draw());
+  prims.sort((a, b) => b.d - a.d).forEach(g => g.draw());
+
+  // inside a tunnel: dark, with the way out glowing ahead
+  const here = piecesIn(Math.floor(C3.x / T), Math.floor(C3.y / T)).find(p => (p.type === "tunel" || p.type === "tunelL") && Math.abs(p.h * FH - (C3.z - EYE)) < FH / 2);
+  if (here) { const g = c3.createRadialGradient(W / 2, hor + 20, 20, W / 2, hor + 20, Math.max(W, H) * .6); g.addColorStop(0, "rgba(255,240,200,.15)"); g.addColorStop(.15, "rgba(20,12,6,.85)"); g.addColorStop(1, "rgba(10,6,3,.97)"); c3.fillStyle = g; c3.fillRect(0, 0, W, H); }
+  if (night) { c3.fillStyle = "rgba(10,18,50,.35)"; c3.fillRect(0, hor, W, H - hor); const g = c3.createRadialGradient(W / 2, H * .8, 10, W / 2, H * .55, H * .6); g.addColorStop(0, "rgba(255,240,180,.35)"); g.addColorStop(1, "rgba(255,240,180,0)"); c3.fillStyle = g; c3.fillRect(0, hor, W, H - hor); }
+  c3Weather(dt);
+  c3Cab(tr, dt, spd);
+}
+function c3Weather(dt) {
+  const W = C3.W, H = C3.H;
+  if (weather !== "lluvia" && weather !== "nevada") { c3Drops.length = 0; return; }
+  const snow = weather === "nevada";
+  while (c3Drops.length < (snow ? 120 : 160)) c3Drops.push([Math.random() * W, Math.random() * H, Math.random() * .6 + .4]);
+  c3.strokeStyle = "rgba(220,235,255,.7)"; c3.fillStyle = "#fff"; c3.lineWidth = 1.5;
+  c3Drops.forEach(p => {
+    p[1] += (snow ? 60 : 900) * p[2] * dt; p[0] += (snow ? Math.sin(C3.t + p[2] * 9) * 20 : -60) * dt;
+    if (p[1] > H) { p[1] = -10; p[0] = Math.random() * W; }
+    if (snow) { c3.beginPath(); c3.arc(p[0], p[1], 2.5 * p[2] + 1, 0, 7); c3.fill(); }
+    else { c3.beginPath(); c3.moveTo(p[0], p[1]); c3.lineTo(p[0] - 4, p[1] + 16 * p[2]); c3.stroke(); }
+  });
+}
+// the cab around you: window frame, the engine's nose ahead, smoke from the chimney, a gauge
+function c3Cab(tr, dt, spd) {
+  const W = C3.W, H = C3.H, K = KINDS[tr.kind], col = /^#[0-9a-f]{6}$/i.test(tr.c1 || "") ? tr.c1 : "#d63a2f", dark = c3Shade(col, .55), steam = K.loco === "steam" || K.loco === "dragonH";
+  const by = H * .8 + Math.sin(C3.t * 11) * spd;
+  if (steam) {
+    // the boiler stretching ahead, with brass bands and the chimney
+    const bw = Math.min(W * .34, 420), g = c3.createLinearGradient(W / 2 - bw / 2, 0, W / 2 + bw / 2, 0);
+    g.addColorStop(0, dark); g.addColorStop(.45, c3Shade(col, 1.15)); g.addColorStop(1, dark);
+    c3.fillStyle = g; c3.beginPath(); c3.moveTo(W / 2 - bw / 2, H); c3.lineTo(W / 2 - bw * .16, by - H * .1); c3.quadraticCurveTo(W / 2, by - H * .14, W / 2 + bw * .16, by - H * .1); c3.lineTo(W / 2 + bw / 2, H); c3.closePath(); c3.fill();
+    c3.strokeStyle = "#e3b000"; c3.lineWidth = 5; [.35, .7].forEach(k => { c3.beginPath(); const yy = by - H * .1 + (H - by + H * .1) * k, ww = bw * (.16 + .34 * k); c3.moveTo(W / 2 - ww, yy); c3.quadraticCurveTo(W / 2, yy - 14 * (1 - k) - 6, W / 2 + ww, yy); c3.stroke(); });
+    const chx = W / 2, chy = by - H * .12, cw = bw * .09;
+    c3.fillStyle = "#2b2b2b"; c3.fillRect(chx - cw / 2, chy - H * .08, cw, H * .08); c3.fillRect(chx - cw * .75, chy - H * .095, cw * 1.5, H * .025);
+    if (spd && Math.random() < dt * 9) c3Smoke.push({ x: chx, y: chy - H * .09, r: cw * .45, a: .5, vx: (Math.random() < .5 ? -1 : 1) * (40 + Math.random() * 60) });
+  } else {
+    // a sloping nose with a wiper line for diesel, electric and bullet trains
+    const g = c3.createLinearGradient(0, by - H * .06, 0, H);
+    g.addColorStop(0, c3Shade(col, 1.1)); g.addColorStop(1, dark);
+    c3.fillStyle = g; c3.beginPath(); c3.moveTo(0, H); c3.lineTo(W * .12, by - H * .02); c3.quadraticCurveTo(W / 2, by - H * .1, W * .88, by - H * .02); c3.lineTo(W, H); c3.closePath(); c3.fill();
+    c3.strokeStyle = "rgba(255,255,255,.35)"; c3.lineWidth = 3; c3.beginPath(); c3.moveTo(W * .3, by); c3.quadraticCurveTo(W / 2, by - H * .06, W * .7, by); c3.stroke();
+    if (K.smoke === "diesel" && spd && Math.random() < dt * 4) c3Smoke.push({ x: W * .5, y: by - H * .07, r: 10, a: .5, vx: 0 });
+  }
+  c3Smoke = c3Smoke.filter(s => s.a > .02);
+  c3Smoke.forEach(s => { s.y -= 150 * dt; s.x += s.vx * dt; s.r += 34 * dt; s.a *= Math.pow(.12, dt); c3.fillStyle = `rgba(245,245,245,${s.a.toFixed(3)})`; c3.beginPath(); c3.arc(s.x, s.y, s.r, 0, 7); c3.fill(); });
+  // window frame: roof and pillars in the engine's colour, and the dashboard
+  c3.fillStyle = dark; c3.fillRect(0, 0, W, H * .06); c3.fillRect(0, 0, W * .045, H); c3.fillRect(W * .955, 0, W * .045, H);
+  c3.fillStyle = "rgba(0,0,0,.25)"; c3.fillRect(0, H * .06, W, 4); c3.fillRect(W * .045, 0, 4, H); c3.fillRect(W * .955 - 4, 0, 4, H);
+  const dg = c3.createLinearGradient(0, H * .9, 0, H); dg.addColorStop(0, "#6b4219"); dg.addColorStop(1, "#3b2410");
+  c3.fillStyle = dg; c3.beginPath(); c3.moveTo(0, H * .92); c3.quadraticCurveTo(W / 2, H * .88, W, H * .92); c3.lineTo(W, H); c3.lineTo(0, H); c3.closePath(); c3.fill();
+  // a speed gauge on the dashboard
+  const gx = W * .14, gy = H * .955, gr = Math.min(36, H * .05), v = clamp((tr.vm == null ? 1 : tr.vm) * speed * spd / 2.2, 0, 1);
+  c3.fillStyle = "#fff8e8"; c3.beginPath(); c3.arc(gx, gy, gr, Math.PI, 0); c3.fill(); c3.strokeStyle = "#e3b000"; c3.lineWidth = 4; c3.stroke();
+  c3.strokeStyle = "#d63a2f"; c3.lineWidth = 3; c3.beginPath(); c3.moveTo(gx, gy); c3.lineTo(gx - Math.cos(v * Math.PI) * gr * .85, gy - Math.sin(v * Math.PI) * gr * .85); c3.stroke();
+}
+
 
 // =====================================================================
 //  ⚡ SURPRISES: obstacles, signals, smart switches, manual crossings, fire, weather
@@ -7157,7 +7428,7 @@ function duelPickScreen() {
   const tipPush = LX("💪 Toca cuando el círculo se ponga VERDE. Si tocas muy deprisa te quedas sin vapor.", "💪 Tap when the ring turns GREEN. Tap too fast and you run out of steam.", "💪 Touche quand le cercle devient VERT. Si tu touches trop vite, tu n'as plus de vapeur.");
   const tipTug = LX("🪢 MANTÉN pulsado para tirar. Cuando el círculo se ponga rojo, ¡suelta! o las ruedas patinan.", "🪢 HOLD to pull. When the ring turns red, let go! or the wheels slip.", "🪢 GARDE le doigt appuyé pour tirer. Quand le cercle devient rouge, lâche ! sinon les roues patinent.");
   const tipHorn = LX(" Si lo haces bien se enciende la 🎺 bocina turbo.", " Do it well and the 🎺 turbo horn lights up.", " Si tu le fais bien, le 🎺 klaxon turbo s'allume.");
-  const tipRace = LX("⚡ MANTÉN pulsado para acelerar y pulsa 🦘 cuando se ponga verde para saltar.", "⚡ HOLD to speed up, and press 🦘 when it turns green to jump.", "⚡ GARDE le doigt appuyé pour accélérer, et appuie sur 🦘 quand il devient vert pour sauter.");
+  const tipRace = LX("⚡ MANTÉN pulsado para acelerar. Si hay un animal en la vía, pulsa 📢 cuando se ponga verde: ¡pitas y se aparta!", "⚡ HOLD to speed up. If an animal is on the track, press 📢 when it turns green: toot, and it steps aside!", "⚡ GARDE le doigt appuyé pour accélérer. S'il y a un animal sur la voie, appuie sur 📢 quand il devient vert : tu klaxonnes et il s'écarte !");
   addEl(d, "div", "dhint sm", (P.ev === "push" ? tipPush : P.ev === "tug" ? tipTug : P.ev === "race" ? tipRace : tipPush + " " + tipTug + " " + tipRace) + tipHorn);
   const go = addEl(d, "button", "dgo", P.ev === "tug" ? LX("¡A tirar!", "Let's pull!", "On tire !") : P.ev === "race" ? LX("¡A correr!", "Let's race!", "On court !") : LX("¡A jugar!", "Let's play!", "On joue !"));
   go.onclick = () => { sfx.whistleShort(); duelStart(); };
@@ -7202,7 +7473,7 @@ function duelArena() {
     const push = addEl(pad, "button", "dpush");
     push.innerHTML = `<svg viewBox="-64 -64 128 128"><circle class="bg" r="50"/><circle class="tr" r="57"/><circle class="pr" r="57" transform="rotate(-90)" stroke-dasharray="358.1" stroke-dashoffset="358.1"/><text class="em" y="2">💪</text><text class="lb" y="36"></text></svg>`;
     p.pushE = push; p.ringE = push.querySelector(".pr"); p.lblE = push.querySelector(".lb"); p.emE = push.querySelector(".em");
-    const jump = addEl(pad, "button", "djump"); addEl(jump, "span", "je", "🦘"); addEl(jump, "span", "jl", LX("salta", "jump", "saute")); p.jumpE = jump;
+    const jump = addEl(pad, "button", "djump"); addEl(jump, "span", "je", "📢"); addEl(jump, "span", "jl", LX("¡pita!", "toot!", "tuut !")); p.jumpE = jump;
     const side = addEl(pad, "div", "dside");
     const horn = addEl(side, "button", "dhorn", "🎺"); p.hornE = horn;
     const st = addEl(side, "div", "dsteam"); addEl(st, "span", "", "♨️"); const sb = addEl(st, "div", "dbar"); p.steamE = addEl(sb, "i");
@@ -7495,7 +7766,7 @@ function duelResult(W) {
     const tug = m.evs.includes("tug"), push = m.evs.includes("push"), race = m.evs.includes("race");
     addEl(card, "div", "dtip", (push ? LX("Consejo: en el muelle, espera a que el círculo se ponga verde. ", "Tip: on the pier, wait for the ring to turn green. ", "Astuce : sur le quai, attends que le cercle devienne vert. ") : "")
       + (tug ? LX("Con la cuerda, suelta un momento antes de que el círculo se ponga rojo. ", "With the rope, let go just before the ring turns red. ", "Avec la corde, lâche juste avant que le cercle devienne rouge. ") : "")
-      + (race ? LX("En la carrera, salta cuando el 🦘 se ponga verde. ", "In the race, jump when the 🦘 turns green. ", "Dans la course, saute quand le 🦘 devient vert. ") : "")
+      + (race ? LX("En la carrera, pita con 📢 cuando se ponga verde: ni muy pronto ni muy tarde. ", "In the race, toot with 📢 when it turns green: not too early, not too late. ", "Dans la course, klaxonne avec 📢 quand il devient vert : ni trop tôt, ni trop tard. ") : "")
       + LX("Guarda la 🎺 bocina para cuando vayas perdiendo.", "Save the 🎺 horn for when you're losing.", "Garde le 🎺 klaxon pour quand tu perds."));
   }
   if (human) { tone([523, 659, 784, 1047, 784, 1047], "square", .1, .2, .07); for (let i = 0; i < 26; i++) { const c = addEl(ov, "div", "dconf"); c.style.left = rnd(5, 95) + "%"; c.style.background = ["#ff5d5d", "#ffd34d", "#5cc96b", "#4fa3ff", "#c77dff"][i % 5]; c.style.animationDelay = rnd(0, .8) + "s"; } }
@@ -7607,7 +7878,7 @@ function duelSceneRace(svg) {
   [.3, .6, .85].forEach((f, j) => { const x = RX0 + RL * f; el("rect", { x: x - 50, y: DCY - 34, width: 100, height: 68, rx: 12, fill: "#ffd34d", stroke: "#6b4219", "stroke-width": 5 }, svg); el("text", { x, y: DCY + 4, "font-size": 40, "text-anchor": "middle", "dominant-baseline": "middle" }, svg).textContent = "⛰️".repeat(j + 1).slice(0, 2 * (j + 1)); });
 }
 function duelRaceSetup() {
-  const m = DUEL.m, kinds = ["🐄", "🪨", "🐑", "🐄", "🪨", "🐐"];
+  const m = DUEL.m, kinds = ["🐄", "🐑", "🐐", "🦆", "🐖", "🐄"];
   const xs = [.15, .3, .45, .6, .74, .87].map(f => (f + rnd(-.03, .03)) * RL), ts = xs.map(() => kinds[Math.floor(Math.random() * kinds.length)]);
   m.obs = [0, 1].map(i => xs.map((x, j) => {
     const e = el("g", {}, m.obL);
@@ -7632,21 +7903,19 @@ function duelRaceStep(dt, done) {
     let tgt = rBase(S) * (1 - g * (.25 + .12 * S.w / (S.p + S.w))) * (p.hornT > 0 ? 1.35 : going ? 1 : p.over > 0 ? .3 : .5);
     if (p.x >= RL) tgt = 0; // over the line: brake
     p.v += (tgt - p.v) * Math.min(1, (2.4 - S.w * .12) * dt);
-    if (p.air >= 0) { p.air += dt; if (p.air > RAIR) { p.air = -1; sfx.toc(); } }
+    if (p.tootCd > 0) p.tootCd -= dt;
     const old = p.x; p.x += p.v * dt;
     if (going && Math.random() < dt * 6) duelPuff(p, KINDS[p.k].smoke === "dark" ? "#6b6b6b" : KINDS[p.k].smoke === "fire" ? "#ff9a3c" : "#fff");
     if (done) return;
     for (const o of m.obs[p.i]) {
       if (o.gone || !(old < o.x && p.x >= o.x)) continue;
       o.gone = true;
-      if (p.air >= 0) { p.boost = Math.min(1, p.boost + .34); if (!p.ai) duelFeedback(p, LX("¡Hop!", "Hop!", "Hop !"), "perfect"); }
-      else { // bonk! the animal (or rock) gets out of the way, but it costs time
+      { // nobody warned it in time: the train stops gently, the animal grumbles and walks off
         p.stun = 1.8; p.v = 0; p.x = o.x - 2; o.walk = 0;
         sfx.bump(); R.shake = 6; p.mood = "dizzy"; p.moodT = 1.8;
-        duelSparkAt(RX0 + o.x, RLY[p.i], 8);
-        duelSay(p, o.t === "🪨" ? L3(["¡Ay! ¡Una roca!", "Ouch! A rock!", "Aïe ! Un rocher !"]) : L3(["¡Uy! ¡Perdona!", "Oops! Sorry!", "Oups ! Pardon !"]), !p.ai);
-        if (o.t === "🐄") setTimeout(() => tone([196, 165], "sawtooth", .35, .5, .05), 200);
-        if (!p.ai) duelFeedback(p, LX("¡Salta con 🦘!", "Jump with 🦘!", "Saute avec 🦘 !"), "weak");
+        duelAnimalSays(o, p.i, true);
+        duelSay(p, L3(["¡Uy! ¡Perdona!", "Oops! Sorry!", "Oups ! Pardon !"]), !p.ai);
+        if (!p.ai) duelFeedback(p, LX("¡Pita con 📢 antes!", "Toot with 📢 sooner!", "Klaxonne avec 📢 plus tôt !"), "weak");
       }
       break;
     }
@@ -7656,21 +7925,45 @@ function duelRaceStep(dt, done) {
   if (fin.length) duelFall(fin.length === 2 ? (m.p[0].x >= m.p[1].x ? 1 : 0) : 1 - fin[0].i);
   else if (R.t > 45) duelFall(m.p[0].x >= m.p[1].x ? 1 : 0);
 }
+// 📢 toot! an animal that hears the horn in time steps off the track; too early it only looks up, too late it can't move
+const TOOT_NEAR = .35, TOOT_FAR = 1.6;
 function duelJump(i) {
   const m = DUEL.m; if (!m || !m.r || m.r.phase !== "go" || m.ev !== "race") return;
-  const p = m.p[i]; if (p.air >= 0 || p.stun > 0) return;
-  p.air = 0; slide(330, 760, .22, "sine", .12); p.mood = "wow"; p.moodT = .7;
+  const p = m.p[i]; if (p.stun > 0 || p.tootCd > 0) return;
+  p.tootCd = .7; p.steam = Math.max(0, p.steam - .5);
+  try { HORNS[KINDS[p.k].horn](); } catch (e) {}
+  p.mood = "wow"; p.moodT = .5;
+  const o = m.obs[p.i].find(o => !o.gone && o.x > p.x); if (!o) return;
+  const tt = (o.x - p.x) / Math.max(p.v, 1);
+  if (tt >= TOOT_NEAR && tt <= TOOT_FAR) {
+    o.gone = true; o.walk = 0; p.boost = Math.min(1, p.boost + .34);
+    duelAnimalSays(o, p.i, false);
+    if (!p.ai) duelFeedback(p, LX("¡Se aparta!", "Out of the way!", "Il s'écarte !"), "perfect");
+  } else if (tt > TOOT_FAR) { duelPopAt(o, p.i, "❓"); if (!p.ai) duelFeedback(p, LX("Aún lejos…", "Still far…", "Encore loin…"), "weak"); }
+  else if (!p.ai) duelFeedback(p, LX("¡Muy tarde!", "Too late!", "Trop tard !"), "weak");
+}
+function duelPopAt(o, lane, t) {
+  const m = DUEL.m, x0 = RX0 + o.x, y0 = RLY[lane] - 60, e = el("text", { x: x0, y: y0, "font-size": 48, "text-anchor": "middle" }, m.fxL); e.textContent = t;
+  duelFx(e, .9, (k, el2) => { el2.setAttribute("y", y0 - 40 * k); el2.setAttribute("opacity", k > .6 ? (1 - k) / .4 : 1); });
+}
+const ANIMAL_SAYS = { "🐄": "Muuu", "🐑": "Beee", "🐐": "Meee", "🦆": "Cuac", "🐖": "Oinc" };
+function duelAnimalSays(o, lane, cross) {
+  duelPopAt(o, lane, cross ? "💢" : "❗");
+  const w = ANIMAL_SAYS[o.t] || "!";
+  const m = DUEL.m, e = el("text", { x: RX0 + o.x + 70, y: RLY[lane] - 50, "font-size": 30, "font-weight": 900, fill: "#fff", stroke: "#3b2a18", "stroke-width": 6, "paint-order": "stroke", "text-anchor": "middle" }, m.fxL); e.textContent = w + "!";
+  duelFx(e, 1.1, (k, el2) => { el2.setAttribute("opacity", k > .7 ? (1 - k) / .3 : 1); });
+  if (o.t === "🐄") tone([196, 165], "sawtooth", .35, .5, .05); else if (o.t === "🦆") tone([700, 560], "square", .09, .1, .05); else tone([420, 380, 420], "triangle", .1, .14, .06);
 }
 function duelRaceAI(p, dt) {
   const L = DUEL_LV[DUEL.m.lvl];
   if (p.rest > 0) { p.rest -= dt; p.hold = false; }
   else { p.hold = p.steam > 0 && p.over <= 0; if (L.keep && p.steam < L.keep) { p.rest = L.restT; p.hold = false; } }
-  if (p.air < 0 && p.stun <= 0) {
+  if (p.stun <= 0 && !(p.tootCd > 0)) {
     const o = DUEL.m.obs[p.i].find(o => !o.gone && o.x > p.x);
     if (o) {
       const tt = (o.x - p.x) / Math.max(p.v, 1);
-      if (!p.plan || p.plan.o !== o) p.plan = { o, at: Math.random() < L.miss ? null : .3 + rndN() * L.jsd };
-      if (p.plan.at != null && tt <= p.plan.at) duelJump(p.i);
+      if (!p.plan || p.plan.o !== o) p.plan = { o, at: Math.random() < L.miss ? null : 1 + rndN() * L.jsd * 3 };
+      if (p.plan.at != null && tt <= p.plan.at) { duelJump(p.i); p.plan.at = null; }
     }
   }
   if (p.boost >= 1) { p.hornWait = (p.hornWait == null ? L.horn + rnd(0, .6) : p.hornWait) - dt; if (p.hornWait <= 0) { duelHorn(p.i); p.hornWait = null; } }
@@ -7711,7 +8004,7 @@ function duelRaceDraw() {
     let js = "";
     if (R.phase === "go" && p.stun <= 0) {
       const o = m.obs[p.i].find(o => !o.gone && o.x > p.x);
-      if (o) { const tt = (o.x - p.x) / Math.max(p.v, 1); js = p.air < 0 && tt > .08 && tt < .55 ? "now" : tt < 1.4 ? "soon" : ""; }
+      if (o) { const tt = (o.x - p.x) / Math.max(p.v, 1); js = p.tootCd > 0 ? "" : tt >= TOOT_NEAR && tt <= TOOT_FAR ? "now" : tt < 2.6 ? "soon" : ""; }
     }
     if (p.jumpE.dataset.st !== js) p.jumpE.dataset.st = js;
     p.steamE.style.width = (100 * p.steam / p.S.h).toFixed(1) + "%";
