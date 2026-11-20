@@ -46,6 +46,14 @@
   .tab { flex: 0 0 auto; min-width: 70px; height: 54px; border-radius: 16px 16px 0 0; background: #c99158; display: flex; flex-direction: column; align-items: center; justify-content: center;
     font-size: 26px; cursor: pointer; line-height: 1; padding: 2px 8px; color: #3b2a18; }
   .tab small { font-size: 11px; font-weight: 700; margin-top: 2px; }
+  #subtabs { display: flex; gap: 6px; align-items: center; margin-left: 10px; padding-left: 12px; border-left: 3px solid rgba(255,248,232,.25); }
+  #subtabs:empty { display: none; }
+  .stab { flex: 0 0 auto; height: 40px; padding: 0 12px 0 8px; border-radius: 20px; background: #8a5a2b; color: #fff8e8; display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 800; font-size: 14px; white-space: nowrap; user-select: none; -webkit-user-select: none; }
+  .stab .ic { width: 26px; height: 24px; }
+  .stab.sel { background: #fff8e8; color: #3b2a18; box-shadow: 0 0 0 3px #ffd34d; }
+  body:not(.playing):not(.toolhand) .swarr { display: none; }
+  #hzPlay .wxrow { display: none; gap: 6px; padding-left: 6px; margin-left: 2px; border-left: 3px solid #e0c99a; }
+  #hzPlay.wx .wxrow { display: flex; }
   .tab.sel { background: #a8743d; color: #fff; }
   #palette { background: #a8743d; display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); align-items: center; }
   .it { flex: 0 0 76px; height: 76px; border-radius: 16px; background: #fff8e8; border: 5px solid #fff8e8; display: flex; align-items: center; justify-content: center;
@@ -57,6 +65,7 @@
     .it { flex-basis: 60px; height: 60px; font-size: 32px; border-width: 4px; }
     .it.wide { flex-basis: 100px; }
     .tab { min-width: 58px; padding: 2px 4px; font-size: 22px; }
+    .stab span { display: none; } .stab { padding: 0 8px; }
     #palette { gap: 6px; padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); }
     #info { font-size: 14px; }
   }
@@ -939,7 +948,7 @@ function drawPiece(p, lay) {
   if (act) {
     const [ax, ay] = ppAt(act, act.len * .72), [bx, by] = ppAt(act, act.len * .9);
     const a = Math.atan2(by - ay, bx - ax) * 180 / Math.PI;
-    const ag = el("g", { transform: `translate(${ax} ${ay}) rotate(${a})` }, g);
+    const ag = el("g", { transform: `translate(${ax} ${ay}) rotate(${a})`, class: "swarr" }, g);
     el("path", { d: "M-9 -11 L11 0 L-9 11 Z", fill: "#2ecc40", stroke: "#fff", "stroke-width": 3, "stroke-linejoin": "round" }, ag);
   }
   if (p.type === "tunel" || p.type === "tunelL" || p.type === "paso") {
@@ -2600,17 +2609,24 @@ function handleTap0(wx, wy) {
   const type = tool === "lapiz" ? "corta" : tool === "lapizCalle" ? "calle" : tool;
   const dd = DEFS[type], deco = !!(dd.deco || dd.road || dd.mon || dd.tramst);
   let f = deco ? 0 : floor, c = Math.floor(wx / T), r = Math.floor((wy + f * E) / T);
-  if (!deco) { const st = smartTarget(wx, wy); if (st && !pieceAtLevel(st.c, st.r, st.z)) { c = st.c; r = st.r; f = st.z; } }
+  let st = null;
+  if (!deco) { st = smartTarget(wx, wy); if (st && !pieceAtLevel(st.c, st.r, st.z)) { c = st.c; r = st.r; f = st.z; } else st = null; }
+  if (isSlope(type) && !proMode && !lvl) slopeMode = autoSlope(st, f);
   const here = pieceAtLevel(c, r, f);
   if (here && isSlope(here.type) && (isSlope(type) || here.type === type)) { slopeSel = here.id; sfx.click(); return; } // slopes use their two buttons
-  if (here && (here.type === type || tool === "lapiz" || (tool === "lapizCalle" && DEFS[here.type].road))) { rotatePiece(here); return; } // same piece: turn it
+  if (here && (here.type === type || MIRROR[type] === here.type || tool === "lapiz" || (tool === "lapizCalle" && DEFS[here.type].road))) { rotatePiece(here); return; } // same piece: turn it
   if (here && here.fixed) { lockedFx(); return; }
   if (!canTake(type, here ? [here] : [])) { sfx.no(); toast("🧱 0"); wobble(document.querySelector(`.it[data-id="${type}"]`)); return; }
   if (!inB(c, r)) return;
   placePiece(type, c, r, f, { replace: !!here });                                    // another piece: swap it
 }
+// up or down? carry on the way a ramp was already going; from a flat track, up from the ground and down from up high
+function autoSlope(st, f) {
+  if (st && st.p && isSlope(st.p.type)) { const o = st.p.geo.ports.find(q => q !== st.pt); return o && st.pt.z < o.z ? "down" : "up"; }
+  return (st ? st.z : f) >= 1 ? "down" : "up";
+}
 // the diagonals turn through 8 positions: 4 one way, then 4 mirrored
-const MIRROR = { sesgoI: "sesgoD", sesgoD: "sesgoI", sesgoLI: "sesgoLD", sesgoLD: "sesgoLI" };
+const MIRROR = { sesgoI: "sesgoD", sesgoD: "sesgoI", sesgoLI: "sesgoLD", sesgoLD: "sesgoLI", desvioI: "desvioD", desvioD: "desvioI", subeI: "subeD", subeD: "subeI" };
 function rotatePiece(p) {
   if (p.fixed) { lockedFx(); return; }
   if (MIRROR[p.type]) {
@@ -2667,7 +2683,7 @@ function smartTarget(wx, wy) {
     const nc = pt.c + DX[pt.e], nr = pt.r + DY[pt.e], z = pt.z;
     if (!inB(nc, nr) || Math.floor(wx / T) !== nc || Math.floor((wy + z * E) / T) !== nr) return;
     const d = Math.hypot((nc + .5) * T - wx, (nr + .5) * T - z * E - wy) + (z === floor ? 0 : 5);
-    if (d < bd) { bd = d; best = { c: nc, r: nr, z }; }
+    if (d < bd) { bd = d; best = { c: nc, r: nr, z, p, pt }; }
   }));
   return best;
 }
@@ -2799,7 +2815,7 @@ function slopeBtnLayout(p) {
   const [x, y0] = slopeBtnPos(p), k = .5 / view.z, pt = slopeCont(p);
   let sg = null;
   if (pt) { const [px, py] = portXY(pt), d = 30 + 52 * k; sg = { id: "seguir", x: px + DX[pt.e] * d, y: py + DY[pt.e] * d }; }
-  const row = y => [{ id: "girar", x: x - 110 * k, y }, { id: "forma", x, y }, { id: "flip", x: x + 110 * k, y }];
+  const row = y => proMode ? [{ id: "girar", x: x - 110 * k, y }, { id: "forma", x, y }, { id: "flip", x: x + 110 * k, y }] : [{ id: "girar", x: x - 60 * k, y }, { id: "flip", x: x + 60 * k, y }];
   const clash = r => sg && r.some(b => Math.hypot(b.x - sg.x, b.y - sg.y) < 100 * k);
   let out = row(y0);
   if (clash(out)) { // ➕ would sit on the other buttons: put the row under the piece instead
@@ -4179,20 +4195,23 @@ function nightTick(dt) {
 //  ⚡ the surprises, also while the trains are running
 // =====================================================================
 const hzp = document.createElement("div"); hzp.id = "hzPlay";
-const HZP = [["hz_fuego", "🔥"], ["hz_vaca", "🐄"], ["hz_rocas", "🪨"], ["hz_sol", "☀️"], ["hz_lluvia", "🌧️"], ["hz_nevada", "❄️"], ["hz_viento", "💨"], ["hz_noche", "🌙"]];
-hzp.innerHTML = `<button class="b main" title="Sorpresas">⚡</button><div class="row">${HZP.map(([id, ic]) => `<button class="b" data-id="${id}">${ic}</button>`).join("")}</div>`;
+const HZP = [["hz_fuego", "🔥"], ["hz_vaca", "🐄"], ["hz_rocas", "🪨"]], HZW = [["hz_sol", "☀️"], ["hz_lluvia", "🌧️"], ["hz_nevada", "❄️"], ["hz_viento", "💨"], ["hz_noche", "🌙"]];
+hzp.innerHTML = `<button class="b main" title="Sorpresas">⚡</button><div class="row">${HZP.map(([id, ic]) => `<button class="b" data-id="${id}">${ic}</button>`).join("")}<button class="b wxb" title="El tiempo">🌦️</button><span class="wxrow">${HZW.map(([id, ic]) => `<button class="b" data-id="${id}">${ic}</button>`).join("")}</span></div>`;
 document.body.appendChild(hzp);
 setTimeout(() => hzp.querySelectorAll(".row .b").forEach(b => { if (INFO[b.dataset.id]) b.title = INFO[b.dataset.id][1]; }), 0);
-hzp.querySelector(".main").onclick = e => { e.stopPropagation(); hzp.classList.toggle("open"); playHz = null; refreshHzPlay(); sfx.click(); };
-hzp.querySelectorAll(".row .b").forEach(b => b.onclick = e => {
+hzp.querySelector(".main").onclick = e => { e.stopPropagation(); hzp.classList.toggle("open"); hzp.classList.remove("wx"); playHz = null; refreshHzPlay(); sfx.click(); };
+hzp.querySelector(".wxb").onclick = e => { e.stopPropagation(); unlockAudio(); hzp.classList.toggle("wx"); sfx.click(); };
+hzp.querySelectorAll(".row .b[data-id]").forEach(b => b.onclick = e => {
   e.stopPropagation(); unlockAudio(); const id = b.dataset.id;
-  if (id === "hz_noche") { setNight(!night); return; }
-  if (WX[id]) { setWeather(WX[id]); playHz = null; refreshHzPlay(); return; }
+  if (id === "hz_noche") { setNight(!night); hzp.classList.remove("wx"); refreshHzPlay(); return; }
+  if (WX[id]) { setWeather(WX[id]); playHz = null; hzp.classList.remove("wx"); refreshHzPlay(); return; }
   playHz = playHz === id ? null : id; refreshHzPlay(); sfx.click();
   if (playHz) toast(b.textContent + " 👉");
 });
 function refreshHzPlay() {
-  hzp.querySelectorAll(".row .b").forEach(b => b.classList.toggle("on", b.dataset.id === playHz || (b.dataset.id === "hz_noche" && night) || WX[b.dataset.id] === weather && b.dataset.id !== "hz_sol"));
+  const w = HZW.find(([id]) => WX[id] === weather && id !== "hz_sol"), wb = hzp.querySelector(".wxb");
+  if (wb) { wb.textContent = night ? "🌙" : w ? w[1] : "🌦️"; wb.classList.toggle("on", night || !!w); }
+  hzp.querySelectorAll(".row .b[data-id]").forEach(b => b.classList.toggle("on", b.dataset.id === playHz || (b.dataset.id === "hz_noche" && night) || WX[b.dataset.id] === weather && b.dataset.id !== "hz_sol"));
   hzp.style.display = hzOn && !lvl ? "" : "none";
 }
 function playHzTap(wx, wy) {
@@ -4483,7 +4502,7 @@ const ICONS = {
   h_alto: _s("M2 42 L18 12 L26 26 L32 18 L46 42 Z", "#8d9aa6") + _s("M18 12 L23 21 L18 19 L14 21 Z", "#fff") + _s("M4 40 Q20 38 26 30 T46 24", "none", 'stroke-width="3.5" stroke="#c98a4b"'),
 };
 const ic = name => ICONS[name] ? `<svg class="ic" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">${ICONS[name]}</svg>` : "";
-const TAB_IC = { vias: "t_vias", cruces: "t_cruces", subir: "t_subir", especial: "t_especial", campo: "t_campo", calles: "t_calles", suelos: "t_suelos", ciudad: "t_ciudad", monumentos: "t_monumentos", sorpresas: "t_sorpresas", trenes: "t_trenes" };
+const TAB_IC = { decor: "t_campo", vias: "t_vias", cruces: "t_cruces", subir: "t_subir", especial: "t_especial", campo: "t_campo", calles: "t_calles", suelos: "t_suelos", ciudad: "t_ciudad", monumentos: "t_monumentos", sorpresas: "t_sorpresas", trenes: "t_trenes" };
 const PAL_IC = { hand: "hand", erase: "erase", lapiz: "pencil", lapizCalle: "crayon" };
 function iconNode(name) { const d = document.createElement("span"); d.className = "icw"; d.innerHTML = ic(name); return d.firstChild; }
 // =====================================================================
@@ -4679,12 +4698,12 @@ const INFO = {
   sesgoLD: [null, "Diagonal larga (al otro lado)", "La diagonal larga hacia el otro lado."],
   curva: [null, "Curva", "Gira un cuarto de vuelta. Cuatro curvas hacen un círculo pequeño."],
   curvaL: [null, "Curva grande", "Curva suave que ocupa 2×2 casillas. Ideal para trenes largos."],
-  desvioI: [null, "Desvío a la izquierda", "La vía se divide: recto o a la izquierda. Con ✋ se cambia el camino; la flecha verde indica por dónde irá el tren."],
+  desvioI: [null, "Desvío", "La vía se divide en dos: recto o curva. Se coloca solo hacia el lado que encaja; tócalo con esta misma pieza para girarlo o darle la vuelta. Con ✋ cambias el camino del tren."],
   desvioD: [null, "Desvío a la derecha", "La vía se divide: recto o a la derecha. Con ✋ se cambia el camino; la flecha verde indica por dónde irá el tren."],
   desvioY: [null, "Desvío en Y", "La vía se divide en dos curvas, izquierda y derecha. Con ✋ se elige cuál."],
   cruce: [null, "Cruce", "Dos vías se cruzan en el mismo piso. ¡Si pasan dos trenes a la vez, chocan!"],
-  rampa: [null, "Rampa", "Cambia un piso. Tócala junto a una vía suelta y se pone a su altura (el número rojo es el piso de esa punta). Con ⬆️ Sube va hacia arriba y con ⬇️ Baja hacia abajo. Si ya está puesta, sus botones: ➕ seguir (pone otra igual, ya unida), ↰ forma (recta o curva), 🔄 girar y ⇅ sube/baja."],
-  subeI: [null, "Curva rampa (izquierda)", "Gira a la izquierda y cambia un piso (⬆️ Sube o ⬇️ Baja). Pon 4 seguidas y harás una espiral, como una montaña rusa. El botón ⇅ le da la vuelta."],
+  rampa: [null, "Rampa", "Cambia un piso. Tócala junto a una vía suelta y se pone a su altura (el número rojo es el piso de esa punta): desde el suelo sube, y desde arriba baja. Si ya está puesta, sus botones: ➕ seguir (pone otra igual, ya unida), 🔄 girar y ⇅ sube/baja."],
+  subeI: [null, "Curva rampa", "Gira y cambia un piso: se coloca sola hacia el lado que encaja. Pon 4 seguidas (con ➕ seguir) y harás una espiral, como una montaña rusa. El botón ⇅ la cambia de subir a bajar."],
   subeD: [null, "Curva rampa (derecha)", "Gira a la derecha y cambia un piso (⬆️ Sube o ⬇️ Baja). 4 seguidas hacen una espiral. El botón ⇅ le da la vuelta."],
   estacion: [null, "Estación", "El tren se para un momento y suena la campana."],
   tunel: [null, "Túnel", "El tren pasa por dentro de una montaña y desaparece un momento."],
@@ -4714,18 +4733,26 @@ const INFO = {
   toriiG: [null, "Torii gigante (Japón)", "Gran puerta roja de 3 casillas. Una vía pasa por el centro."],
   train: ["🚂", "Trenes", "Elige un tren y toca una vía para ponerlo. Toca el tren para cambiar su dirección. Con ➖ ➕ eliges cuántos vagones lleva."],
 };
+// the palette is split into a few big tabs (GROUPS); Tracks and Decorate have small sub-tabs inside
+const GROUPS = [
+  { id: "vias", ic: "🛤️", nm: "Vías" },
+  { id: "calles", ic: "🚗", nm: "Calles" },
+  { id: "decor", ic: "🌳", nm: "Decorar" },
+  { id: "trenes", ic: "🚂", nm: "Trenes" },
+];
+// adventure levels keep the full list of pieces (both switches, both ramp curves…), as before
+const LEVEL_ITEMS = ["lapiz", "recta", "corta", "curva", "curvaL", "sesgoI", "sesgoLI", "desvioI", "desvioD", "desvioY", "cruce", "rampa", "subeI", "subeD", "estacion", "tunel", "tunelL", "tope", "paso"];
 const TABS = [
-  { id: "vias", ic: "🛤️", nm: "Vías", items: ["lapiz", "recta", "corta", "curva", "curvaL", "sesgoI", "sesgoLI"] },
-  { id: "cruces", ic: "🔀", nm: "Desvíos", items: ["desvioI", "desvioD", "desvioY", "cruce"] },
-  { id: "subir", ic: "⛰️", nm: "Rampas", items: ["rampa", "subeI", "subeD"] },
-  { id: "especial", ic: "🚉", nm: "Especiales", items: ["estacion", "tunel", "tunelL", "tope", "paso"] },
-  { id: "campo", ic: "🌳", nm: "Campo", items: CAMPO.map(d => d[0]) },
-  { id: "calles", ic: "🚗", nm: "Calles", items: ["lapizCalle", "calle", "calleC", "calleT", "calleX", "paso", "calleVia", "calleViaC", "car_coche", "car_taxi", "car_bus", "car_policia", "car_bomberos", "car_tuktuk"] },
-  { id: "suelos", ic: "🎨", nm: "Suelos", items: ["plaza", "arena", "parque", "nieve", "campo", "gris", "rosa", "naranja", "azul", "amarillo", "marron", "rojo", "agua"] },
-  { id: "ciudad", ic: "🏙️", nm: "Ciudad", items: ["casa", "granja", "iglesia", "rascacielos", "tienda", "ciudad", "museo", "kiosco", "estadio", "fuente", "barco", "velero", "torre", "castillo", "torii", "templo", "estatua", "reloj", "noria", "atraccion", "tiovivo", "globo", "dragon", "cafe"] },
-  { id: "monumentos", ic: "🏛️", nm: "Monumentos", items: ["arco", "eiffel", "towerb", "bigben", "acueducto", "alcala", "toriiG", "obelisco", "faro", "monte"] },
-  { id: "sorpresas", ic: "⚡", nm: "Sorpresas", items: ["hz_senal", "hz_listo", "hz_barrera", "hz_fuego", "hz_vaca", "hz_rocas", "hz_sol", "hz_lluvia", "hz_nevada", "hz_viento", "hz_noche"] },
-  { id: "trenes", ic: "🚂", nm: "Trenes", items: [] },
+  { id: "vias", grp: "vias", ic: "🛤️", nm: "Vías", items: ["lapiz", "recta", "corta", "curva", "curvaL", "sesgoI", "sesgoLI"] },
+  { id: "cruces", grp: "vias", ic: "🔀", nm: "Desvíos", items: ["desvioI", "desvioY", "cruce", "hz_listo", "hz_senal"] },
+  { id: "subir", grp: "vias", ic: "⛰️", nm: "Rampas", items: ["rampa", "subeI"] },
+  { id: "especial", grp: "vias", ic: "🚉", nm: "Estación", items: ["estacion", "tunel", "tunelL", "tope", "paso"] },
+  { id: "campo", grp: "decor", ic: "🌳", nm: "Campo", items: CAMPO.map(d => d[0]) },
+  { id: "calles", grp: "calles", ic: "🚗", nm: "Calles", items: ["lapizCalle", "calle", "calleC", "calleT", "calleX", "paso", "calleVia", "calleViaC", "car_coche", "car_taxi", "car_bus", "car_policia", "car_bomberos", "car_tuktuk"] },
+  { id: "suelos", grp: "decor", ic: "🎨", nm: "Suelos", items: ["plaza", "arena", "parque", "nieve", "campo", "gris", "rosa", "naranja", "azul", "amarillo", "marron", "rojo", "agua"] },
+  { id: "ciudad", grp: "decor", ic: "🏙️", nm: "Ciudad", items: ["casa", "granja", "iglesia", "rascacielos", "tienda", "ciudad", "museo", "kiosco", "estadio", "fuente", "barco", "velero", "torre", "castillo", "torii", "templo", "estatua", "reloj", "noria", "atraccion", "tiovivo", "globo", "dragon", "cafe"] },
+  { id: "monumentos", grp: "decor", ic: "🏛️", nm: "Monumentos", items: ["arco", "eiffel", "towerb", "bigben", "acueducto", "alcala", "toriiG", "obelisco", "faro", "monte"] },
+  { id: "trenes", grp: "trenes", ic: "🚂", nm: "Trenes", items: [] },
 ];
 function nameOf(id) {
   if (id === "train") return KINDS[trainKind].t;
@@ -4834,13 +4861,31 @@ function showInfo(id) {
   layoutUI(); infoShown(); updateGrid();
 }
 let curTab = "vias";
+const lastSub = {};
+const grpOf = id => (TABS.find(t => t.id === id) || TABS[0]).grp;
+const subsOf = g => TABS.filter(t => t.grp === g);
+// what to light up in a tutorial: the small sub-tab if its big tab is open, otherwise the big tab
+function tabSel(id) { const g = grpOf(id); return grpOf(curTab) === g && subsOf(g).length > 1 ? `.stab[data-tab="${id}"]` : `.tab[data-grp="${g}"]`; }
 function buildTabs() {
   const tb = $("tabs");
-  TABS.forEach(t => {
-    const d = document.createElement("div"); d.className = "tab"; d.dataset.tab = t.id; d.title = t.nm;
-    d.innerHTML = `${TAB_IC[t.id] ? ic(TAB_IC[t.id]) : t.ic}<small>${t.nm}</small>`;
-    d.onclick = () => { unlockAudio(); selectTab(t.id); sfx.click(); };
+  GROUPS.forEach(G => {
+    const subs = subsOf(G.id), d = document.createElement("div"); d.className = "tab"; d.dataset.grp = G.id; d.title = G.nm;
+    if (subs.length === 1) d.dataset.tab = subs[0].id;
+    d.innerHTML = `${TAB_IC[G.id] ? ic(TAB_IC[G.id]) : G.ic}<small>${G.nm}</small>`;
+    d.onclick = () => { unlockAudio(); selectTab(lastSub[G.id] || subs[0].id); sfx.click(); };
     tb.appendChild(d);
+  });
+  const ch = document.createElement("div"); ch.id = "subtabs"; tb.appendChild(ch);
+}
+function renderSubtabs() {
+  const ch = $("subtabs"); if (!ch) return;
+  const g = grpOf(curTab), subs = subsOf(g); ch.innerHTML = "";
+  if (subs.length < 2) return;
+  subs.forEach(t => {
+    const b = document.createElement("div"); b.className = "stab" + (t.id === curTab ? " sel" : ""); b.dataset.tab = t.id; b.title = t.nm;
+    b.innerHTML = `${TAB_IC[t.id] ? ic(TAB_IC[t.id]) : t.ic}<span>${t.nm}</span>`;
+    b.onclick = () => { unlockAudio(); selectTab(t.id); sfx.click(); };
+    ch.appendChild(b);
   });
 }
 function allowedItem(id) {
@@ -4863,7 +4908,7 @@ function levelPalette() {
   pal.appendChild(makeItem("erase", () => selectTool("erase")));
   pal.appendChild(Object.assign(document.createElement("div"), { className: "sep" }));
   const seen = new Set();
-  TABS.forEach(t => t.items.forEach(it => { if (!seen.has(it) && allowedItem(it)) { seen.add(it); pal.appendChild(makeItem(it, () => selectTool(it))); } }));
+  [LEVEL_ITEMS, ...TABS.map(t => t.items)].forEach(list => list.forEach(it => { if (!seen.has(it) && allowedItem(it)) { seen.add(it); pal.appendChild(makeItem(it, () => selectTool(it))); } }));
   if ([...seen].some(isSlope)) {
     pal.appendChild(Object.assign(document.createElement("div"), { className: "sep" }));
     const sw = document.createElement("div"); sw.className = "dirsw"; sw.title = "¿La pieza sube o baja?";
@@ -4880,8 +4925,10 @@ function levelPalette() {
 function selectTab(id) {
   hzApplyCfg();
   if (lvl) { curTab = id; levelPalette(); return; }
-  curTab = id;
-  document.querySelectorAll(".tab").forEach(e => e.classList.toggle("sel", e.dataset.tab === id));
+  if (!TABS.some(t => t.id === id)) id = "vias";
+  curTab = id; lastSub[grpOf(id)] = id;
+  document.querySelectorAll(".tab").forEach(e => e.classList.toggle("sel", e.dataset.grp === grpOf(id)));
+  renderSubtabs();
   const pal = $("palette"); pal.innerHTML = "";
   pal.appendChild(makeItem("hand", () => selectTool("hand")));
   pal.appendChild(makeItem("erase", () => selectTool("erase")));
@@ -4913,7 +4960,7 @@ function selectTab(id) {
     updateCarsUI();
   } else {
     tab.items.filter(allowedItem).forEach(it => { const lk = shopLocked(it), d = makeItem(it, () => shopLocked(it) ? openShop(it) : selectTool(it)); if (lk) lockItem(d, it); pal.appendChild(d); });
-    if (id === "subir" && tab.items.some(allowedItem)) {
+    if (id === "subir" && proMode && tab.items.some(allowedItem)) {
       pal.appendChild(Object.assign(document.createElement("div"), { className: "sep" }));
       const sw = document.createElement("div"); sw.className = "dirsw"; sw.title = "¿La pieza sube o baja?";
       [["up", "⬆️", "Sube"], ["down", "⬇️", "Baja"]].forEach(([m, ic, nm]) => {
@@ -4933,7 +4980,7 @@ function selectTab(id) {
   layoutUI();
 }
 function selectTool(id) {
-  tool = id; if (typeof updateGrid === "function") setTimeout(updateGrid, 0);
+  tool = id; document.body.classList.toggle("toolhand", id === "hand"); if (typeof updateGrid === "function") setTimeout(updateGrid, 0);
   if (WX[id]) setWeather(WX[id]);
   if (id === "hz_noche") setNight(!night);
   document.querySelectorAll("#palette .it").forEach(e => e.classList.toggle("sel", e.dataset.id === id || (id === "train" && e.dataset.kind === trainKind)));
@@ -5397,48 +5444,48 @@ const STRAIGHTS = ["corta", "recta", "estacion", "tunel", "tunelL", "paso"];
 function ghostDone(g) { if ((tut && tut.draw) || (!tut && guide)) return ghostCovered(g); const p = pieceAtLevel(g.c, g.r, g.h); return !!p && (p.type === g.type || (g.type === "corta" && STRAIGHTS.includes(p.type))); }
 const TUT_BASIC = [
   { em: "👋", tx: "¡Hola! Vamos a construir juntos un circuito de tren. Sigue las luces amarillas: te dicen qué tocar.", btn: "¡Empezamos!" },
-  { em: "🛤️", tx: "Abajo están las pestañas con las piezas. Toca la pestaña 🛤️ Vías.", hi: () => '.tab[data-tab="vias"]', done: () => curTab === "vias" },
+  { em: "🛤️", tx: "Abajo están las pestañas con las piezas. Toca la pestaña 🛤️ Vías.", hi: () => tabSel("vias"), done: () => curTab === "vias" },
   { em: "↪️", tx: "Elige la curva.", hi: () => '.it[data-id="curva"]', done: () => tool === "curva" },
   { em: "👆", tx: "Toca los 4 recuadros amarillos del tablero para poner las 4 curvas.", ghosts: TUT_CURVES, hi: () => tool === "curva" ? null : '.it[data-id="curva"]', done: () => TUT_CURVES.every(ghostDone) },
-  { em: "➖", tx: "¡Muy bien! Ahora elige la recta corta.", hi: () => curTab === "vias" ? '.it[data-id="corta"]' : '.tab[data-tab="vias"]', done: () => tool === "corta" },
+  { em: "➖", tx: "¡Muy bien! Ahora elige la recta corta.", hi: () => curTab === "vias" ? '.it[data-id="corta"]' : tabSel("vias"), done: () => tool === "corta" },
   { em: "🔴", tx: "Pon rectas en los huecos amarillos. Los puntos rojos que parpadean son vías sueltas: cuando desaparecen, ¡el circuito está cerrado!",
     ghosts: TUT_STRAIGHT, hi: () => tool === "corta" ? null : '.it[data-id="corta"]', done: () => TUT_STRAIGHT.every(ghostDone) },
-  { em: "🔁", tx: "Si te equivocas de pieza, no hace falta borrar: elige otra y tócala encima. Prueba: abre 🚉 Especiales, elige la estación y toca las rectas de arriba.",
-    ghosts: TUT_STATION, hi: () => tool === "estacion" ? null : curTab === "especial" ? '.it[data-id="estacion"]' : '.tab[data-tab="especial"]', done: () => TUT_STATION.every(ghostDone) },
-  { em: "🚂", tx: "¡Ahora un tren! Abre la pestaña 🚂 Trenes, elige el que más te guste y toca la vía.", hi: () => tool === "train" ? null : '.tab[data-tab="trenes"]', done: () => trains.length > 0 },
+  { em: "🔁", tx: "Si te equivocas de pieza, no hace falta borrar: elige otra y tócala encima. Prueba: abre 🚉 Estación, elige la estación y toca las rectas de arriba.",
+    ghosts: TUT_STATION, hi: () => tool === "estacion" ? null : curTab === "especial" ? '.it[data-id="estacion"]' : tabSel("especial"), done: () => TUT_STATION.every(ghostDone) },
+  { em: "🚂", tx: "¡Ahora un tren! Abre la pestaña 🚂 Trenes, elige el que más te guste y toca la vía.", hi: () => tool === "train" ? null : tabSel("trenes"), done: () => trains.length > 0 },
   { em: "▶️", tx: "La flecha verde dice hacia dónde irá (toca el tren para darle la vuelta). Pulsa ▶️ para arrancar.", hi: () => "#play", done: () => running },
   { em: "🎉", tx: "¡Chu-chu! Mientras el tren anda no se puede construir: solo cambiar desvíos. Cuando quieras, pulsa ⏸️ para parar.", hi: () => "#play", done: () => !running, minTime: 3 },
   { em: "✏️", tx: "Truco: con el lápiz ✏️ dibujas la vía arrastrando el dedo, y las curvas se ponen solas. Elige el lápiz y dibuja un camino que salga de la estación.",
-    hi: () => tool === "lapiz" ? null : curTab === "vias" ? '.it[data-id="lapiz"]' : '.tab[data-tab="vias"]', done: () => tut.drawn >= 3, hold: 3.5, doneSay: "¡Mira qué vía has dibujado!" },
+    hi: () => tool === "lapiz" ? null : curTab === "vias" ? '.it[data-id="lapiz"]' : tabSel("vias"), done: () => tut.drawn >= 3, hold: 3.5, doneSay: "¡Mira qué vía has dibujado!" },
   { em: "🏆", tx: "¡Ya sabes lo básico! En ⚙️ tienes la ayuda y tus circuitos, y en 🏠 la biblioteca con ciudades listas para jugar. Cuando seas mayor, aprende a subir y bajar con el tutorial ⛰️.", hi: () => ["#menuBtn", "#homeBtn"], end: true, next: "alto" },
 ];
 const TUT_HIGH = [
   { em: "⛰️", tx: "Vamos a aprender a construir hacia arriba: rampas, puentes y una espiral, como una montaña rusa.", btn: "¡Empezamos!", onEnter: tutStub },
   { em: "⛰️", tx: "¡Vamos a construir hacia arriba! Abre la pestaña ⛰️ Rampas.", view: true, onEnter: tutStub,
-    hi: () => '.tab[data-tab="subir"]', done: () => curTab === "subir" },
-  { em: "⬆️", tx: "Pulsa ⬆️ Sube y elige la rampa.", view: true,
-    hi: () => slopeMode !== "up" ? '.dirsw button[data-m="up"]' : tool !== "rampa" ? '.it[data-id="rampa"]' : null, done: () => slopeMode === "up" && tool === "rampa" },
+    hi: () => tabSel("subir"), done: () => curTab === "subir" },
+  { em: "⬆️", tx: "Elige la rampa.", view: true,
+    hi: () => tool !== "rampa" ? '.it[data-id="rampa"]' : null, done: () => tool === "rampa" },
   { em: "👆", tx: "Pon la rampa en el recuadro amarillo, junto a la punta suelta. Fíjate: el número rojo dice en qué piso está cada punta.", view: true, ghosts: TUT_UP,
     hi: () => tool === "rampa" ? null : '.it[data-id="rampa"]', done: () => TUT_UP.every(ghostDone) },
   { em: "1️⃣", tx: "¡Has subido al piso 1! Abre 🛤️ Vías y pon una recta corta en el recuadro de arriba. Toca justo al lado de la punta: la pieza se pone sola a su altura.", view: true, ghosts: TUT_TOP,
-    hi: () => tool === "corta" ? null : curTab === "vias" ? '.it[data-id="corta"]' : '.tab[data-tab="vias"]', done: () => TUT_TOP.every(ghostDone) },
-  { em: "⬇️", tx: "Para bajar: vuelve a ⛰️ Rampas, pulsa ⬇️ Baja y pon la rampa en el recuadro.", view: true, ghosts: TUT_DOWN,
-    hi: () => curTab !== "subir" ? '.tab[data-tab="subir"]' : slopeMode !== "down" ? '.dirsw button[data-m="down"]' : tool !== "rampa" ? '.it[data-id="rampa"]' : null,
+    hi: () => tool === "corta" ? null : curTab === "vias" ? '.it[data-id="corta"]' : tabSel("vias"), done: () => TUT_TOP.every(ghostDone) },
+  { em: "⬇️", tx: "Para bajar: vuelve a ⛰️ Rampas y pon la rampa en el recuadro. Desde arriba, la rampa baja sola.", view: true, ghosts: TUT_DOWN,
+    hi: () => curTab !== "subir" ? tabSel("subir") : tool !== "rampa" ? '.it[data-id="rampa"]' : null,
     done: () => TUT_DOWN.every(ghostDone) },
-  { em: "📐", tx: "Toca 📐 para verlo de lado: la vía sube al piso 1 y vuelve a bajar. Truco: al tocar una rampa, ➕ seguir pone la siguiente ya unida y ↰ forma la cambia de recta a curva.", view: true,
+  { em: "📐", tx: "Toca 📐 para verlo de lado: la vía sube al piso 1 y vuelve a bajar. Truco: al tocar una rampa, ➕ seguir pone la siguiente ya unida.", view: true,
     hi: () => "#sideBtn", done: () => sideOn, minTime: 1, hold: 2 },
-  { em: "🌀", tx: "¡Ahora una espiral! En ⛰️ Rampas pulsa ⬆️ Sube y elige la curva rampa.", view: true, onEnter: () => { if (sideOn) toggleSide(); setTimeout(() => tut && tutFit("spiral"), 350); },
-    hi: () => curTab !== "subir" ? '.tab[data-tab="subir"]' : slopeMode !== "up" ? '.dirsw button[data-m="up"]' : tool !== "subeI" ? '.it[data-id="subeI"]' : null,
-    done: () => slopeMode === "up" && tool === "subeI" },
+  { em: "🌀", tx: "¡Ahora una espiral! En ⛰️ Rampas elige la curva rampa.", view: true, onEnter: () => { if (sideOn) toggleSide(); setTimeout(() => tut && tutFit("spiral"), 350); },
+    hi: () => curTab !== "subir" ? tabSel("subir") : tool !== "subeI" ? '.it[data-id="subeI"]' : null,
+    done: () => tool === "subeI" },
   { em: "👆", tx: "Pon la curva rampa en el recuadro amarillo, junto a la punta suelta.", ghosts: () => TUT_SPIRAL.slice(0, 1),
     hi: () => tool === "subeI" ? null : '.it[data-id="subeI"]', done: () => TUT_SPIRAL.slice(0, 1).every(ghostDone) },
   { em: "➕", tx: "Ahora toca el botón verde ➕ seguir de la curva: pone otra igual, ya unida y un piso más arriba. Púlsalo hasta llenar los recuadros.", ghosts: () => TUT_SPIRAL,
     onEnter: () => { const p = pieceAtLevel(TUT_SPIRAL[0].c, TUT_SPIRAL[0].r, 0); if (p) { slopeSel = p.id; } },
     done: () => TUT_SPIRAL.every(ghostDone), hold: 2.5, doneSay: "¡Una espiral! Cuatro curvas rampa dan una vuelta entera y suben cuatro pisos." },
-  { em: "🛑", tx: "Arriba la vía se acaba. Abre 🚉 Especiales y pon un tope en el recuadro: el tren se parará allí y volverá marcha atrás.", ghosts: () => TUT_SPTOP,
-    onEnter: () => setFloor(4), hi: () => tool === "tope" ? null : curTab === "especial" ? '.it[data-id="tope"]' : '.tab[data-tab="especial"]', done: () => TUT_SPTOP.every(ghostDone) },
+  { em: "🛑", tx: "Arriba la vía se acaba. Abre 🚉 Estación y pon un tope en el recuadro: el tren se parará allí y volverá marcha atrás.", ghosts: () => TUT_SPTOP,
+    onEnter: () => setFloor(4), hi: () => tool === "tope" ? null : curTab === "especial" ? '.it[data-id="tope"]' : tabSel("especial"), done: () => TUT_SPTOP.every(ghostDone) },
   { em: "🚂", tx: "Pon un tren en la vía de abajo y pulsa ▶️ para verlo subir por la espiral.",
-    hi: () => trains.length ? "#play" : tool === "train" ? null : '.tab[data-tab="trenes"]', done: () => trains.length > 0 && running },
+    hi: () => trains.length ? "#play" : tool === "train" ? null : tabSel("trenes"), done: () => trains.length > 0 && running },
   { em: "🎢", tx: "¡Mira cómo sube y baja! Cuando quieras, pulsa ⏸️ para parar.", hi: () => "#play", done: () => !running, minTime: 3 },
   { em: "🏆", tx: "¡Ya sabes subir y bajar! Con rampas haces puentes sobre ríos y calles, y con espirales subes muy alto. ¡Pruébalo en la aventura, en Machu Picchu!", hi: () => ["#floorBox"], end: true },
 ];
@@ -6169,7 +6216,7 @@ function setModeUI() {
   document.body.classList.toggle("lvlmode", inL);
   document.body.classList.toggle("noflo", inL && !Object.keys(lvl.inv).some(isSlope));
   ["saveBtn", "clearBtn", "tutBtn"].forEach(id => $(id).style.display = inL ? "none" : "");
-  document.querySelectorAll(".tab").forEach(e => { const t = TABS.find(x => x.id === e.dataset.tab); e.style.display = !inL ? "" : (t.id !== "trenes" && t.items.some(allowedItem)) ? "" : "none"; });
+  document.querySelectorAll(".tab").forEach(e => { const subs = subsOf(e.dataset.grp); e.style.display = !inL ? "" : (e.dataset.grp !== "trenes" && subs.some(t => t.items.some(allowedItem))) ? "" : "none"; });
   renderLvlBar();
 }
 function enterFree() {
@@ -6331,7 +6378,7 @@ function openParents() {
     act(r6, "🧹 Vaciar monedas y tienda", "Vaciar monedas y tienda", () => confirmAction("🧹 ¿Vaciar las monedas y la tienda?", "Las monedas vuelven a 0 y lo comprado se vuelve a cerrar.", () => { coins = 0; sset(KEY + "-coins", 0); owned = new Set(); sset(KEY + "-shop", []); toast("🧹"); }));
     addEl(card, "h3", "", "⚡ Sorpresas y desastres");
     const r5 = row(card);
-    sw(r5, hzOn, "Pestaña ⚡ Sorpresas (fuego, lluvia, vacas, señales…)", () => { hzOn = !hzOn; if (!hzOn) hzRnd = false; saveCfg(); hzApplyCfg(); if (!hzOn && curTab === "sorpresas") selectTab("vias"); openParents(); });
+    sw(r5, hzOn, "Botón ⚡ Sorpresas al jugar (fuego, lluvia, vacas…)", () => { hzOn = !hzOn; if (!hzOn) hzRnd = false; saveCfg(); hzApplyCfg(); openParents(); });
     sw(r5, hzRnd, "Sorpresas al azar mientras juegan (vacas y rocas en la vía)", () => { hzRnd = !hzRnd; if (hzRnd) hzOn = true; saveCfg(); hzApplyCfg(); openParents(); });
     addEl(card, "p", "", "Nadie se hace daño: los choques son de dibujos animados y siempre hay un rescate (bomberos, grúa…). Si a tu peque le asustan, apágalas aquí.").style.fontSize = "14px";
     addEl(card, "h3", "", "🌐 Idioma");
@@ -6442,6 +6489,14 @@ const I18N_ROWS = [
 ["🚂 Constructor de trenes", "🚂 Train Builder", "🚂 Constructeur de trains"],
 ["Aventura", "Adventure", "Aventure"],
 ["Juego libre", "Free play", "Jeu libre"],
+["Decorar", "Decorate", "Décorer"], ["Estación", "Station", "Gare"], ["Desvío", "Switch", "Aiguillage"], ["Curva rampa", "Ramp curve", "Courbe en rampe"], ["El tiempo", "Weather", "La météo"],
+["La vía se divide en dos: recto o curva. Se coloca solo hacia el lado que encaja; tócalo con esta misma pieza para girarlo o darle la vuelta. Con ✋ cambias el camino del tren.", "The track splits in two: straight on or curve. It places itself facing the way that fits; tap it with the same piece to turn it or flip it. Use ✋ to change the train's way.", "La voie se sépare en deux : tout droit ou en courbe. Il se place tout seul du côté qui convient ; touche-le avec la même pièce pour le tourner ou le retourner. Avec ✋ tu changes le chemin du train."],
+["Gira y cambia un piso: se coloca sola hacia el lado que encaja. Pon 4 seguidas (con ➕ seguir) y harás una espiral, como una montaña rusa. El botón ⇅ la cambia de subir a bajar.", "Turns and changes floor: it places itself facing the way that fits. Put 4 in a row (with ➕ continue) to make a spiral, like a roller coaster. The ⇅ button switches it between up and down.", "Tourne et change d'étage : elle se place toute seule du côté qui convient. Mets-en 4 à la suite (avec ➕ continuer) pour faire une spirale, comme des montagnes russes. Le bouton ⇅ la fait monter ou descendre."],
+["Cambia un piso. Tócala junto a una vía suelta y se pone a su altura (el número rojo es el piso de esa punta): desde el suelo sube, y desde arriba baja. Si ya está puesta, sus botones: ➕ seguir (pone otra igual, ya unida), 🔄 girar y ⇅ sube/baja.", "Changes floor. Tap it next to a loose end and it sets itself at that height (the red number is that end's floor): from the ground it goes up, and from up high it comes down. Once placed, its buttons: ➕ continue (adds another one, already joined), 🔄 turn and ⇅ up/down.", "Change d'étage. Touche-la près d'un bout libre et elle se met à sa hauteur (le chiffre rouge est l'étage de ce bout) : depuis le sol elle monte, et depuis en haut elle descend. Une fois posée, ses boutons : ➕ continuer (en ajoute une autre, déjà reliée), 🔄 tourner et ⇅ monte/descend."],
+["Elige la rampa.", "Pick the ramp.", "Choisis la rampe."],
+["Para bajar: vuelve a ⛰️ Rampas y pon la rampa en el recuadro. Desde arriba, la rampa baja sola.", "To come down: go back to ⛰️ Ramps and put the ramp in the box. From up high, the ramp goes down by itself.", "Pour descendre : retourne dans ⛰️ Rampes et pose la rampe dans la case. Depuis en haut, la rampe descend toute seule."],
+["¡Ahora una espiral! En ⛰️ Rampas elige la curva rampa.", "Now a spiral! In ⛰️ Ramps pick the ramp curve.", "Maintenant une spirale ! Dans ⛰️ Rampes choisis la courbe en rampe."],
+["Botón ⚡ Sorpresas al jugar (fuego, lluvia, vacas…)", "⚡ Surprises button while playing (fire, rain, cows…)", "Bouton ⚡ Surprises en jouant (feu, pluie, vaches…)"],
 ["Desafío de trenes", "Train Challenge", "Défi des trains"],
 ["Dos trenes frente a frente: ¡empuja al otro fuera del muelle!", "Two trains nose to nose: push the other one off the pier!", "Deux trains face à face : pousse l'autre hors du quai !"],
 ["Aprender a jugar", "Learn to play", "Apprendre à jouer"],
@@ -6618,7 +6673,7 @@ const I18N_ROWS = [
 ["Toca los 4 recuadros amarillos del tablero para poner las 4 curvas.", "Tap the 4 yellow boxes on the board to place the 4 curves.", "Touche les 4 cases jaunes du plateau pour poser les 4 courbes."],
 ["¡Muy bien! Ahora elige la recta corta.", "Well done! Now pick the short straight.", "Très bien ! Maintenant choisis la petite droite."],
 ["Pon rectas en los huecos amarillos. Los puntos rojos que parpadean son vías sueltas: cuando desaparecen, ¡el circuito está cerrado!", "Put straights in the yellow gaps. The blinking red dots are loose ends: when they disappear, the layout is closed!", "Mets des droites dans les trous jaunes. Les points rouges qui clignotent sont des bouts libres : quand ils disparaissent, le circuit est fermé !"],
-["Si te equivocas de pieza, no hace falta borrar: elige otra y tócala encima. Prueba: abre 🚉 Especiales, elige la estación y toca las rectas de arriba.", "If you pick the wrong piece, no need to erase: choose another and tap on top. Try it: open 🚉 Special, pick the station and tap the straights at the top.", "Si tu te trompes de pièce, pas besoin d'effacer : choisis-en une autre et touche dessus. Essaie : ouvre 🚉 Spéciales, choisis la gare et touche les droites du haut."],
+["Si te equivocas de pieza, no hace falta borrar: elige otra y tócala encima. Prueba: abre 🚉 Estación, elige la estación y toca las rectas de arriba.", "If you pick the wrong piece, no need to erase: choose another and tap on top. Try it: open 🚉 Station, pick the station and tap the straights at the top.", "Si tu te trompes de pièce, pas besoin d'effacer : choisis-en une autre et touche dessus. Essaie : ouvre 🚉 Gare, choisis la gare et touche les droites du haut."],
 ["¡Ahora un tren! Abre la pestaña 🚂 Trenes, elige el que más te guste y toca la vía.", "Now a train! Open the 🚂 Trains tab, pick the one you like best and tap the track.", "Maintenant un train ! Ouvre l'onglet 🚂 Trains, choisis celui que tu préfères et touche la voie."],
 ["La flecha verde dice hacia dónde irá (toca el tren para darle la vuelta). Pulsa ▶️ para arrancar.", "The green arrow shows where it will go (tap the train to turn it around). Press ▶️ to start.", "La flèche verte montre où il ira (touche le train pour le faire demi-tour). Appuie sur ▶️ pour démarrer."],
 ["¡Chu-chu! Mientras el tren anda no se puede construir: solo cambiar desvíos. Cuando quieras, pulsa ⏸️ para parar.", "Choo-choo! While the train runs you can't build: only change switches. Whenever you like, press ⏸️ to stop.", "Tchou-tchou ! Quand le train roule on ne peut pas construire : seulement changer les aiguillages. Quand tu veux, appuie sur ⏸️ pour arrêter."],
@@ -6733,7 +6788,7 @@ I18N_ROWS.push(
 ["Pon la curva rampa en el recuadro amarillo, junto a la punta suelta.", "Put the ramp curve in the yellow box, next to the loose end.", "Pose la courbe en rampe dans la case jaune, près du bout libre."],
 ["Ahora toca el botón verde ➕ seguir de la curva: pone otra igual, ya unida y un piso más arriba. Púlsalo hasta llenar los recuadros.", "Now tap the curve's green ➕ continue button: it adds another one, already joined and one floor higher. Keep pressing until the boxes are full.", "Maintenant touche le bouton vert ➕ suite de la courbe : il en ajoute une autre, déjà raccordée et un étage plus haut. Appuie jusqu'à remplir les cases."],
 ["¡Una espiral! Cuatro curvas rampa dan una vuelta entera y suben cuatro pisos.", "A spiral! Four ramp curves go all the way round and climb four floors.", "Une spirale ! Quatre courbes en rampe font un tour complet et montent quatre étages."],
-["Arriba la vía se acaba. Abre 🚉 Especiales y pon un tope en el recuadro: el tren se parará allí y volverá marcha atrás.", "At the top the track ends. Open 🚉 Special and put a buffer stop in the box: the train will stop there and go back in reverse.", "En haut la voie s'arrête. Ouvre 🚉 Spéciales et pose un butoir dans la case : le train s'arrêtera là et repartira en marche arrière."],
+["Arriba la vía se acaba. Abre 🚉 Estación y pon un tope en el recuadro: el tren se parará allí y volverá marcha atrás.", "At the top the track ends. Open 🚉 Station and put a buffer stop in the box: the train will stop there and go back in reverse.", "En haut la voie s'arrête. Ouvre 🚉 Gare et pose un butoir dans la case : le train s'arrêtera là et repartira en marche arrière."],
 ["Pon un tren en la vía de abajo y pulsa ▶️ para verlo subir por la espiral.", "Put a train on the track at the bottom and press ▶️ to watch it climb the spiral.", "Pose un train sur la voie du bas et appuie sur ▶️ pour le voir monter la spirale."],
 ["¡Mira cómo sube y baja! Cuando quieras, pulsa ⏸️ para parar.", "Look at it go up and down! Whenever you like, press ⏸️ to stop.", "Regarde-le monter et descendre ! Quand tu veux, appuie sur ⏸️ pour arrêter."],
 ["¡Ya sabes subir y bajar! Con rampas haces puentes sobre ríos y calles, y con espirales subes muy alto. ¡Pruébalo en la aventura, en Machu Picchu!", "Now you can go up and down! Ramps make bridges over rivers and streets, and spirals take you really high. Try it in the adventure, at Machu Picchu!", "Tu sais monter et descendre ! Les rampes font des ponts au-dessus des rivières et des rues, et les spirales montent très haut. Essaie dans l'aventure, au Machu Picchu !"],
