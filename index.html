@@ -46,6 +46,10 @@
   .tab { flex: 0 0 auto; min-width: 70px; height: 54px; border-radius: 16px 16px 0 0; background: #c99158; display: flex; flex-direction: column; align-items: center; justify-content: center;
     font-size: 26px; cursor: pointer; line-height: 1; padding: 2px 8px; color: #3b2a18; }
   .tab small { font-size: 11px; font-weight: 700; margin-top: 2px; }
+  .bob { animation: bob 2.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 80%; }
+  @keyframes bob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-4px) rotate(2deg); } }
+  .monok { animation: monok 1.4s ease-in-out infinite; } @keyframes monok { 50% { opacity: .55; } }
+  @media (max-height: 560px) { #bottom #palette { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; } #bottom #palette > * { flex-shrink: 0; } }
   #subtabs { display: flex; gap: 6px; align-items: center; margin-left: 10px; padding-left: 12px; border-left: 3px solid rgba(255,248,232,.25); }
   #subtabs:empty { display: none; }
   .stab { flex: 0 0 auto; height: 40px; padding: 0 12px 0 8px; border-radius: 20px; background: #8a5a2b; color: #fff8e8; display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 800; font-size: 14px; white-space: nowrap; user-select: none; -webkit-user-select: none; }
@@ -372,7 +376,7 @@
     .dcard { padding: 10px 20px; gap: 6px; } .dtro { font-size: 50px; } .dwin { height: 60px; width: 150px; } .dcoins { font-size: 28px; }
     .djump { width: 76px; height: 76px; } .djump .je { font-size: 32px; } .djump .jl { font-size: 12px; } .dprog { height: 26px; } .dpdot { width: 40px; height: 22px; } .dtop { min-height: 44px; } .dname { font-size: 18px; } .dname svg { width: 50px; height: 30px; } .dpush { width: 96px; height: 96px; } .dhorn { width: 56px; height: 56px; font-size: 28px; } .dmid { font-size: 13px; } }
   @media (max-width: 1400px) { .mode { width: min(250px, 80vw); padding: 14px; } .mode .big { font-size: 64px; } .mode b { font-size: 24px; } }
-  @media (prefers-reduced-motion: reduce) { .mudb, .dpush svg, .dconf, .dban, .dhorn.ready, .sway, .popin, .slidein, #card, #menuPop, .wv, .glint, .fall, .foam, .mist { animation: none !important; } }
+  @media (prefers-reduced-motion: reduce) { .bob, .monok, .mudb, .dpush svg, .dconf, .dban, .dhorn.ready, .sway, .popin, .slidein, #card, #menuPop, .wv, .glint, .fall, .foam, .mist { animation: none !important; } }
   #toast { position: fixed; left: 50%; top: 24%; transform: translate(-50%, -50%) scale(.5); font-size: 84px; opacity: 0; pointer-events: none; z-index: 40;
     transition: opacity .25s, transform .25s; text-shadow: 0 4px 10px rgba(0,0,0,.3); white-space: nowrap; }
   #toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
@@ -625,7 +629,11 @@ const GTILES = [["plaza", "Plaza (adoquines)", "#d9d3c7"], ["arena", "Arena de p
   ["gris", "Suelo gris", "#a7acb4"], ["rosa", "Suelo rosa", "#f6a6c1"], ["naranja", "Suelo naranja", "#f5a84e"], ["azul", "Suelo azul", "#86c8f2"], ["amarillo", "Suelo amarillo", "#ffd95a"], ["marron", "Suelo marrón", "#6e4a2c"], ["rojo", "Suelo rojo", "#e2493b"]];
 const DECO_NAME = {};
 GTILES.forEach(([id, nm, col]) => { DEFS[id] = { gtile: col, cells: P1, ports: [], routes: [] }; });
-[...CAMPO, ...CIUDAD].forEach(([id, em, nm]) => { DEFS[id] = { deco: em || " ", water: id === "agua", cells: P1, ports: [], routes: [] }; DECO_NAME[id] = nm; });
+[...CAMPO, ...CIUDAD].forEach(([id, em, nm]) => { DEFS[id] = { deco: em || " ", water: id === "agua", float: id === "barco" || id === "velero", cells: P1, ports: [], routes: [] }; DECO_NAME[id] = nm; });
+// the landmarks come in a big 2×2 size in the palette; layouts made before keep their small ones
+const BIG_DECO = ["montana", "estadio", "estatua", "noria", "atraccion", "tiovivo", "castillo", "templo"];
+BIG_DECO.forEach(id => { DEFS[id + "G"] = Object.assign({}, DEFS[id], { big: 2, base: id, cells: [[0, 0], [1, 0], [0, 1], [1, 1]] }); DECO_NAME[id + "G"] = DECO_NAME[id]; });
+const bigOf = id => BIG_DECO.includes(id) ? id + "G" : id;
 
 function rotP(x, y, k) { for (let i = 0; i < k; i++) { const t = x; x = -y; y = t; } return [x, y]; }
 const spanT = type => DEFS[type].span || 1;
@@ -700,7 +708,7 @@ function fits(type, c, r, rot, h, ignore) {
   return cellsFor(type, c, r, rot).every(([x, y], i) => {
     if (!inB(x, y)) return false;
     const [lo, hi] = d.occ ? d.occ[i] : [h, h + sp];
-    return piecesIn(x, y).every(q => { if (q.id === ignore) return true; const [ql, qh] = occRange(q, x, y); return qh <= lo || ql >= hi; });
+    return piecesIn(x, y).every(q => { if (q.id === ignore) return true; if ((d.float && DEFS[q.type].water) || (d.water && DEFS[q.type].float)) return true; const [ql, qh] = occRange(q, x, y); return qh <= lo || ql >= hi; });
   });
 }
 function roadConnectAt(c, r, e) {
@@ -831,7 +839,7 @@ function drawRails(g, routes, p, act) {
 function drawPiece(p, lay) {
   const d = DEFS[p.type], els = [];
   lay = lay || (k => k === "shadow" ? L.shadow : k === "paint" ? L.paint : k === "mon" ? L.lv[d.mon.layer].over : lvL(p.h)[k]);
-  const cx = (p.c + .5) * T, cy = (p.r + .5) * T - p.h * E, tf = `translate(${cx} ${cy}) rotate(${p.rot * 90})`;
+  const bk = d.big || 1, cx = (p.c + bk / 2) * T, cy = (p.r + bk / 2) * T - p.h * E, tf = `translate(${cx} ${cy}) rotate(${p.rot * 90})`;
   const g = el("g", {}, lay("piece")); els.push(g);
   p.els = els;
   if (d.gtile) {
@@ -848,10 +856,16 @@ function drawPiece(p, lay) {
   }
   if (d.deco) {
     if (d.water) { drawWater(p, g); return; }
-    if (SPRITES[p.type]) { // illustrated: drawn over the trains of its floor, back to front, so tall buildings hide what is behind them
-      const ov = lay("over"), sg = ov ? el("g", {}, ov) : g; if (ov) els.push(sg);
-      if (ov) { sg.dataset.y = cy; const nx = [...ov.children].find(ch => ch !== sg && ch.dataset.y != null && +ch.dataset.y > cy); if (nx) ov.insertBefore(sg, nx); }
-      SPRITES[p.type](sg, cx - 50, cy - 50, p.c * 7 + p.r * 13);
+    const spr = SPRITES[d.base || p.type];
+    if (spr) { // illustrated: drawn over the trains of its floor, back to front, so tall buildings hide what is behind them
+      const ov = lay("over"), sg = ov ? el("g", {}, ov) : g, fy = cy + (bk - 1) * T / 2; if (ov) els.push(sg);
+      if (ov) { sg.dataset.y = fy; const nx = [...ov.children].find(ch => ch !== sg && ch.dataset.y != null && +ch.dataset.y > fy); if (nx) ov.insertBefore(sg, nx); }
+      // boats sitting on water rock gently (and have no grass shadow under them)
+      const onWater = d.float && piecesIn(p.c, p.r).some(q => DEFS[q.type].water);
+      let dg = bk > 1 ? el("g", { transform: `translate(${cx} ${cy}) scale(${bk}) translate(${-cx} ${-cy})` }, sg) : sg;
+      if (onWater) dg = el("g", { class: "bob", style: `animation-delay:${(-(p.c * .53 + p.r * .31) % 3).toFixed(2)}s` }, dg);
+      spr(dg, cx - 50, cy - 50, p.c * 7 + p.r * 13);
+      if (onWater) dg.querySelectorAll("ellipse").forEach((e, i) => { if (i === 0) e.setAttribute("fill", "rgba(255,255,255,.35)"); });
       if (SWAY.has(p.type)) { const sw = el("g", { class: "sway", style: `animation-delay:${(-(p.c * 0.37 + p.r * 0.71) % 4).toFixed(2)}s` }, sg); while (sg.firstChild !== sw) sw.appendChild(sg.firstChild); }
       return;
     }
@@ -954,15 +968,7 @@ function drawPiece(p, lay) {
   if (p.type === "tunel" || p.type === "tunelL" || p.type === "paso") {
     const og = el("g", {}, lay("over")); els.push(og);
     const lo = el("g", { transform: tf }, og);
-    if (p.type === "tunel" || p.type === "tunelL") {
-      const x0 = -36, x1 = p.type === "tunel" ? 36 : 136, mid = (x0 + x1) / 2;
-      el("path", { d: `M${x0} -60 Q${x0 - 34} 0 ${x0} 60 L${x1} 60 Q${x1 + 34} 0 ${x1} -60 Z`, fill: "#6aa84f", stroke: "#3e7a2c", "stroke-width": 4 }, lo);
-      el("path", { d: `M${mid - 22} -30 Q${mid} -56 ${mid + 22} -28 Q${mid + 8} -10 ${mid - 22} -30 Z`, fill: "#fff", opacity: .9 }, lo);
-      [[mid - 16, 22, 7], [mid + 18, 30, 5], [mid + 22, -2, 4]].forEach(([x, y, r]) => el("circle", { cx: x, cy: y, r, fill: "#4f8a3a" }, lo));
-      [x0 - 2, x1 + 2].forEach(x => {
-        el("ellipse", { cx: x, cy: 0, rx: 9, ry: 30, fill: "#9e9e9e", stroke: "#666", "stroke-width": 3 }, lo);
-        el("ellipse", { cx: x, cy: 0, rx: 5, ry: 23, fill: "#2b1d0e" }, lo);
-      });
+    if (p.type === "tunel" || p.type === "tunelL") { drawTunnel(lo, p);
     } else {
       p.arms = []; p.lights = [];
       [[-40, -40, 0], [40, 40, 180]].forEach(([x, y, base]) => {
@@ -976,6 +982,31 @@ function drawPiece(p, lay) {
       p.armT = p.armT || 0;
     }
   }
+}
+
+// a rounded grassy hill over the track, with a stone portal and a dark mouth at each end
+function drawTunnel(lo, p) {
+  const long = p.type === "tunelL", x0 = -40, x1 = long ? 140 : 40, mid = (x0 + x1) / 2, H = 56, R = i => seeded(p.c, p.r, i);
+  const mound = (a, b, t, u) => `M${a} ${t + 26}Q${a} ${t} ${a + 26} ${t}L${b - 26} ${t}Q${b} ${t} ${b} ${t + 26}L${b} ${u - 26}Q${b} ${u} ${b - 26} ${u}L${a + 26} ${u}Q${a} ${u} ${a} ${u - 26}Z`;
+  el("path", { d: mound(x0 + 4, x1 + 10, -H + 10, H + 10), fill: "rgba(20,40,10,.22)" }, lo);
+  el("path", { d: mound(x0, x1, -H, H), fill: "#4f8f3c", stroke: "#356b27", "stroke-width": 4 }, lo);
+  el("path", { d: mound(x0 + 3, x1 - 3, -H + 3, H * .45), fill: "#6db450" }, lo);
+  el("ellipse", { cx: mid - (x1 - x0) * .18, cy: -H * .45, rx: (x1 - x0) * .32 + 10, ry: 16, fill: "#8fd06c", opacity: .8 }, lo);
+  // grass tufts, pebbles and (on the long one) a little tree
+  for (let i = 0; i < (long ? 7 : 4); i++) { const tx = x0 + 6 + R(i) * (x1 - x0 - 12), ty = -H + 14 + R(i + 9) * (H * 1.3); el("path", { d: `M${tx - 6} ${ty + 4}l3 -9l3 9l3 -11l3 11`, fill: "none", stroke: "#3f7d2f", "stroke-width": 2.5, "stroke-linecap": "round", "stroke-linejoin": "round" }, lo); }
+  el("ellipse", { cx: mid + (x1 - x0) * .22, cy: H * .2, rx: 9, ry: 6, fill: "#a7a39b", stroke: "#6f6a62", "stroke-width": 2 }, lo);
+  if (long) { el("ellipse", { cx: mid + 6, cy: -6, rx: 20, ry: 8, fill: "rgba(20,40,10,.25)" }, lo); el("circle", { cx: mid, cy: -18, r: 20, fill: "#2f7a32", stroke: "#215a23", "stroke-width": 3 }, lo); el("circle", { cx: mid - 7, cy: -25, r: 8, fill: "#4c9a45" }, lo); }
+  else ["#ff8fb1", "#fff", "#ffd34d"].forEach((c, i) => el("circle", { cx: mid - 8 + i * 9, cy: -26 + (i % 2) * 6, r: 4.5, fill: c, stroke: "rgba(0,0,0,.25)", "stroke-width": 1.5 }, lo));
+  // stone portals
+  // stone arches at both ends: a dark mouth opening outwards, ringed with blocks
+  [[x0, -1], [x1, 1]].forEach(([x, sx]) => {
+    const g2 = el("g", { transform: `translate(${x} 0) scale(${sx} 1)` }, lo);
+    el("path", { d: "M4 -40A22 40 0 0 0 4 40", fill: "none", stroke: "#6f665b", "stroke-width": 17 }, g2);
+    el("path", { d: "M4 -40A22 40 0 0 0 4 40", fill: "none", stroke: "#c9c0b2", "stroke-width": 12 }, g2);
+    for (let k = 1; k < 8; k++) { const a = -Math.PI / 2 - k * Math.PI / 8, cx = 4 + Math.cos(a) * 22, cy = -Math.sin(a) * 40 * -1; void cx; el("line", { x1: 4 + Math.cos(a) * 16, y1: Math.sin(a) * 34, x2: 4 + Math.cos(a) * 28, y2: Math.sin(a) * 46, stroke: "#8f857a", "stroke-width": 2 }, g2); }
+    el("path", { d: "M10 -31A16 31 0 0 0 10 31Z", fill: "#1f140a" }, g2);
+    el("path", { d: "M10 -31A16 31 0 0 0 10 31", fill: "none", stroke: "#3a2614", "stroke-width": 4 }, g2);
+  });
 }
 
 // =====================================================================
@@ -1602,6 +1633,16 @@ function drawToriiG(g, X, Y) {
 
 function refreshHints() {
   L.hints.innerHTML = "";
+  if (!running && typeof tool === "string" && DEFS[tool] && DEFS[tool].mon) pieces.forEach(p => {
+    const d = DEFS[p.type]; if (!d.mon) return;
+    p.geo.cells.forEach(([x, y], i) => {
+      if (d.occ[i][0] <= 0) return;
+      const g = el("g", { class: "monok" }, L.hints);
+      el("rect", { x: x * T + 9, y: y * T + 9, width: T - 18, height: T - 18, rx: 16, fill: "rgba(46,204,64,.28)", stroke: "#2ecc40", "stroke-width": 5, "stroke-dasharray": "14 9" }, g);
+      [-14, 14].forEach(o => el("line", { x1: x * T + 30, y1: y * T + 50 + o, x2: x * T + 70, y2: y * T + 50 + o, stroke: "#1f8f31", "stroke-width": 5, "stroke-linecap": "round" }, g));
+      [30, 43, 57, 70].forEach(o => el("line", { x1: x * T + o, y1: y * T + 30, x2: x * T + o, y2: y * T + 70, stroke: "#1f8f31", "stroke-width": 4, "stroke-linecap": "round", opacity: .6 }, g));
+    });
+  });
   const tall = [...pieces.values()].some(p => p.geo.routes.some(R => R.za || R.zb));
   const num = (x, y, z, bg, fg) => {
     const g = el("g", { transform: `translate(${x.toFixed(1)} ${y.toFixed(1)})` }, L.hints);
@@ -2612,6 +2653,17 @@ function handleTap0(wx, wy) {
   let st = null;
   if (!deco) { st = smartTarget(wx, wy); if (st && !pieceAtLevel(st.c, st.r, st.z)) { c = st.c; r = st.r; f = st.z; } else st = null; }
   if (isSlope(type) && !proMode && !lvl) slopeMode = autoSlope(st, f);
+  if (dd.float && !lvl) { // boats go on water: the nearest water square within 3
+    const wet = (x, y) => piecesIn(x, y).some(q => DEFS[q.type].water) && !piecesIn(x, y).some(q => DEFS[q.type].float);
+    if (!wet(c, r)) {
+      let best = null, bd = 1e9;
+      for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) { const d2 = dx * dx + dy * dy; if (d2 < bd && inB(c + dx, r + dy) && wet(c + dx, r + dy)) { bd = d2; best = [c + dx, r + dy]; } }
+      if (!best) { sfx.no(); toast("🌊 ?"); return; }
+      [c, r] = best;
+    }
+    if (placePiece(type, c, r, 0, { replace: true })) { sfx.toc(); autosave(); }
+    return;
+  }
   const here = pieceAtLevel(c, r, f);
   if (here && isSlope(here.type) && (isSlope(type) || here.type === type)) { slopeSel = here.id; sfx.click(); return; } // slopes use their two buttons
   if (here && (here.type === type || MIRROR[type] === here.type || tool === "lapiz" || (tool === "lapizCalle" && DEFS[here.type].road))) { rotatePiece(here); return; } // same piece: turn it
@@ -2654,7 +2706,7 @@ function conflictsFor(type, ac, ar, rot, h) {
     const [x, y] = cells[i];
     if (!inB(x, y)) return null;
     const [lo, hi] = d.occ ? d.occ[i] : [h, h + sp];
-    piecesIn(x, y).forEach(q => { const [ql, qh] = occRange(q, x, y); if (!(qh <= lo || ql >= hi)) set.add(q); });
+    piecesIn(x, y).forEach(q => { if ((d.float && DEFS[q.type].water) || (d.water && DEFS[q.type].float)) return; const [ql, qh] = occRange(q, x, y); if (!(qh <= lo || ql >= hi)) set.add(q); });
   }
   return [...set];
 }
@@ -2699,7 +2751,7 @@ function placePiece(type, c, r, f, opts) {
   const type0 = type;
   cands.forEach(k => {
     const type = k.t;
-    if (d.mon && k.rot) return;
+    if ((d.mon || d.big) && k.rot) return;
     const conf = conflictsFor(type, k.ac, k.ar, k.rot, k.h);
     if (!conf) return;
     if (conf.length && !opts.replace && !tg) return;
@@ -4747,10 +4799,10 @@ const TABS = [
   { id: "cruces", grp: "vias", ic: "🔀", nm: "Desvíos", items: ["desvioI", "desvioY", "cruce", "hz_listo", "hz_senal"] },
   { id: "subir", grp: "vias", ic: "⛰️", nm: "Rampas", items: ["rampa", "subeI"] },
   { id: "especial", grp: "vias", ic: "🚉", nm: "Estación", items: ["estacion", "tunel", "tunelL", "tope", "paso"] },
-  { id: "campo", grp: "decor", ic: "🌳", nm: "Campo", items: CAMPO.map(d => d[0]) },
+  { id: "campo", grp: "decor", ic: "🌳", nm: "Campo", items: CAMPO.map(d => bigOf(d[0])) },
   { id: "calles", grp: "calles", ic: "🚗", nm: "Calles", items: ["lapizCalle", "calle", "calleC", "calleT", "calleX", "paso", "calleVia", "calleViaC", "car_coche", "car_taxi", "car_bus", "car_policia", "car_bomberos", "car_tuktuk"] },
   { id: "suelos", grp: "decor", ic: "🎨", nm: "Suelos", items: ["plaza", "arena", "parque", "nieve", "campo", "gris", "rosa", "naranja", "azul", "amarillo", "marron", "rojo", "agua"] },
-  { id: "ciudad", grp: "decor", ic: "🏙️", nm: "Ciudad", items: ["casa", "granja", "iglesia", "rascacielos", "tienda", "ciudad", "museo", "kiosco", "estadio", "fuente", "barco", "velero", "torre", "castillo", "torii", "templo", "estatua", "reloj", "noria", "atraccion", "tiovivo", "globo", "dragon", "cafe"] },
+  { id: "ciudad", grp: "decor", ic: "🏙️", nm: "Ciudad", items: ["casa", "granja", "iglesia", "rascacielos", "tienda", "ciudad", "museo", "kiosco", "estadioG", "fuente", "barco", "velero", "torre", "castilloG", "torii", "temploG", "estatuaG", "reloj", "noriaG", "atraccionG", "tiovivoG", "globo", "dragon", "cafe"] },
   { id: "monumentos", grp: "decor", ic: "🏛️", nm: "Monumentos", items: ["arco", "eiffel", "towerb", "bigben", "acueducto", "alcala", "toriiG", "obelisco", "faro", "monte"] },
   { id: "trenes", grp: "trenes", ic: "🚂", nm: "Trenes", items: [] },
 ];
@@ -4763,6 +4815,7 @@ function textOf(id) {
   if (isSlope(id)) return trn(slopeMode === "down" ? "Ahora BAJA ⬇️ desde el piso en el que estás." : "Ahora SUBE ⬆️ desde el piso en el que estás.") + " " + trn(INFO[id][2]);
   if (id === "train") return trn(KINDS[trainKind].desc) + " " + trn("Toca una vía para ponerlo y tócalo para darle la vuelta. ➖ ➕ cambian los vagones.");
   if (id.startsWith("car_")) return "Toca una calle para ponerlo. Anda cuando pulsas ▶️, elige camino en los cruces y espera en el paso a nivel. Tócalo para darle la vuelta.";
+  if (INFO[id] && DEFS[id] && DEFS[id].mon) return trn(INFO[id][2]) + " " + LX("Los recuadros verdes muestran por dónde puede pasar la vía, por debajo.", "The green squares show where track can go through, underneath.", "Les cases vertes montrent où la voie peut passer, en dessous.");
   if (INFO[id]) return INFO[id][2];
   if (id === "agua") return "Un río, un lago o el mar. Pasa por encima con una vía elevada (sube con una rampa).";
   return "Figura de adorno. Aquí no hay vía: si un tren llega, ¡descarrila!";
@@ -4849,7 +4902,7 @@ function iconFor(id) {
   if (INFO[id] && INFO[id][0]) { const sp = document.createElement("span"); sp.textContent = INFO[id][0]; return sp; }
   if (DEFS[id] && !DEFS[id].deco) return pieceIcon(id);
   if (id === "agua") { const s = el("svg", { viewBox: "0 0 100 100" }); el("rect", { x: 4, y: 4, width: 92, height: 92, rx: 14, fill: "#4aa3df" }, s); el("path", { d: "M15 40 q12 -10 24 0 t24 0 t24 0 M15 66 q12 -10 24 0 t24 0 t24 0", stroke: "#bfe6ff", "stroke-width": 6, fill: "none" }, s); return s; }
-  if (SPRITES[id]) return spriteIcon(id);
+  if (SPRITES[DEFS[id].base || id]) return spriteIcon(DEFS[id].base || id);
   const sp = document.createElement("span"); sp.textContent = DEFS[id].deco; return sp;
 }
 function showInfo(id) {
@@ -4980,7 +5033,9 @@ function selectTab(id) {
   layoutUI();
 }
 function selectTool(id) {
-  tool = id; document.body.classList.toggle("toolhand", id === "hand"); if (typeof updateGrid === "function") setTimeout(updateGrid, 0);
+  const wasMon = DEFS[tool] && DEFS[tool].mon;
+  tool = id; document.body.classList.toggle("toolhand", id === "hand");
+  if (wasMon || (DEFS[id] && DEFS[id].mon)) setTimeout(refreshHints, 0); if (typeof updateGrid === "function") setTimeout(updateGrid, 0);
   if (WX[id]) setWeather(WX[id]);
   if (id === "hz_noche") setNight(!night);
   document.querySelectorAll("#palette .it").forEach(e => e.classList.toggle("sel", e.dataset.id === id || (id === "train" && e.dataset.kind === trainKind)));
