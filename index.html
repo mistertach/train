@@ -330,6 +330,20 @@
   .dconf { position: absolute; top: -20px; width: 14px; height: 22px; border-radius: 4px; animation: dconf 2.6s linear forwards; }
   @keyframes dconf { to { transform: translateY(110vh) rotate(720deg); } }
   #duel.darena[data-ev="tug"] { background: #78bd5a; }
+  #duel.darena[data-ev="race"] { background: #a9c97a; }
+  .djump { width: clamp(84px, 10vw, 120px); height: clamp(84px, 10vw, 120px); border-radius: 50%; border: 6px solid #6b4219; background: #fff8e8; box-shadow: 0 6px 0 #6b4219; cursor: pointer; padding: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; touch-action: none; -webkit-tap-highlight-color: transparent; }
+  .djump .je { font-size: clamp(34px, 4.4vw, 52px); line-height: 1; } .djump .jl { font-size: 15px; font-weight: 900; color: #3b2a18; }
+  .djump:active { transform: translateY(4px); box-shadow: 0 2px 0 #6b4219; }
+  .djump[data-st="soon"] { background: #ffe79a; }
+  .djump[data-st="now"] { background: #3ec46d; box-shadow: 0 6px 0 #1d6b33, 0 0 22px #7dffa8; animation: tutPulse .5s ease-in-out infinite; } .djump[data-st="now"] .jl { color: #fff; }
+  #duel:not([data-ev="race"]) .djump, #duel:not([data-ev="race"]) .dprog { display: none; }
+  .dprog { position: absolute; left: 50%; top: 6px; transform: translateX(-50%); width: min(560px, 60%); height: 34px; pointer-events: none; z-index: 1; }
+  .dpline { position: absolute; left: 0; right: 0; top: 13px; height: 10px; border-radius: 6px; background: linear-gradient(90deg, #5fae4f, #c3c690 70%, #eef3f6); border: 3px solid #fff; box-shadow: 0 2px 0 rgba(0,0,0,.25); }
+  .dpflag { position: absolute; right: -14px; top: -2px; font-size: 30px; }
+  .dpdot { position: absolute; width: 54px; height: 30px; transform: translateX(-50%); transition: none; }
+  .dpdot svg { width: 100%; height: 100%; } .dpdot.p1 { top: -10px; } .dpdot.p2 { top: 14px; }
+
   .dban.top { top: 24%; font-size: clamp(34px, 5vw, 58px); }
   .dstats .dim { opacity: .35; }
   .dpush[data-st="hold"] .bg { fill: #ffd34d; }
@@ -347,7 +361,7 @@
     .dstats { font-size: 12px; gap: 1px 8px; } .dstats .dbar { height: 9px; }
     .dgo { font-size: 20px; padding: 6px 26px; border-width: 4px; box-shadow: 0 4px 0 #134a22; } .dgo.alt { font-size: 17px; }
     .dcard { padding: 10px 20px; gap: 6px; } .dtro { font-size: 50px; } .dwin { height: 60px; width: 150px; } .dcoins { font-size: 28px; }
-    .dtop { min-height: 44px; } .dname { font-size: 18px; } .dname svg { width: 50px; height: 30px; } .dpush { width: 96px; height: 96px; } .dhorn { width: 56px; height: 56px; font-size: 28px; } .dmid { font-size: 13px; } }
+    .djump { width: 76px; height: 76px; } .djump .je { font-size: 32px; } .djump .jl { font-size: 12px; } .dprog { height: 26px; } .dpdot { width: 40px; height: 22px; } .dtop { min-height: 44px; } .dname { font-size: 18px; } .dname svg { width: 50px; height: 30px; } .dpush { width: 96px; height: 96px; } .dhorn { width: 56px; height: 56px; font-size: 28px; } .dmid { font-size: 13px; } }
   @media (max-width: 1400px) { .mode { width: min(250px, 80vw); padding: 14px; } .mode .big { font-size: 64px; } .mode b { font-size: 24px; } }
   @media (prefers-reduced-motion: reduce) { .mudb, .dpush svg, .dconf, .dban, .dhorn.ready, .sway, .popin, .slidein, #card, #menuPop, .wv, .glint, .fall, .foam, .mist { animation: none !important; } }
   #toast { position: fixed; left: 50%; top: 24%; transform: translate(-50%, -50%) scale(.5); font-size: 84px; opacity: 0; pointer-events: none; z-index: 40;
@@ -6838,13 +6852,14 @@ const DUEL_ST = { // p power · w weight · s speed · h steam  (balanced by sim
   bomberosT:  { p: 6,   w: 8, s: 4, h: 8 },
 };
 const DUEL_LV = { // push: tap when the ring is at mu±sd · tug: let go at rel±rsd of the slip time, rest rest±restSd
-  easy:   { mu: .7,  sd: .35, skip: .4,  horn: 2.5, save: 0, coins: 3, rel: 1.1, rsd: .3,  rest: .75, restSd: .35, react: .6 },
-  normal: { mu: .88, sd: .3,  skip: .22, horn: 1.5, save: 1, coins: 5, rel: 1.0, rsd: .2,  rest: .65, restSd: .25, react: .45 },
-  hard:   { mu: 1.05, sd: .11, skip: .05, horn: .4,  save: 2, coins: 8, rel: .9, rsd: .1,  rest: .5,  restSd: .12, react: .28 },
+  easy:   { mu: .7,  sd: .35, skip: .4,  horn: 2.5, save: 0, coins: 3, rel: 1.1, rsd: .3,  rest: .75, restSd: .35, react: .6,  jsd: .2,  miss: .25, keep: 0,   restT: 0 },
+  normal: { mu: .88, sd: .3,  skip: .22, horn: 1.5, save: 1, coins: 5, rel: 1.0, rsd: .2,  rest: .65, restSd: .25, react: .45, jsd: .16, miss: .17, keep: .6,  restT: 1 },
+  hard:   { mu: 1.05, sd: .11, skip: .05, horn: .4,  save: 2, coins: 8, rel: .9, rsd: .1,  rest: .5,  restSd: .12, react: .28, jsd: .07, miss: .03, keep: 1.2, restT: 1.4 },
 };
 const DUEL_EV = {
   push: { em: "🚂", nm: ["Empujar", "Push-off", "Poussée"] },
   tug:  { em: "🪢", nm: ["Tira de la cuerda", "Tug of war", "Tir à la corde"] },
+  race: { em: "⛰️", nm: ["Carrera a la cima", "Hill race", "Course au sommet"] },
   mix:  { em: "🎲", nm: ["Mezcla", "Mix", "Mélange"] },
 };
 const DUEL_TX = {
@@ -6854,6 +6869,8 @@ const DUEL_TX = {
   fall: [["¡Plof! ¡Al agua!", "Splash! Into the water!", "Plouf ! Dans l'eau !"], ["¡Uy, qué fresquita!", "Ooh, it's chilly!", "Oh, elle est fraîche !"]],
   mud: [["¡Puaj! ¡Barro!", "Yuck! Mud!", "Beurk ! De la boue !"], ["¡Me he puesto perdido!", "I'm all muddy!", "Je suis tout sale !"]],
   slip: [["¡Patino!", "I'm slipping!", "Je patine !"]],
+  rstart: [["¡Hasta la cima!", "To the top!", "Jusqu'au sommet !"], ["¡Te voy a ganar!", "I'm going to beat you!", "Je vais te battre !"], ["¡Cuidado con las vacas!", "Watch out for the cows!", "Attention aux vaches !"]],
+  rlose: [["¡Casi! ¡Qué carrera!", "So close! What a race!", "Presque ! Quelle course !"], ["¡Uf, qué cuesta!", "Phew, what a hill!", "Ouf, quelle montée !"]],
   tired: [["¡Uf, sin vapor!", "Phew, out of steam!", "Ouf, plus de vapeur !"]],
   horn: [["¡Tuuuut! ¡Turbo!", "Toooot! Turbo!", "Tuuuut ! Turbo !"]],
 };
@@ -6896,13 +6913,17 @@ function duelPickScreen() {
     const b = addEl(evs, "div", "dchip ev" + (P.ev === ev ? " on" : ""), evName(ev));
     b.onclick = () => { sfx.click(); P.ev = ev; duelPickScreen(); };
   });
-  addEl(d, "div", "dhint", P.ev === "tug"
+  addEl(d, "div", "dhint", P.ev === "race"
+    ? LX("Dos trenes suben una montaña. Acelera, salta las vacas y las rocas, y no te quedes sin vapor. ¡El primero en la cima gana la ronda!",
+      "Two trains race up a mountain. Speed up, jump the cows and rocks, and don't run out of steam. First to the top wins the round!",
+      "Deux trains montent une montagne. Accélère, saute les vaches et les rochers, et garde de la vapeur. Le premier au sommet gagne la manche !")
+    : P.ev === "tug"
     ? LX("Dos trenes espalda con espalda, atados con una cuerda sobre un charco de barro. ¡Arrastra al otro al barro! Gana quien gane 2 rondas.",
       "Two trains back to back, tied with a rope over a mud pit. Drag the other one into the mud! First to win 2 rounds wins.",
       "Deux trains dos à dos, attachés par une corde au-dessus d'une flaque de boue. Tire l'autre dans la boue ! Le premier à gagner 2 manches gagne.")
-    : P.ev === "mix" ? LX("Cada ronda es distinta: empujar en el muelle y tirar de la cuerda en el barro. Gana quien gane 2 rondas.",
-      "Every round is different: pushing on the pier and tug of war over the mud. First to win 2 rounds wins.",
-      "Chaque manche est différente : poussée sur le quai et tir à la corde au-dessus de la boue. Le premier à gagner 2 manches gagne.")
+    : P.ev === "mix" ? LX("Cada ronda es distinta: empujar en el muelle, tirar de la cuerda en el barro y la carrera a la cima. Gana quien gane 2 rondas.",
+      "Every round is different: pushing on the pier, tug of war over the mud and the hill race. First to win 2 rounds wins.",
+      "Chaque manche est différente : poussée sur le quai, tir à la corde au-dessus de la boue et course au sommet. Le premier à gagner 2 manches gagne.")
     : LX("Dos trenes frente a frente en el muelle. ¡Empuja al otro al agua! Gana quien gane 2 rondas.",
       "Two trains nose to nose on the pier. Push the other one into the water! First to win 2 rounds wins.",
       "Deux trains face à face sur le quai. Pousse l'autre dans l'eau ! Le premier à gagner 2 manches gagne."));
@@ -6941,8 +6962,9 @@ function duelPickScreen() {
   const tipPush = LX("💪 Toca cuando el círculo se ponga VERDE. Si tocas muy deprisa te quedas sin vapor.", "💪 Tap when the ring turns GREEN. Tap too fast and you run out of steam.", "💪 Touche quand le cercle devient VERT. Si tu touches trop vite, tu n'as plus de vapeur.");
   const tipTug = LX("🪢 MANTÉN pulsado para tirar. Cuando el círculo se ponga rojo, ¡suelta! o las ruedas patinan.", "🪢 HOLD to pull. When the ring turns red, let go! or the wheels slip.", "🪢 GARDE le doigt appuyé pour tirer. Quand le cercle devient rouge, lâche ! sinon les roues patinent.");
   const tipHorn = LX(" Si lo haces bien se enciende la 🎺 bocina turbo.", " Do it well and the 🎺 turbo horn lights up.", " Si tu le fais bien, le 🎺 klaxon turbo s'allume.");
-  addEl(d, "div", "dhint sm", (P.ev === "push" ? tipPush : P.ev === "tug" ? tipTug : tipPush + " " + tipTug) + tipHorn);
-  const go = addEl(d, "button", "dgo", P.ev === "tug" ? LX("¡A tirar!", "Let's pull!", "On tire !") : LX("¡A jugar!", "Let's play!", "On joue !"));
+  const tipRace = LX("⚡ MANTÉN pulsado para acelerar y pulsa 🦘 cuando se ponga verde para saltar.", "⚡ HOLD to speed up, and press 🦘 when it turns green to jump.", "⚡ GARDE le doigt appuyé pour accélérer, et appuie sur 🦘 quand il devient vert pour sauter.");
+  addEl(d, "div", "dhint sm", (P.ev === "push" ? tipPush : P.ev === "tug" ? tipTug : P.ev === "race" ? tipRace : tipPush + " " + tipTug + " " + tipRace) + tipHorn);
+  const go = addEl(d, "button", "dgo", P.ev === "tug" ? LX("¡A tirar!", "Let's pull!", "On tire !") : P.ev === "race" ? LX("¡A correr!", "Let's race!", "On court !") : LX("¡A jugar!", "Let's play!", "On joue !"));
   go.onclick = () => { sfx.whistleShort(); duelStart(); };
 }
 
@@ -6954,7 +6976,7 @@ function duelStart() {
     return { i, k, S, rate: dRate(S), c1: same ? (K.c1[1] || K.c1[0]) : K.c1[0], c2: same ? (K.c2[1] || K.c2[0]) : K.c2[0],
       name: dName(k) + (same ? " 2" : ""), ai: P.mode === "ai" && i === 1, wins: 0 };
   };
-  const evs = P.ev === "mix" ? ["push", "tug", Math.random() < .5 ? "push" : "tug"] : [P.ev, P.ev, P.ev];
+  const evs = P.ev === "mix" ? ["push", "tug", "race"].sort(() => Math.random() - .5) : [P.ev, P.ev, P.ev];
   DUEL.m = { mode: P.mode, lvl: P.lvl, evs, p: [mk(P.k[0], 0), mk(P.k[1], 1)], fx: [], r: null };
   duelArena(); duelRound();
   let last = performance.now();
@@ -6974,8 +6996,10 @@ function duelArena() {
   const stage = addEl(d, "div", "dstage");
   const svg = el("svg", { id: "dsvg", viewBox: "0 0 1600 720", preserveAspectRatio: "xMidYMid meet" }, stage);
   m.svg = svg;
+  const prog = addEl(stage, "div", "dprog"); addEl(prog, "div", "dpline"); addEl(prog, "div", "dpflag", "🏁");
+  m.p.forEach(p => { p.progE = addEl(prog, "div", "dpdot p" + (p.i + 1)); p.progE.appendChild(trainIcon(p.k, 1, p.c1, p.c2)); });
   // always show the whole playing area, as big as the space allows; the scenery fills whatever is left over
-  m.fit = () => { const r = stage.getBoundingClientRect(); if (r.height) svg.setAttribute("preserveAspectRatio", r.width / r.height > 1600 / 560 ? "xMidYMid slice" : "xMidYMid meet"); };
+  m.fit = () => { const r = stage.getBoundingClientRect(); if (r.height) svg.setAttribute("preserveAspectRatio", m.ev !== "race" && r.width / r.height > 1600 / 560 ? "xMidYMid slice" : "xMidYMid meet"); };
   setTimeout(m.fit, 0);
   const pads = addEl(d, "div", "dpads");
   m.p.forEach(p => {
@@ -6983,6 +7007,7 @@ function duelArena() {
     const push = addEl(pad, "button", "dpush");
     push.innerHTML = `<svg viewBox="-64 -64 128 128"><circle class="bg" r="50"/><circle class="tr" r="57"/><circle class="pr" r="57" transform="rotate(-90)" stroke-dasharray="358.1" stroke-dashoffset="358.1"/><text class="em" y="2">💪</text><text class="lb" y="36"></text></svg>`;
     p.pushE = push; p.ringE = push.querySelector(".pr"); p.lblE = push.querySelector(".lb"); p.emE = push.querySelector(".em");
+    const jump = addEl(pad, "button", "djump"); addEl(jump, "span", "je", "🦘"); addEl(jump, "span", "jl", LX("salta", "jump", "saute")); p.jumpE = jump;
     const side = addEl(pad, "div", "dside");
     const horn = addEl(side, "button", "dhorn", "🎺"); p.hornE = horn;
     const st = addEl(side, "div", "dsteam"); addEl(st, "span", "", "♨️"); const sb = addEl(st, "div", "dbar"); p.steamE = addEl(sb, "i");
@@ -6992,22 +7017,28 @@ function duelArena() {
       ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => push.addEventListener(ev, () => duelUp(p.i)));
       push.addEventListener("contextmenu", e => e.preventDefault());
       horn.addEventListener("pointerdown", e => { e.preventDefault(); duelHorn(p.i); });
+      jump.addEventListener("pointerdown", e => { e.preventDefault(); duelJump(p.i); });
     }
-    if (p.i === 0) m.midE = addEl(pads, "div", "dmid", m.mode === "2p" && matchMedia("(hover: hover)").matches ? LX("Jugador 1: A · S    Jugador 2: L · K", "Player 1: A · S    Player 2: L · K", "Joueur 1 : A · S    Joueur 2 : L · K") : "");
+    if (p.i === 0) m.midE = addEl(pads, "div", "dmid", m.mode === "2p" && matchMedia("(hover: hover)").matches ? LX("Jugador 1: A · W · S    Jugador 2: L · O · K", "Player 1: A · W · S    Player 2: L · O · K", "Joueur 1 : A · W · S    Joueur 2 : L · O · K") : "");
   });
 }
 // the scenery and the two trains, rebuilt every round (in a mix the event changes)
 function duelBuild(ev) {
   const m = DUEL.m, svg = m.svg; svg.innerHTML = "";
-  if (ev === "tug") duelSceneTug(svg); else duelScene(svg);
+  svg.setAttribute("viewBox", "0 0 1600 720");
+  if (ev === "tug") duelSceneTug(svg); else if (ev === "race") duelSceneRace(svg); else duelScene(svg);
+  if (ev === "race") m.obL = el("g", {}, svg);
   m.trainL = el("g", {}, svg); m.fxL = el("g", { "pointer-events": "none" }, svg);
   if (ev === "tug") { m.ropeE = el("g", {}, m.trainL); }
   m.p.forEach(p => {
+    if (ev === "race") p.shE = el("ellipse", { rx: 75 * RS, ry: 24 * RS, fill: "#000", opacity: 0 }, m.trainL);
     p.g = el("g", {}, m.trainL); p.bub = null; p.faceG = null; p.faceKey = "";
     p.cars = [];
     carTypes(p.k, 1).forEach((type, j) => { const g = el("g", { transform: `translate(${-j * SP} 0)` }, p.g); drawCar(g, type, carColor(KINDS[p.k], j, p.c1), p.c2); if (j === 0) p.faceHost = g; p.cars.push(g); });
   });
-  m.p.forEach(p => { p.emE.textContent = ev === "tug" ? "🪢" : "💪"; p.pushE.dataset.st = ""; });
+  m.p.forEach(p => { p.emE.textContent = ev === "tug" ? "🪢" : ev === "race" ? "⚡" : "💪"; p.pushE.dataset.st = ""; });
+  if (ev === "race") duelRaceSetup();
+  if (m.fit) m.fit();
 }
 function duelScene(svg) {
   const defs = el("defs", {}, svg);
@@ -7042,9 +7073,10 @@ function duelScene(svg) {
   DEDGE.forEach((x, i) => el("rect", { x: i ? x - 26 : x, y: DCY - 100, width: 26, height: 200, fill: "url(#dstripe)", stroke: "#6b4219", "stroke-width": 4 }, pier));
   el("line", { x1: DCX, y1: DCY - 96, x2: DCX, y2: DCY + 96, stroke: "#fff", "stroke-width": 6, "stroke-dasharray": "14 12", opacity: .75 }, pier);
 }
-function duelTrack(g, x0, x1) {
-  for (let x = x0 + 20; x < x1; x += 38) el("rect", { x: x - 8, y: DCY - 76, width: 16, height: 152, rx: 3, fill: "#6e4520" }, g);
-  [-57, 57].forEach(dy => { el("rect", { x: x0, y: DCY + dy - 5, width: x1 - x0, height: 10, rx: 3, fill: "#9aa6b2", stroke: "#5b6670", "stroke-width": 2 }, g); });
+function duelTrack(g, x0, x1, y, k) {
+  y = y || DCY; k = k || 1;
+  for (let x = x0 + 20; x < x1; x += 38 * k) el("rect", { x: x - 8 * k, y: y - 76 * k, width: 16 * k, height: 152 * k, rx: 3, fill: "#6e4520" }, g);
+  [-57, 57].forEach(dy => { el("rect", { x: x0, y: y + dy * k - 5 * k, width: x1 - x0, height: 10 * k, rx: 3, fill: "#9aa6b2", stroke: "#5b6670", "stroke-width": 2 }, g); });
 }
 function duelFlowers(svg) {
   [[90, 40], [330, 30], [620, 45], [1010, 35], [1290, 40], [1520, 30], [180, 690], [520, 700], [940, 690], [1380, 700]].forEach(([x, y], i) => {
@@ -7093,12 +7125,13 @@ function duelRound() {
   duelBuild(ev);
   m.r = { x: 0, v: 0, t: 0, phase: "count", cn: 4, fallT: 0, loser: -1, shake: 0 };
   m.p.forEach(p => { p.steam = p.S.h; p.boost = 0; p.over = 0; p.hornT = 0; p.lastTap = 0; p.aiT = null; p.hornWait = null; p.mood = "happy"; p.moodT = 0;
-    p.hold = false; p.keyHold = false; p.hT = 0; p.slip = false; p.rest = rnd(.2, .6); p.rel = null; p.slipAt = 0; });
+    p.hold = false; p.keyHold = false; p.hT = 0; p.slip = false; p.rest = ev === "race" ? 0 : rnd(.2, .6); p.rel = null; p.slipAt = 0;
+    p.x = 0; p.v = 0; p.air = -1; p.stun = 0; p.plan = null; });
   m.roundE.textContent = LX("Ronda ", "Round ", "Manche ") + (n + 1) + " · " + evName(ev);
   m.p.forEach(p => { p.pipsE.textContent = "★".repeat(p.wins) + "☆".repeat(2 - p.wins); });
   if (m.evs[0] !== m.evs[1] || n === 0) duelBanner(evName(ev), "sm top");
   const who = m.p[Math.random() < .5 ? 0 : 1];
-  setTimeout(() => { if (DUEL.m === m) duelSay(who, dPick(ev === "tug" ? DUEL_TX.tstart : DUEL_TX.start), true); }, 300);
+  setTimeout(() => { if (DUEL.m === m) duelSay(who, dPick(ev === "tug" ? DUEL_TX.tstart : ev === "race" ? DUEL_TX.rstart : DUEL_TX.start), true); }, 300);
 }
 function duelBanner(t, cls) { const b = addEl($("duel"), "div", "dban" + (cls ? " " + cls : ""), t); setTimeout(() => b.remove(), cls && cls.includes("top") ? 1600 : 1000); }
 // pushes grow stronger as a round goes on, so two well-matched trains never stall for long
@@ -7114,7 +7147,8 @@ function duelStep(dt) {
       else { duelBanner(LX("¡Ya!", "Go!", "Partez !"), "go"); tone([784, 1047], "square", .09, .22, .08); R.phase = "go"; R.t = 0; m.p.forEach(p => { p.lastTap = duelG; if (p.keyHold) p.hold = true; }); }
     }
   } else if (R.phase === "go") {
-    if (m.ev === "tug") duelTugStep(dt);
+    if (m.ev === "race") duelRaceStep(dt);
+    else if (m.ev === "tug") duelTugStep(dt);
     else {
       m.p.forEach(p => {
         if (p.over > 0) { p.over -= dt; if (p.over <= 0) { p.steam = p.S.h * .5; p.lastTap = duelG; } }
@@ -7125,7 +7159,8 @@ function duelStep(dt) {
       });
       R.v *= Math.exp(-3 * dt); R.x += R.v * dt;
     }
-    if (R.x <= -1 || R.x >= 1) duelFall(m.ev === "tug" ? (R.x <= -1 ? 1 : 0) : (R.x <= -1 ? 0 : 1));
+    if (m.ev === "race") {}
+    else if (R.x <= -1 || R.x >= 1) duelFall(m.ev === "tug" ? (R.x <= -1 ? 1 : 0) : (R.x <= -1 ? 0 : 1));
     else if (R.t > 30) { // nobody budged: whoever is losing ground loses; a dead heat is replayed
       if (Math.abs(R.x) < .05) { duelBanner(LX("¡Empate!", "Draw!", "Égalité !")); R.phase = "end"; setTimeout(() => DUEL.m === m && duelRound(), 1300); }
       else duelFall(m.ev === "tug" ? (R.x < 0 ? 1 : 0) : (R.x < 0 ? 0 : 1));
@@ -7133,6 +7168,7 @@ function duelStep(dt) {
   }
   if (R.phase === "fall") {
     R.fallT += dt;
+    if (m.ev === "race") duelRaceStep(dt, true);
     if (m.ev === "tug" && R.fallT > .7 && !R.mudded) { R.mudded = true; duelMud(R.loser); }
     if (R.fallT > 2.2 && !R.done) { R.done = true; duelPoint(); }
   }
@@ -7167,18 +7203,18 @@ function duelTugAI(p, dt) {
   const L = DUEL_LV[DUEL.m.lvl];
   if (p.over > 0) { p.hold = false; return; }
   if (p.hold) {
-    if (p.slip) { if (duelG - p.slipAt > L.react) { p.hold = false; p.rest = Math.max(.15, L.rest + rndN() * L.restSd * .5); } }
-    else if (p.hornT <= 0 && p.hT / dSlip(p.S) >= p.rel) { p.hold = false; p.rest = Math.max(.15, L.rest + rndN() * L.restSd * .5); }
+    if (p.slip) { if (duelG - p.slipAt > L.react) { p.hold = false; p.rest = Math.max(.15, L.rest + rndN() * L.restSd); } }
+    else if (p.hornT <= 0 && p.hT / dSlip(p.S) >= p.rel) { p.hold = false; p.rest = Math.max(.15, L.rest + rndN() * L.restSd); }
   } else {
     p.rest -= dt;
-    if (p.rest <= 0 && p.steam > .5) { p.hold = true; p.rel = Math.max(.3, L.rel + rndN() * L.rsd * .5); }
+    if (p.rest <= 0 && p.steam > .5) { p.hold = true; p.rel = Math.max(.3, L.rel + rndN() * L.rsd); }
   }
   if (p.boost >= 1) { p.hornWait = (p.hornWait == null ? L.horn + rnd(0, .6) : p.hornWait) - dt; if (p.hornWait <= 0) { duelHorn(p.i); p.hornWait = null; } }
 }
 function duelDown(i) {
   const m = DUEL.m; if (!m || !m.r) return;
   const p = m.p[i]; p.keyHold = true;
-  if (m.ev === "tug") { if (m.r.phase === "go") p.hold = true; }
+  if (m.ev === "tug" || m.ev === "race") { if (m.r.phase === "go") p.hold = true; }
   else duelPush(i);
 }
 function duelUp(i) {
@@ -7223,6 +7259,14 @@ function duelAI(p, dt) {
 function duelFall(loser) {
   const m = DUEL.m, R = m.r; if (R.phase === "fall") return;
   R.phase = "fall"; R.loser = loser; R.fallT = 0;
+  if (m.ev === "race") {
+    const L = m.p[loser], W = m.p[1 - loser];
+    W.mood = "wow"; W.moodT = 3; L.mood = "worried"; L.moodT = 2.2;
+    duelFinish(W);
+    duelSay(W, dPick(DUEL_TX.win), true); try { HORNS[KINDS[W.k].horn](); } catch (e) {}
+    setTimeout(() => { if (DUEL.m === m) duelSay(L, dPick(DUEL_TX.rlose)); }, 900);
+    return;
+  }
   R.x = m.ev === "tug" ? (loser ? -1 : 1) : (loser ? 1 : -1);
   const L = m.p[loser], W = m.p[1 - loser];
   L.mood = "worried"; W.mood = "wow"; W.moodT = 3;
@@ -7253,9 +7297,10 @@ function duelResult(W) {
     addEl(card, "div", "dcoins", "+" + n + " 🪙");
     tone([1319, 1568, 2093], "triangle", .07, .16, .1);
   } else if (m.mode === "ai") {
-    const tug = m.evs.includes("tug"), push = m.evs.includes("push");
+    const tug = m.evs.includes("tug"), push = m.evs.includes("push"), race = m.evs.includes("race");
     addEl(card, "div", "dtip", (push ? LX("Consejo: en el muelle, espera a que el círculo se ponga verde. ", "Tip: on the pier, wait for the ring to turn green. ", "Astuce : sur le quai, attends que le cercle devienne vert. ") : "")
       + (tug ? LX("Con la cuerda, suelta un momento antes de que el círculo se ponga rojo. ", "With the rope, let go just before the ring turns red. ", "Avec la corde, lâche juste avant que le cercle devienne rouge. ") : "")
+      + (race ? LX("En la carrera, salta cuando el 🦘 se ponga verde. ", "In the race, jump when the 🦘 turns green. ", "Dans la course, saute quand le 🦘 devient vert. ") : "")
       + LX("Guarda la 🎺 bocina para cuando vayas perdiendo.", "Save the 🎺 horn for when you're losing.", "Garde le 🎺 klaxon pour quand tu perds."));
   }
   if (human) { tone([523, 659, 784, 1047, 784, 1047], "square", .1, .2, .07); for (let i = 0; i < 26; i++) { const c = addEl(ov, "div", "dconf"); c.style.left = rnd(5, 95) + "%"; c.style.background = ["#ff5d5d", "#ffd34d", "#5cc96b", "#4fa3ff", "#c77dff"][i % 5]; c.style.animationDelay = rnd(0, .8) + "s"; } }
@@ -7269,17 +7314,19 @@ function duelResult(W) {
 function duelFx(e, dur, fn) { DUEL.m.fx.push({ e, t: 0, dur, fn }); fn(0, e); }
 function duelPos(p) { // where the engine's back (tug) or nose (push-off) is
   const m = DUEL.m, R = m.r;
+  if (m.ev === "race") return RX0 + p.x;
   if (m.ev === "tug") { const rib = DCX + R.x * DRANGE; return p.i ? rib + DROPE : rib - DROPE; }
   const cx = DCX + R.x * DRANGE;
   return p.i ? cx + 4 : cx - 4;
 }
 function duelChimney(p) { // roughly where smoke comes out
   const m = DUEL.m, dir = p.i ? 1 : -1;
+  if (m.ev === "race") return duelPos(p) - 25 * RS;
   if (m.ev === "tug") return duelPos(p) + dir * (SP + 37 + 20) * DS;
   return duelPos(p) + (p.i ? 1 : -1) * 40 * DS;
 }
 function duelPuff(p, col) {
-  const m = DUEL.m, x0 = duelChimney(p), y0 = DCY - 6;
+  const m = DUEL.m, x0 = duelChimney(p), y0 = (m.ev === "race" ? RLY[p.i] : DCY) - 6;
   const c = el("circle", { cx: x0, cy: y0, r: 10, fill: col, opacity: .9 }, m.fxL), dx = rnd(-20, 20) + (p.i ? 30 : -30), dy = rnd(-70, -40);
   duelFx(c, .9, (k, e) => { e.setAttribute("cx", x0 + dx * k); e.setAttribute("cy", y0 + dy * k); e.setAttribute("r", 10 + 30 * k); e.setAttribute("opacity", .85 * (1 - k)); });
 }
@@ -7315,13 +7362,17 @@ function duelMud(loser) {
 function duelSay(p, text, voice) {
   const m = DUEL.m; if (!m) return;
   if (p.bub) p.bub.remove();
-  const x = clamp(duelPos(p) + (p.i ? 1 : -1) * 120, 260, 1340), y = 200;
+  // in the race the bubble sits between the two tracks (player 1's tail points up, player 2's down), one at a time
+  const race = m.ev === "race", below = race && p.i === 0, cam = race ? (m.cam || 0) : 0;
+  if (race) m.p.forEach(q => { if (q !== p && q.bub) { q.bub.remove(); q.bub = null; } });
+  const x = race ? clamp(duelPos(p) - 60, cam + 300, cam + 1300) : clamp(duelPos(p) + (p.i ? 1 : -1) * 120, 260, 1340), y = race ? DCY + (below ? 14 : -10) : 200;
   const g = el("g", { "pointer-events": "none" }, m.fxL), w = Math.min(560, 40 + text.length * 15);
   el("rect", { x: x - w / 2, y: y - 40, width: w, height: 64, rx: 22, fill: "#fff", stroke: "#3b2a18", "stroke-width": 4 }, g);
-  el("path", { d: `M${x - 14} ${y + 22}l${p.i ? 24 : -24} 34l${p.i ? 4 : 30} -34`, fill: "#fff", stroke: "#3b2a18", "stroke-width": 4, "stroke-linejoin": "round" }, g);
-  el("rect", { x: x - 30, y: y + 14, width: 46, height: 12, fill: "#fff" }, g);
+  if (below) { el("path", { d: `M${x - 14} ${y - 38}l12 -34l18 34`, fill: "#fff", stroke: "#3b2a18", "stroke-width": 4, "stroke-linejoin": "round" }, g); el("rect", { x: x - 30, y: y - 46, width: 46, height: 12, fill: "#fff" }, g); }
+  else { el("path", { d: `M${x - 14} ${y + 22}l${p.i || race ? 24 : -24} 34l${p.i || race ? 4 : 30} -34`, fill: "#fff", stroke: "#3b2a18", "stroke-width": 4, "stroke-linejoin": "round" }, g);
+    el("rect", { x: x - 30, y: y + 14, width: 46, height: 12, fill: "#fff" }, g); }
   const t = el("text", { x, y: y + 2, "font-size": 28, "font-weight": 800, fill: "#3b2a18", "text-anchor": "middle", "dominant-baseline": "middle" }, g); t.textContent = text;
-  const nm = el("text", { x: x - w / 2 + 14, y: y - 48, "font-size": 22, "font-weight": 900, fill: "#fff", stroke: "#6b4219", "stroke-width": 5, "paint-order": "stroke" }, g); nm.textContent = p.name;
+  const nm = el("text", { x: x - w / 2 + 14, y: below ? y + 48 : y - 48, "font-size": 22, "font-weight": 900, fill: "#fff", stroke: "#6b4219", "stroke-width": 5, "paint-order": "stroke" }, g); nm.textContent = p.name;
   p.bub = g; setTimeout(() => { if (p.bub === g) { g.remove(); p.bub = null; } }, 2200);
   if (voice) { const C = CHAR[p.k] || CHAR.vapor; speak(text, { pitch: C.pitch, rate: C.rate, raw: true }); }
 }
@@ -7331,9 +7382,168 @@ function duelFeedback(p, text, q) {
   setTimeout(() => b.remove(), 800);
 }
 
+// ---------- ⛰️ hill race: two tracks up a mountain; hold to go (uses steam), 🦘 to jump the cows and rocks
+const RL = 6000, RX0 = 300, RS = 2.3, RAIR = .65, RLY = [DCY - 100, DCY + 100];
+const rBase = S => 470 + S.s * 6;
+function duelSceneRace(svg) {
+  const W = RX0 + RL + 900, FIN = RX0 + RL;
+  const defs = el("defs", {}, svg);
+  defs.innerHTML = `<linearGradient id="dhill" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${W}" y2="0"><stop offset="0" stop-color="#8fd16f"/><stop offset=".45" stop-color="#a9d277"/><stop offset=".68" stop-color="#c3c690"/><stop offset=".84" stop-color="#c4bcae"/><stop offset=".93" stop-color="#eef3f6"/></linearGradient>
+    <pattern id="dcheck" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="#fff"/><rect width="20" height="20" fill="#222"/><rect x="20" y="20" width="20" height="20" fill="#222"/></pattern>`;
+  el("rect", { x: -1400, y: -1200, width: W + 2800, height: 3200, fill: "url(#dhill)" }, svg);
+  // contour lines: closer together higher up, so the hill looks steeper
+  for (let x = 700, gap = 560; x < FIN; x += gap, gap = Math.max(170, gap * .9))
+    el("path", { d: `M${x} -300Q${x + 50} 100 ${x} 360T${x} 1100`, stroke: "rgba(255,255,255,.35)", "stroke-width": 6, fill: "none" }, svg);
+  // trees low down, rocks higher up, snow at the top
+  for (let x = -200; x < W + 400; x += 210) [70, 650].forEach((y0, j) => {
+    const y = y0 + rnd(-25, 25), xx = x + rnd(-40, 40) + j * 100, f = xx / FIN;
+    if (f < .55) { el("ellipse", { cx: xx + 8, cy: y + 30, rx: 36, ry: 12, fill: "rgba(0,0,0,.15)" }, svg); el("circle", { cx: xx, cy: y, r: 38, fill: "#3f8f3a", stroke: "#2d6b2a", "stroke-width": 4 }, svg); el("circle", { cx: xx - 12, cy: y - 12, r: 14, fill: "#5fae4f" }, svg); }
+    else { const s = f < .88 ? 1 : 1.2, c = f < .88 ? "#9aa0a6" : "#dfe6ec"; el("path", { d: `M${xx - 40 * s} ${y + 22}L${xx - 22 * s} ${y - 20}L${xx + 6} ${y - 34 * s}L${xx + 38 * s} ${y + 4}L${xx + 30 * s} ${y + 24}Z`, fill: c, stroke: "#6b7178", "stroke-width": 4, "stroke-linejoin": "round" }, svg); if (f >= .88) el("path", { d: `M${xx - 18} ${y - 16}L${xx + 6} ${y - 34 * s}L${xx + 24} ${y - 8}`, fill: "none", stroke: "#fff", "stroke-width": 6, "stroke-linecap": "round" }, svg); }
+  });
+  // a snowy peak behind the finish
+  el("path", { d: `M${FIN + 120} 720L${FIN + 420} 120L${FIN + 560} 260L${FIN + 760} -40L${FIN + 1200} 720Z`, fill: "#9aa6b2", stroke: "#6b7178", "stroke-width": 6, "stroke-linejoin": "round" }, svg);
+  el("path", { d: `M${FIN + 340} 280L${FIN + 420} 120L${FIN + 500} 200L${FIN + 560} 260L${FIN + 680} 120L${FIN + 760} -40L${FIN + 860} 170Z`, fill: "#fff", stroke: "#c9d3dc", "stroke-width": 4, "stroke-linejoin": "round" }, svg);
+  RLY.forEach(y => duelTrack(svg, -400, W, y, RS / DS));
+  // start line and the chequered finish
+  el("rect", { x: RX0 - 6, y: RLY[0] - 90, width: 12, height: RLY[1] - RLY[0] + 180, fill: "#fff", opacity: .9 }, svg);
+  el("rect", { x: FIN, y: RLY[0] - 100, width: 60, height: RLY[1] - RLY[0] + 200, fill: "url(#dcheck)", stroke: "#222", "stroke-width": 4 }, svg);
+  [RLY[0] - 110, RLY[1] + 110].forEach((y, j) => { el("line", { x1: FIN + 30, y1: y, x2: FIN + 30, y2: y + (j ? 80 : -80), stroke: "#5a3818", "stroke-width": 8, "stroke-linecap": "round" }, svg); el("path", { d: `M${FIN + 30} ${y + (j ? 80 : -80)}l60 16l-60 16Z`, fill: j ? "#2f6fd1" : "#d63a2f", stroke: "#3b2a18", "stroke-width": 3 }, svg); });
+  // little signs telling how steep it gets
+  [.3, .6, .85].forEach((f, j) => { const x = RX0 + RL * f; el("rect", { x: x - 50, y: DCY - 34, width: 100, height: 68, rx: 12, fill: "#ffd34d", stroke: "#6b4219", "stroke-width": 5 }, svg); el("text", { x, y: DCY + 4, "font-size": 40, "text-anchor": "middle", "dominant-baseline": "middle" }, svg).textContent = "⛰️".repeat(j + 1).slice(0, 2 * (j + 1)); });
+}
+function duelRaceSetup() {
+  const m = DUEL.m, kinds = ["🐄", "🪨", "🐑", "🐄", "🪨", "🐐"];
+  const xs = [.15, .3, .45, .6, .74, .87].map(f => (f + rnd(-.03, .03)) * RL), ts = xs.map(() => kinds[Math.floor(Math.random() * kinds.length)]);
+  m.obs = [0, 1].map(i => xs.map((x, j) => {
+    const e = el("g", {}, m.obL);
+    el("ellipse", { cx: RX0 + x, cy: RLY[i] + 34, rx: 40, ry: 12, fill: "rgba(0,0,0,.18)" }, e);
+    const t = el("text", { x: RX0 + x, y: RLY[i] + 4, "font-size": 92, "text-anchor": "middle", "dominant-baseline": "middle" }, e); t.textContent = ts[j];
+    return { x, t: ts[j], e, gone: false, walk: null };
+  }));
+  m.cam = 0;
+}
+function duelRaceStep(dt, done) {
+  const m = DUEL.m, R = m.r;
+  m.p.forEach(p => {
+    if (p.moodT > 0) p.moodT -= dt;
+    if (p.ai) duelRaceAI(p, dt);
+    const S = p.S, g = .2 + .8 * Math.min(1, p.x / RL);
+    if (p.stun > 0) { p.stun -= dt; p.v = 0; return; }
+    if (p.over > 0) p.over -= dt;
+    if (p.hornT > 0) { p.hornT -= dt; if (Math.random() < dt * 14) duelPuff(p, "#fff"); }
+    const going = p.hold && p.over <= 0 && p.hornT <= 0;
+    if (going) { p.steam -= dt; if (p.steam <= 0) { p.steam = 0; p.over = 1.5; sfx.no(); duelSay(p, dPick(DUEL_TX.tired)); } }
+    else if (p.hornT <= 0) p.steam = Math.min(S.h, p.steam + 1.3 * dt);
+    let tgt = rBase(S) * (1 - g * (.25 + .12 * S.w / (S.p + S.w))) * (p.hornT > 0 ? 1.35 : going ? 1 : p.over > 0 ? .3 : .5);
+    if (p.x >= RL) tgt = 0; // over the line: brake
+    p.v += (tgt - p.v) * Math.min(1, (2.4 - S.w * .12) * dt);
+    if (p.air >= 0) { p.air += dt; if (p.air > RAIR) { p.air = -1; sfx.toc(); } }
+    const old = p.x; p.x += p.v * dt;
+    if (going && Math.random() < dt * 6) duelPuff(p, KINDS[p.k].smoke === "dark" ? "#6b6b6b" : KINDS[p.k].smoke === "fire" ? "#ff9a3c" : "#fff");
+    if (done) return;
+    for (const o of m.obs[p.i]) {
+      if (o.gone || !(old < o.x && p.x >= o.x)) continue;
+      o.gone = true;
+      if (p.air >= 0) { p.boost = Math.min(1, p.boost + .34); if (!p.ai) duelFeedback(p, LX("¡Hop!", "Hop!", "Hop !"), "perfect"); }
+      else { // bonk! the animal (or rock) gets out of the way, but it costs time
+        p.stun = 1.8; p.v = 0; p.x = o.x - 2; o.walk = 0;
+        sfx.bump(); R.shake = 6; p.mood = "dizzy"; p.moodT = 1.8;
+        duelSparkAt(RX0 + o.x, RLY[p.i], 8);
+        duelSay(p, o.t === "🪨" ? L3(["¡Ay! ¡Una roca!", "Ouch! A rock!", "Aïe ! Un rocher !"]) : L3(["¡Uy! ¡Perdona!", "Oops! Sorry!", "Oups ! Pardon !"]), !p.ai);
+        if (o.t === "🐄") setTimeout(() => tone([196, 165], "sawtooth", .35, .5, .05), 200);
+        if (!p.ai) duelFeedback(p, LX("¡Salta con 🦘!", "Jump with 🦘!", "Saute avec 🦘 !"), "weak");
+      }
+      break;
+    }
+  });
+  if (done) return;
+  const fin = m.p.filter(p => p.x >= RL);
+  if (fin.length) duelFall(fin.length === 2 ? (m.p[0].x >= m.p[1].x ? 1 : 0) : 1 - fin[0].i);
+  else if (R.t > 45) duelFall(m.p[0].x >= m.p[1].x ? 1 : 0);
+}
+function duelJump(i) {
+  const m = DUEL.m; if (!m || !m.r || m.r.phase !== "go" || m.ev !== "race") return;
+  const p = m.p[i]; if (p.air >= 0 || p.stun > 0) return;
+  p.air = 0; slide(330, 760, .22, "sine", .12); p.mood = "wow"; p.moodT = .7;
+}
+function duelRaceAI(p, dt) {
+  const L = DUEL_LV[DUEL.m.lvl];
+  if (p.rest > 0) { p.rest -= dt; p.hold = false; }
+  else { p.hold = p.steam > 0 && p.over <= 0; if (L.keep && p.steam < L.keep) { p.rest = L.restT; p.hold = false; } }
+  if (p.air < 0 && p.stun <= 0) {
+    const o = DUEL.m.obs[p.i].find(o => !o.gone && o.x > p.x);
+    if (o) {
+      const tt = (o.x - p.x) / Math.max(p.v, 1);
+      if (!p.plan || p.plan.o !== o) p.plan = { o, at: Math.random() < L.miss ? null : .3 + rndN() * L.jsd };
+      if (p.plan.at != null && tt <= p.plan.at) duelJump(p.i);
+    }
+  }
+  if (p.boost >= 1) { p.hornWait = (p.hornWait == null ? L.horn + rnd(0, .6) : p.hornWait) - dt; if (p.hornWait <= 0) { duelHorn(p.i); p.hornWait = null; } }
+}
+function duelFace(p, mood) {
+  p.blinkT = (p.blinkT == null ? rnd(1, 4) : p.blinkT) - 1 / 60;
+  const blink = p.blinkT < 0 && p.blinkT > -.14; if (p.blinkT < -.14) p.blinkT = rnd(2, 5);
+  const key = mood + (blink ? "b" : "");
+  if (key !== p.faceKey && FACE_AT[KINDS[p.k].loco]) { p.faceKey = key; if (p.faceG) p.faceG.remove(); p.faceG = el("g", {}, p.faceHost); drawFace(p.faceG, KINDS[p.k].loco, mood, blink); }
+}
+function duelRaceDraw() {
+  const m = DUEL.m, R = m.r;
+  const fr = m.p.map(p => RX0 + p.x), lead = Math.max(...fr), avg = (fr[0] + fr[1]) / 2;
+  const tgt = clamp(Math.max(avg - 700, lead - 1250), 0, RX0 + RL + 520 - 1600);
+  m.cam = m.cam == null ? tgt : m.cam + (tgt - m.cam) * .12;
+  const sh = R.shake ? rnd(-R.shake, R.shake) : 0;
+  m.svg.setAttribute("viewBox", `${(m.cam + sh).toFixed(1)} 130 1600 460`); // just the two tracks: the scenery spills over to fill the screen
+  m.p.forEach(p => {
+    const y0 = RLY[p.i], front = RX0 + p.x;
+    let x = front - DFRONT * RS, y = y0, sc = RS, h = 0;
+    if (p.air >= 0) { h = Math.sin(Math.PI * Math.min(1, p.air / RAIR)); sc = RS * (1 + .22 * h); y -= 30 * h; }
+    if (p.stun > 0) x += Math.sin(duelG * 50) * 3;
+    p.shE.setAttribute("cx", (front - 75 * RS).toFixed(1)); p.shE.setAttribute("cy", y0 + 14); p.shE.setAttribute("opacity", (.3 * h).toFixed(2));
+    p.g.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${sc.toFixed(3)})`);
+    p.g.removeAttribute("opacity");
+    let mood = p.mood;
+    if (R.phase === "go" && p.moodT <= 0) mood = p.stun > 0 ? "dizzy" : p.over > 0 ? "worried" : (p.hold || p.hornT > 0) ? "wow" : "happy";
+    if (R.phase === "count") mood = "happy";
+    duelFace(p, mood);
+    const st = p.stun > 0 ? "slip" : p.over > 0 ? "over" : R.phase !== "go" ? "wait" : p.hornT > 0 ? "now" : p.hold ? "pull" : "hold";
+    if (p.pushE.dataset.st !== st) {
+      p.pushE.dataset.st = st;
+      p.lblE.textContent = ({ now: LX("¡TURBO!", "TURBO!", "TURBO !"), over: LX("sin vapor", "no steam", "plus de vapeur"), slip: LX("¡ay!", "ouch!", "aïe !"),
+        pull: LX("a tope", "full steam", "à fond"), hold: LX("¡acelera!", "go!", "accélère !") })[st] || "";
+    }
+    p.ringE.setAttribute("stroke-dashoffset", (358.1 * (1 - clamp(p.v / rBase(p.S), 0, 1))).toFixed(1));
+    // the jump button lights up green at the right moment
+    let js = "";
+    if (R.phase === "go" && p.stun <= 0) {
+      const o = m.obs[p.i].find(o => !o.gone && o.x > p.x);
+      if (o) { const tt = (o.x - p.x) / Math.max(p.v, 1); js = p.air < 0 && tt > .08 && tt < .55 ? "now" : tt < 1.4 ? "soon" : ""; }
+    }
+    if (p.jumpE.dataset.st !== js) p.jumpE.dataset.st = js;
+    p.steamE.style.width = (100 * p.steam / p.S.h).toFixed(1) + "%";
+    p.steamE.parentNode.classList.toggle("low", p.steam < 1.5);
+    p.hornE.classList.toggle("ready", p.boost >= 1 && R.phase === "go");
+    [...p.boostE.children].forEach((e, j) => e.classList.toggle("on", p.boost >= (j + 1) * .33));
+    p.progE.style.left = (2 + 90 * clamp(p.x / RL, 0, 1)).toFixed(1) + "%";
+  });
+  m.obs.forEach((lane, i) => lane.forEach(o => {
+    if (o.walk == null || o.walk >= 1) return;
+    o.walk = Math.min(1, o.walk + 1 / 60);
+    o.e.setAttribute("transform", `translate(0 ${((i ? 1 : -1) * 150 * o.walk).toFixed(1)})`); o.e.setAttribute("opacity", (1 - .4 * o.walk).toFixed(2));
+  }));
+}
+function duelFinish(W) { // confetti at the finish line
+  const m = DUEL.m, x0 = RX0 + RL + 30, y0 = RLY[W.i];
+  for (let i = 0; i < 26; i++) {
+    const a = rnd(-Math.PI, 0), sp = rnd(120, 320), c = el("rect", { x: x0, y: y0, width: 14, height: 20, rx: 3, fill: ["#ff5d5d", "#ffd34d", "#5cc96b", "#4fa3ff", "#c77dff"][i % 5] }, m.fxL);
+    duelFx(c, 1.6, (k, e) => { e.setAttribute("x", x0 + Math.cos(a) * sp * k); e.setAttribute("y", y0 + Math.sin(a) * sp * k + 260 * k * k); e.setAttribute("opacity", k > .7 ? (1 - k) / .3 : 1); });
+  }
+  tone([523, 659, 784, 1047], "square", .09, .2, .07);
+}
+
 // ---------- drawing each frame
 function duelDraw() {
   const m = DUEL.m, R = m.r; if (!R) return;
+  if (m.ev === "race") return duelRaceDraw();
   const sh = R.shake ? rnd(-R.shake, R.shake) : 0, tug = m.ev === "tug", falling = R.phase === "fall" || (R.phase === "end" && R.loser >= 0);
   // in the tug of war, after the win the rope keeps moving so the loser slides deep into the mud
   const drag = tug && falling ? Math.min(R.fallT, .8) * 170 * (R.loser ? -1 : 1) : 0;
@@ -7407,7 +7617,7 @@ function duelDraw() {
   }
 }
 addEventListener("resize", () => { if (DUEL.m && DUEL.m.fit) DUEL.m.fit(); });
-const DUEL_KEYS = { a: [0, "d"], s: [0, "h"], l: [1, "d"], k: [1, "h"] };
+const DUEL_KEYS = { a: [0, "d"], s: [0, "h"], w: [0, "j"], l: [1, "d"], k: [1, "h"], o: [1, "j"], arrowup: [0, "j"] };
 document.addEventListener("keydown", e => {
   const d = $("duel"); if (!d || d.hidden || !DUEL.m) return;
   const k = e.key.toLowerCase(), two = DUEL.m.mode === "2p";
@@ -7416,7 +7626,7 @@ document.addEventListener("keydown", e => {
   if (!a || (a[0] === 1 && !two)) return;
   e.preventDefault(); e.stopPropagation();
   if (e.repeat) return;
-  if (a[1] === "d") duelDown(a[0]); else duelHorn(a[0]);
+  if (a[1] === "d") duelDown(a[0]); else if (a[1] === "j") duelJump(a[0]); else duelHorn(a[0]);
 }, true);
 document.addEventListener("keyup", e => {
   const d = $("duel"); if (!d || d.hidden || !DUEL.m) return;
