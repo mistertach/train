@@ -3492,7 +3492,7 @@ function carAt(wx, wy) {
 let camMode = "free", camIdx = 0, camAng = null;
 const camTrains = () => { const m = trains.filter(t => !t.ambient); return m.length ? m : trains; };
 function setCam(m) {
-  camMode = m; camAng = null; if (typeof c3Ang !== "undefined") c3Ang = null;
+  camMode = m; camAng = null; if (typeof c3Ang !== "undefined") { c3Ang = null; C3.zs = null; }
   document.body.classList.toggle("cab", m === "cab");
   $("camFollow").classList.toggle("on", m === "follow"); $("camCab").classList.toggle("on", m === "cab");
   if (m === "free") applyView();
@@ -3605,19 +3605,77 @@ function c3Poses(tr) {
   }
   return out;
 }
-function c3Box(prims, x, y, z, a, len, wid, ht, col, extra) { // a car or building block as a lit box
+// ---------- detail on solid things: faces get windows, stripes, doors, lights and wheels
+const c3Lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+// a rectangle inside a face, in face coordinates (u along, v up, both 0..1)
+function c3Sub(q, u0, v0, u1, v1) { const P = (u, v) => c3Lerp(c3Lerp(q[0], q[1], u), c3Lerp(q[3], q[2], u), v); return [P(u0, v0), P(u1, v0), P(u1, v1), P(u0, v1)]; }
+function c3Dot(q, u, v, r, fill) { const p = c3Lerp(c3Lerp(q[0], q[1], u), c3Lerp(q[3], q[2], u), v), c = c3Cam(p[0], p[1], p[2]); if (c[1] < NEAR) return; const [sx, sy] = c3Scr(c), rr = r * C3.foc / c[1]; c3.fillStyle = fill; c3.beginPath(); c3.arc(sx, sy, Math.max(.6, rr), 0, 7); c3.fill(); }
+// a lit box; only the faces turned towards you are drawn; face(i, quad, depth) adds detail
+// (i: 0 front end, 1 right side, 2 back end, 3 left side)
+function c3Box(prims, x, y, z, a, len, wid, ht, col, opt) {
+  opt = opt || {};
   const ca = Math.cos(a), sa = Math.sin(a), L2 = len / 2, W2 = wid / 2;
   const P = [[L2, W2], [L2, -W2], [-L2, -W2], [-L2, W2]].map(([u, v]) => [x + u * ca - v * sa, y + u * sa + v * ca]);
+  const N = [[ca, sa], [sa, -ca], [-ca, -sa], [-sa, ca]];
   const d = c3Cam(x, y, z)[1];
-  prims.push({ d, draw: () => {
+  if (d < -len) return;
+  prims.push({ d: d + (opt.bias || 0), draw: () => {
     const faces = [];
-    for (let i = 0; i < 4; i++) { const p = P[i], q = P[(i + 1) % 4], mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2; faces.push({ d: c3Cam(mx, my, z)[1], pts: [[p[0], p[1], z], [q[0], q[1], z], [q[0], q[1], z + ht], [p[0], p[1], z + ht]], shade: [.82, .62, .74, .94][i], front: i === 0 }); }
+    for (let i = 0; i < 4; i++) {
+      const p = P[i], q = P[(i + 1) % 4], mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2;
+      if ((C3.x - mx) * N[i][0] + (C3.y - my) * N[i][1] <= 0) continue; // facing away
+      faces.push({ i, d: c3Cam(mx, my, z)[1], pts: [[p[0], p[1], z], [q[0], q[1], z], [q[0], q[1], z + ht], [p[0], p[1], z + ht]] });
+    }
     faces.sort((u, v) => v.d - u.d);
-    faces.forEach(fc => c3Poly(fc.pts, c3Fog(c3Shade(col, fc.shade), fc.d), "rgba(0,0,0,.35)", .8));
-    c3Poly(P.map(p => [p[0], p[1], z + ht]), c3Fog(c3Shade(col, 1.08), d), "rgba(0,0,0,.3)", .8);
-    if (extra) extra(P, faces);
+    faces.forEach(fc => {
+      c3Poly(fc.pts, c3Fog(c3Shade(col, [.86, .7, .78, .95][fc.i]), fc.d), "rgba(0,0,0,.28)", .7);
+      if (opt.face && fc.d < FAR * .8) opt.face(fc.i, fc.pts, fc.d);
+    });
+    if (C3.z > z + ht || opt.alwaysTop) { const top = P.map(p => [p[0], p[1], z + ht]); c3Poly(top, c3Fog(opt.top || c3Shade(col, 1.08), d), "rgba(0,0,0,.25)", .7); if (opt.topFace) opt.topFace(top, d); }
   } });
 }
+const c3Glass = (f) => c3Fog("#9fd3f2", f);
+// one railway vehicle (engine, coach or wagon) at pose q
+function c3Rolling(prims, q, type, c1, c2, faceOn) {
+  const a = q.a, ca = Math.cos(a), sa = Math.sin(a), z = q.z * FH + 3, at = o => [q.x + ca * o, q.y + sa * o];
+  const wheels = (i, qd, f) => { if (i === 1 || i === 3) [.18, .4, .6, .82].forEach(u => c3Dot(qd, u, .05, 6.5, c3Fog("#222222", f))); };
+  c3Box(prims, q.x, q.y, z, a, 58, 26, 8, "#2b2b2b", { face: wheels });
+  const zb = z + 8, col = /^#[0-9a-f]{6}$/i.test(c1 || "") ? c1 : "#d63a2f", col2 = /^#[0-9a-f]{6}$/i.test(c2 || "") ? c2 : "#f5c518";
+  if (type === "steam" || type === "dragonH") {
+    const [bx, by] = at(10), [cx, cy] = at(-17), [kx, ky] = at(26);
+    c3Box(prims, bx, by, zb, a, 36, 22, 22, type === "dragonH" ? col : c3Shade(col, .9), { face: (i, qd, f) => {
+      if (i === 1 || i === 3) [.3, .65].forEach(u => c3Poly(c3Sub(qd, u, 0, u + .05, 1), c3Fog("#e3b000", f)));
+      if (i === 0) { c3Poly(c3Sub(qd, .08, .05, .92, .95), c3Fog("#f6e7cf", f)); if (faceOn) { c3Dot(qd, .32, .62, 2.6, "#2b1d12"); c3Dot(qd, .68, .62, 2.6, "#2b1d12"); c3Poly(c3Sub(qd, .35, .22, .65, .32), "#7a2a2a"); c3Dot(qd, .2, .35, 2, "rgba(255,120,150,.7)"); c3Dot(qd, .8, .35, 2, "rgba(255,120,150,.7)"); } }
+    } });
+    c3Box(prims, kx, ky, zb + 22, a, 7, 7, 14, "#2b2b2b", { bias: -1 });
+    c3Box(prims, cx, cy, zb, a, 24, 30, 36, col, { top: "#2b2b2b", face: (i, qd, f) => { if (i === 1 || i === 3) c3Poly(c3Sub(qd, .2, .5, .8, .85), c3Glass(f)); if (i === 0) c3Poly(c3Sub(qd, .15, .55, .85, .85), c3Glass(f)); } });
+    return;
+  }
+  if (type === "tender" || type === "coal") { c3Box(prims, q.x, q.y, zb, a, 50, 28, type === "coal" ? 18 : 22, type === "coal" ? "#5a5a5a" : col, { top: "#1f1f1f", face: (i, qd, f) => { if (i === 1 || i === 3) c3Poly(c3Sub(qd, .05, .75, .95, .85), c3Fog("#e3b000", f)); } }); return; }
+  if (type === "logs") { c3Box(prims, q.x, q.y, zb, a, 54, 28, 4, "#7a5230"); [-9, 0, 9].forEach((o, k) => { const px = q.x - sa * o, py = q.y + ca * o; c3Box(prims, px, py, zb + 4 + (k === 1 ? 8 : 0), a, 52, 9, 9, "#a86f3c", { top: "#c98a50", face: (i, qd, f) => { if (i === 0 || i === 2) c3Dot(qd, .5, .5, 3, c3Fog("#e8c08a", f)); } }); }); return; }
+  if (type === "crate") { c3Box(prims, q.x, q.y, zb, a, 52, 28, 26, "#c8a26a", { top: "#d9b47c", face: (i, qd, f) => { [.25, .5, .75].forEach(v => c3Poly(c3Sub(qd, 0, v - .02, 1, v + .02), c3Fog("#8a6a3a", f))); } }); return; }
+  if (type === "tank") { c3Box(prims, q.x, q.y, zb, a, 52, 24, 24, "#8aa0b5", { top: "#a9bccd", face: (i, qd, f) => { if (i === 1 || i === 3) [.15, .85].forEach(u => c3Poly(c3Sub(qd, u - .02, 0, u + .02, 1), c3Fog("#5f7387", f))); } }); c3Box(prims, q.x, q.y, zb + 24, a, 8, 8, 4, "#5f7387", { bias: -1 }); return; }
+  const engine = ["diesel", "bullet", "subway", "tram", "bulletEnd"].includes(type);
+  const h = type === "tram" || type === "tramcar" ? 34 : 30;
+  c3Box(prims, q.x, q.y, zb, a, 60, 30, h, col, { top: c3Shade(col, .8), face: (i, qd, f) => {
+    if (i === 1 || i === 3) {
+      c3Poly(c3Sub(qd, 0, .22, 1, .32), c3Fog(col2, f));
+      const n = engine ? 2 : 4, u0 = engine ? (i === 1 ? .55 : .1) : .08, w = engine ? .16 : .18;
+      for (let k = 0; k < n; k++) c3Poly(c3Sub(qd, u0 + k * (w + .04), .5, u0 + k * (w + .04) + w, .82), c3Glass(f));
+    }
+    if (i === 0 && engine) { c3Poly(c3Sub(qd, .08, .55, .92, .86), c3Fog("#2b3a55", f)); c3Dot(qd, .2, .2, 3, "#fff6b0"); c3Dot(qd, .8, .2, 3, "#fff6b0"); if (faceOn) { c3Dot(qd, .35, .72, 2.4, "#ffffff"); c3Dot(qd, .65, .72, 2.4, "#ffffff"); } }
+    else if (i === 0 || i === 2) c3Poly(c3Sub(qd, .35, .05, .65, .8), c3Fog(c3Shade(col, .7), f));
+  } });
+}
+// a car or bus on the road
+function c3Car(prims, x, y, a, kind, col) {
+  const len = (CARS[kind] || CARS.coche).len, ca = Math.cos(a), sa = Math.sin(a);
+  const wheels = (i, qd, f) => { if (i === 1 || i === 3) [.2, .8].forEach(u => c3Dot(qd, u, .02, 5, c3Fog("#222222", f))); };
+  if (kind === "bus") { c3Box(prims, x, y, 2, a, len, 26, 28, col, { top: "#eeeeee", face: (i, qd, f) => { wheels(i, qd, f); if (i === 1 || i === 3) c3Poly(c3Sub(qd, .06, .5, .94, .82), c3Glass(f)); if (i === 0) c3Poly(c3Sub(qd, .1, .45, .9, .85), c3Glass(f)); } }); return; }
+  c3Box(prims, x, y, 2, a, len, 22, 10, col, { face: (i, qd, f) => { wheels(i, qd, f); if (i === 0) { c3Dot(qd, .2, .55, 2.2, "#fff6b0"); c3Dot(qd, .8, .55, 2.2, "#fff6b0"); } if (i === 2) { c3Dot(qd, .2, .55, 2, "#e74c3c"); c3Dot(qd, .8, .55, 2, "#e74c3c"); } } });
+  c3Box(prims, x - ca * len * .05, y - sa * len * .05, 12, a, len * .55, 20, 9, "#9fd3f2", { top: col, bias: -1, face: (i, qd, f) => { [.0, 1].forEach(u => c3Poly(c3Sub(qd, Math.max(0, u - .05), 0, Math.min(1, u + .05), 1), c3Fog(col, f))); } });
+}
+
 function c3Shade(hex, k) {
   const c = c3RGB[hex] || (c3RGB[hex] = [1, 3, 5].map(i => parseInt(hex.length === 4 ? hex[(i + 1) / 2] + hex[(i + 1) / 2] : hex.slice(i, i + 2), 16)));
   const h = c.map(v => clamp(Math.round(v * k), 0, 255).toString(16).padStart(2, "0")).join(""); return "#" + h;
@@ -3627,14 +3685,24 @@ function render3D(dt) {
   const list = camTrains(), tr = list[camIdx % Math.max(1, list.length)];
   if (!tr || !tr.trail || tr.trail.length < 2) return;
   c3Size(); C3.t += dt;
-  const P0 = c3Poses(tr)[0];
-  if (c3Ang == null) c3Ang = P0.a;
-  let da = P0.a - c3Ang; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
-  c3Ang += da * (1 - Math.exp(-dt * 6));
+  const P0 = c3Poses(tr)[0], t = tr.trail, cum = trailCum(t), back = trailAt(t, cum, 46);
+  let hdg = Math.atan2(P0.y - back.y, P0.x - back.x);
+  try { // look a little way down the track ahead too, so curves are taken smoothly
+    const R = routeOf(tr.head), d0 = tr.head.dir === 1 ? tr.head.s : R.len - tr.head.s, d1 = clamp(d0 + 40 * tr.head.dir, 0, R.len);
+    if (Math.abs(d1 - d0) > 8) { const [ax, ay] = pointAt(R, d0), [bx, by] = pointAt(R, d1); const ha = Math.atan2(by - ay, bx - ax); let dd = ha - hdg; while (dd > Math.PI) dd -= 2 * Math.PI; while (dd < -Math.PI) dd += 2 * Math.PI; hdg += dd * .5; }
+  } catch (e) {}
+  if (c3Ang == null) c3Ang = hdg;
+  let da = hdg - c3Ang; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
+  c3Ang += da * (1 - Math.exp(-dt * 2.6));
   C3.hx = Math.cos(c3Ang); C3.hy = Math.sin(c3Ang);
   const spd = running && !(tr.wait > 0) && tr.thr !== 0 && !tr.wreck ? 1 : 0;
-  C3.x = P0.x - C3.hx * 6; C3.y = P0.y - C3.hy * 6; C3.z = P0.z * FH + EYE + Math.sin(C3.t * 11) * .7 * spd;
-  const W = C3.W, H = C3.H, hor = C3.hor;
+  const zT = P0.z * FH + EYE; C3.zs = C3.zs == null ? zT : C3.zs + (zT - C3.zs) * (1 - Math.exp(-dt * 5));
+  C3.x = P0.x - C3.hx * 6; C3.y = P0.y - C3.hy * 6; C3.z = C3.zs + Math.sin(C3.t * 7) * .25 * spd;
+  const W = C3.W, H = C3.H, hor = C3.hor, UNDER = P0.z < -.3;
+  if (UNDER) { // the metro under the city: a dark tunnel, only underground track and trains
+    const g = c3.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#14141a"); g.addColorStop(.45, "#26262e"); g.addColorStop(1, "#1a1a20");
+    c3.fillStyle = g; c3.fillRect(0, 0, W, H);
+  } else {
   // sky, sun or stars, distant hills turning with the heading
   const sky = c3.createLinearGradient(0, 0, 0, hor);
   if (night) { sky.addColorStop(0, "#060b26"); sky.addColorStop(1, "#24356b"); } else { sky.addColorStop(0, weather === "lluvia" ? "#8fa4b5" : "#6fb8ee"); sky.addColorStop(1, weather === "lluvia" ? "#c9d3da" : "#d6efff"); }
@@ -3652,21 +3720,26 @@ function render3D(dt) {
   const gr = c3.createLinearGradient(0, hor, 0, H);
   if (night) { gr.addColorStop(0, "#1d3b25"); gr.addColorStop(1, "#2c5a33"); } else { gr.addColorStop(0, weather === "nevada" ? "#e8f0f5" : "#a9d48c"); gr.addColorStop(1, weather === "nevada" ? "#ffffff" : "#6db552"); }
   c3.fillStyle = gr; c3.fillRect(0, hor, W, H - hor);
+  }
 
   const ground = [], prims = [];
   const cx = Math.floor(C3.x / T), cy = Math.floor(C3.y / T), RAD = Math.ceil(FAR / T) + 1;
   const seen = new Set();
   for (let r = cy - RAD; r <= cy + RAD; r++) for (let c = cx - RAD; c <= cx + RAD; c++) {
     if (!inB(c, r) || !c3Vis((c + .5) * T, (r + .5) * T, 90)) continue;
-    piecesIn(c, r).forEach(p => {
+    const here = UNDER ? piecesIn(c, r).filter(p => p.h < 0 || p.geo.routes.some(R => R.za < 0 || R.zb < 0)) : piecesIn(c, r);
+    if (!here.length && !night && !UNDER) { const fq = c3Cam((c + .5) * T, (r + .5) * T, 0)[1]; if (fq > NEAR && fq < 650) ground.push({ d: fq, draw: () => { for (let k = 0; k < 4; k++) { const gx = c * T + seeded(c, r, k) * T, gy = r * T + seeded(c, r, k + 5) * T; c3Line([gx, gy, 0], [gx - 2, gy, 5], weather === "nevada" ? "#c9d6dd" : "#4f9a3f", 1.1); c3Line([gx + 2, gy, 0], [gx + 4, gy, 4], weather === "nevada" ? "#c9d6dd" : "#5fae4f", 1.1); } } }); }
+    here.forEach(p => {
       const d = DEFS[p.type];
+      if (UNDER && !(p.geo.routes && p.geo.routes.length)) return;
       if (d.gtile || d.water) { // flat squares of colour on the ground
         const fq = c3Cam((c + .5) * T, (r + .5) * T, 0)[1], col = d.water ? "#47a1dd" : d.gtile;
-        ground.push({ d: fq, draw: () => { c3Poly([[c * T, r * T, 0], [c * T + T, r * T, 0], [c * T + T, r * T + T, 0], [c * T, r * T + T, 0]], c3Fog(col, fq)); if (d.water && fq < 900) { c3.globalAlpha = .5; c3Line([c * T + 20, r * T + 40 + Math.sin(C3.t * 2 + c) * 6, 1], [c * T + 60, r * T + 40 + Math.sin(C3.t * 2 + c) * 6, 1], "#d8f1ff", 3); c3.globalAlpha = 1; } } });
+        ground.push({ d: fq, draw: () => { c3Poly([[c * T, r * T, 0], [c * T + T, r * T, 0], [c * T + T, r * T + T, 0], [c * T, r * T + T, 0]], c3Fog(col, fq));
+          if (!d.water && fq < 800) { const lc = c3Shade(col, .85); [25, 50, 75].forEach(k => { c3Line([c * T + k, r * T, .3], [c * T + k, r * T + T, .3], lc, .8); c3Line([c * T, r * T + k, .3], [c * T + T, r * T + k, .3], lc, .8); }); } if (d.water && fq < 900) { c3.globalAlpha = .5; c3Line([c * T + 20, r * T + 40 + Math.sin(C3.t * 2 + c) * 6, 1], [c * T + 60, r * T + 40 + Math.sin(C3.t * 2 + c) * 6, 1], "#d8f1ff", 3); c3.globalAlpha = 1; } } });
         return;
       }
       if (seen.has(p.id)) return; seen.add(p.id);
-      if (d.road || (p.geo.rroutes && p.geo.rroutes.length)) p.geo.rroutes.forEach(R => { const S = c3Samples(R); for (let i = 0; i < S.length - 1; i++) { const a = S[i], b = S[i + 1], fq = c3Cam((a.x + b.x) / 2, (a.y + b.y) / 2, 0)[1]; ground.push({ d: fq, draw: () => c3Poly([[a.x + a.nx * 34, a.y + a.ny * 34, .5], [b.x + b.nx * 34, b.y + b.ny * 34, .5], [b.x - b.nx * 34, b.y - b.ny * 34, .5], [a.x - a.nx * 34, a.y - a.ny * 34, .5]], c3Fog("#6d6d6d", fq)) }); } });
+      if (d.road || (p.geo.rroutes && p.geo.rroutes.length)) p.geo.rroutes.forEach(R => { const S = c3Samples(R); for (let i = 0; i < S.length - 1; i++) { const a = S[i], b = S[i + 1], fq = c3Cam((a.x + b.x) / 2, (a.y + b.y) / 2, 0)[1]; ground.push({ d: fq, draw: () => { c3Poly([[a.x + a.nx * 34, a.y + a.ny * 34, .5], [b.x + b.nx * 34, b.y + b.ny * 34, .5], [b.x - b.nx * 34, b.y - b.ny * 34, .5], [a.x - a.nx * 34, a.y - a.ny * 34, .5]], c3Fog("#6d6d6d", fq)); if (fq < 1100) { [-30, 30].forEach(o => c3Line([a.x + a.nx * o, a.y + a.ny * o, .8], [b.x + b.nx * o, b.y + b.ny * o, .8], c3Fog("#e8e8e8", fq), 1.2)); if (i % 2 === 0) c3Line([a.x, a.y, .8], [b.x, b.y, .8], c3Fog("#ffffff", fq), 1.6); } } }); } });
       if (p.geo.routes.length && !d.road) { // track: ballast, sleepers and rails; pillars under bridges
         const tun = p.type === "tunel" || p.type === "tunelL";
         p.geo.routes.forEach(R => {
@@ -3674,6 +3747,12 @@ function render3D(dt) {
           for (let i = 0; i < S.length - 1; i++) {
             const a = S[i], b = S[i + 1], fq = c3Cam((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2)[1];
             if (fq < -30 || fq > FAR) continue;
+            if (UNDER ? Math.max(a.z, b.z) > -4 : Math.min(a.z, b.z) < -FH + 4) continue;
+            if (UNDER) prims.push({ d: fq + 2, draw: () => { // tunnel walls, ceiling and a lamp every few metres
+              [-46, 46].forEach(o => c3Poly([[a.x + a.nx * o, a.y + a.ny * o, a.z], [b.x + b.nx * o, b.y + b.ny * o, b.z], [b.x + b.nx * o, b.y + b.ny * o, b.z + 70], [a.x + a.nx * o, a.y + a.ny * o, a.z + 70]], c3Shade("#55555f", clamp(1.1 - fq / FAR, .35, 1.1))));
+              c3Poly([[a.x + a.nx * 46, a.y + a.ny * 46, a.z + 70], [b.x + b.nx * 46, b.y + b.ny * 46, b.z + 70], [b.x - b.nx * 46, b.y - b.ny * 46, b.z + 70], [a.x - a.nx * 46, a.y - a.ny * 46, a.z + 70]], c3Shade("#3a3a42", clamp(1.1 - fq / FAR, .35, 1.1)));
+              if (i % 5 === 0) [-44, 44].forEach(o => { const lq = c3Cam(a.x + a.nx * o, a.y + a.ny * o, a.z + 52); if (lq[1] < NEAR) return; const [lx, ly] = c3Scr(lq), rr = 2.6 * C3.foc / lq[1]; c3.fillStyle = "rgba(255,230,150,.18)"; c3.beginPath(); c3.arc(lx, ly, rr * 2.2, 0, 7); c3.fill(); c3.fillStyle = "#ffe9a8"; c3.beginPath(); c3.arc(lx, ly, rr, 0, 7); c3.fill(); });
+            } });
             prims.push({ d: fq + .01, draw: () => {
               const up = (a.z > .5 || b.z > .5);
               if (up && i % 3 === 0) c3Poly([[a.x - a.ny * 5, a.y + a.nx * 5, 0], [a.x + a.ny * 5, a.y - a.nx * 5, 0], [a.x + a.ny * 5, a.y - a.nx * 5, a.z - 6], [a.x - a.ny * 5, a.y + a.nx * 5, a.z - 6]], c3Fog("#9a9087", fq), "rgba(0,0,0,.3)", .6);
@@ -3693,8 +3772,10 @@ function render3D(dt) {
           [S[0], S[S.length - 1]].forEach(e => { const fq2 = c3Cam(e.x, e.y, 0)[1]; prims.push({ d: fq2, draw: () => { const pts = [], pts2 = []; for (let k = 0; k <= 12; k++) { const t = Math.PI * k / 12; pts.push([e.x + e.nx * Math.cos(t) * 40, e.y + e.ny * Math.cos(t) * 40, e.z + Math.sin(t) * 46]); pts2.push([e.x + e.nx * Math.cos(t) * 30, e.y + e.ny * Math.cos(t) * 30, e.z + Math.sin(t) * 36]); } c3Poly(pts, c3Fog("#b8afa2", fq2), "rgba(0,0,0,.35)", 1); c3Poly(pts2, "#1f140a"); } }); });
         }
         if (p.type === "estacion") { const R = p.geo.routes[0], S = c3Samples(R), a = S[0], b = S[S.length - 1], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, ang = Math.atan2(b.y - a.y, b.x - a.x);
-          c3Box(prims, mx + a.nx * 52, my + a.ny * 52, a.z, ang, R.len - 10, 40, 12, "#d9d3c7");
-          c3Box(prims, mx + a.nx * 66, my + a.ny * 66, a.z + 12, ang, R.len - 40, 12, 46, "#c0392b"); }
+          const side = c3Cam(mx + a.nx * 52, my + a.ny * 52, 0)[0] * 0 + 1, ox = a.nx * 52 * side, oy = a.ny * 52 * side;
+          c3Box(prims, mx + ox, my + oy, a.z, ang, R.len - 10, 40, 12, "#d9d3c7", { alwaysTop: true, topFace: (top, f) => { const e0 = c3Lerp(top[0], top[3], 0), e1 = c3Lerp(top[1], top[2], 0); void e0; void e1; c3Line([a.x + a.nx * 37, a.y + a.ny * 37, a.z + 12.5], [b.x + b.nx * 37, b.y + b.ny * 37, b.z + 12.5], c3Fog("#f5c518", f), 2.5); } });
+          [-.35, 0, .35].forEach(k => { const px = mx + ox * 1.15 + (b.x - a.x) * k, py = my + oy * 1.15 + (b.y - a.y) * k; c3Box(prims, px, py, a.z + 12, ang, 4, 4, 36, "#6b4219"); });
+          c3Box(prims, mx + ox * 1.05, my + oy * 1.05, a.z + 48, ang, R.len - 20, 50, 5, "#c0392b", { alwaysTop: true, top: "#d9483b", bias: -2 }); }
       }
       if (d.deco && !d.water) { // scenery: standing pictures that always face you
         const bk = d.big || 1, x = (p.c + bk / 2) * T, y = (p.r + bk / 2) * T, fq = c3Cam(x, y, 0)[1], id = d.base || p.type;
@@ -3720,18 +3801,13 @@ function render3D(dt) {
     const K = KINDS[t2.kind];
     c3Poses(t2).forEach((q, i) => {
       if (t2 === tr && i === 0) return;
-      if (!c3Vis(q.x, q.y, 80)) return;
-      const z = q.z * FH + 4, col = carColor(K, i, t2.c1);
-      c3Box(prims, q.x, q.y, 0 + z - 4, q.a, 26, 26, 8, "#2b2b2b");
-      c3Box(prims, q.x, q.y, z + 4, q.a, 60, 32, i === 0 ? 34 : 30, /^#[0-9a-f]{6}$/i.test(col) ? col : "#d63a2f", i === 0 && t2 !== tr ? (Pt, faces) => {
-        const fr = faces.find(f => f.front); if (!fr || c3Cam(q.x + Math.cos(q.a) * 40, q.y + Math.sin(q.a) * 40, z)[1] > c3Cam(q.x, q.y, z)[1]) return;
-        const fx = q.x + Math.cos(q.a) * 31, fy = q.y + Math.sin(q.a) * 31, nx = -Math.sin(q.a), ny = Math.cos(q.a);
-        [-8, 8].forEach(o => { const e = c3Cam(fx + nx * o, fy + ny * o, z + 26); if (e[1] < NEAR) return; const [ex, ey] = c3Scr(e), r = 5 * C3.foc / e[1]; c3.fillStyle = "#fff"; c3.beginPath(); c3.arc(ex, ey, r, 0, 7); c3.fill(); c3.fillStyle = "#2b1d12"; c3.beginPath(); c3.arc(ex, ey, r * .55, 0, 7); c3.fill(); });
-      } : null);
+      if (!c3Vis(q.x, q.y, 80) || UNDER !== (q.z < -.3)) return;
+      const types = t2._types || (t2._types = carTypes(t2.kind, t2.cars));
+      c3Rolling(prims, q, types[i] || "pas", carColor(K, i, t2.c1), t2.c2, i === 0);
     });
   });
-  cars.forEach(car => { try { const q = carPose(car); if (!c3Vis(q.x, q.y, 50)) return; c3Box(prims, q.x, q.y, 2, Math.atan2(q.ty, q.tx), (CARS[car.kind] || CARS.coche).len, 22, 18, car.color || "#3498db"); } catch (e) {} });
-  obst.forEach(o => { const fq = c3Cam(o.x, o.y, 0)[1]; if (fq < NEAR + 4 || !c3Vis(o.x, o.y, 40)) return; prims.push({ d: fq, draw: () => { const q = c3Cam(o.x, o.y, o.z * FH), s = C3.foc / q[1], [sx, sy] = c3Scr(q), fs = 60 * s; c3.font = `${fs}px sans-serif`; c3.textAlign = "center"; c3.textBaseline = "bottom"; c3.fillText(({ vaca: "🐄", rocas: "🪨", tronco: "🪵", nieve: "❄️" })[o.kind] || "⚠️", sx, sy); } }); });
+  if (!UNDER) cars.forEach(car => { try { const q = carPose(car); if (!c3Vis(q.x, q.y, 50)) return; const K = CARS[car.kind] || CARS.coche; c3Car(prims, q.x, q.y, Math.atan2(q.ty, q.tx), car.kind, K.colors[(car.ci || 0) % K.colors.length]); } catch (e) {} });
+  if (!UNDER) obst.forEach(o => { const fq = c3Cam(o.x, o.y, 0)[1]; if (fq < NEAR + 4 || !c3Vis(o.x, o.y, 40)) return; prims.push({ d: fq, draw: () => { const q = c3Cam(o.x, o.y, o.z * FH), s = C3.foc / q[1], [sx, sy] = c3Scr(q), fs = 60 * s; c3.font = `${fs}px sans-serif`; c3.textAlign = "center"; c3.textBaseline = "bottom"; c3.fillText(({ vaca: "🐄", rocas: "🪨", tronco: "🪵", nieve: "❄️" })[o.kind] || "⚠️", sx, sy); } }); });
 
   ground.sort((a, b) => b.d - a.d).forEach(g => g.draw());
   prims.sort((a, b) => b.d - a.d).forEach(g => g.draw());
@@ -3740,7 +3816,7 @@ function render3D(dt) {
   const here = piecesIn(Math.floor(C3.x / T), Math.floor(C3.y / T)).find(p => (p.type === "tunel" || p.type === "tunelL") && Math.abs(p.h * FH - (C3.z - EYE)) < FH / 2);
   if (here) { const g = c3.createRadialGradient(W / 2, hor + 20, 20, W / 2, hor + 20, Math.max(W, H) * .6); g.addColorStop(0, "rgba(255,240,200,.15)"); g.addColorStop(.15, "rgba(20,12,6,.85)"); g.addColorStop(1, "rgba(10,6,3,.97)"); c3.fillStyle = g; c3.fillRect(0, 0, W, H); }
   if (night) { c3.fillStyle = "rgba(10,18,50,.35)"; c3.fillRect(0, hor, W, H - hor); const g = c3.createRadialGradient(W / 2, H * .8, 10, W / 2, H * .55, H * .6); g.addColorStop(0, "rgba(255,240,180,.35)"); g.addColorStop(1, "rgba(255,240,180,0)"); c3.fillStyle = g; c3.fillRect(0, hor, W, H - hor); }
-  c3Weather(dt);
+  if (!UNDER) c3Weather(dt);
   c3Cab(tr, dt, spd);
 }
 function c3Weather(dt) {
