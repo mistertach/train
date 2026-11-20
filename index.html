@@ -46,6 +46,12 @@
   .tab { flex: 0 0 auto; min-width: 70px; height: 54px; border-radius: 16px 16px 0 0; background: #c99158; display: flex; flex-direction: column; align-items: center; justify-content: center;
     font-size: 26px; cursor: pointer; line-height: 1; padding: 2px 8px; color: #3b2a18; }
   .tab small { font-size: 11px; font-weight: 700; margin-top: 2px; }
+  .roam { animation: roam 12s ease-in-out infinite; } .roamf { animation: roamf 12s step-end infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes roam { 0%, 12% { transform: translate(0, 0); } 40%, 52% { transform: translate(26px, 6px); } 80%, 100% { transform: translate(0, 0); } }
+  @keyframes roamf { 0% { transform: scaleX(-1); } 46% { transform: scaleX(1); } 100% { transform: scaleX(-1); } }
+  .drift { animation: drift 9s ease-in-out infinite; } .driftsh { animation: driftsh 9s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes drift { 0%, 100% { transform: translate(0, 0); } 30% { transform: translate(10px, -22px); } 65% { transform: translate(-8px, -8px); } }
+  @keyframes driftsh { 0%, 100% { transform: translate(0, 0) scale(1); } 30% { transform: translate(10px, 0) scale(.7); } 65% { transform: translate(-8px, 0) scale(.88); } }
   .bob { animation: bob 2.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 80%; }
   @keyframes bob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-4px) rotate(2deg); } }
   .monok { animation: monok 1.4s ease-in-out infinite; } @keyframes monok { 50% { opacity: .55; } }
@@ -376,7 +382,7 @@
     .dcard { padding: 10px 20px; gap: 6px; } .dtro { font-size: 50px; } .dwin { height: 60px; width: 150px; } .dcoins { font-size: 28px; }
     .djump { width: 76px; height: 76px; } .djump .je { font-size: 32px; } .djump .jl { font-size: 12px; } .dprog { height: 26px; } .dpdot { width: 40px; height: 22px; } .dtop { min-height: 44px; } .dname { font-size: 18px; } .dname svg { width: 50px; height: 30px; } .dpush { width: 96px; height: 96px; } .dhorn { width: 56px; height: 56px; font-size: 28px; } .dmid { font-size: 13px; } }
   @media (max-width: 1400px) { .mode { width: min(250px, 80vw); padding: 14px; } .mode .big { font-size: 64px; } .mode b { font-size: 24px; } }
-  @media (prefers-reduced-motion: reduce) { .bob, .monok, .mudb, .dpush svg, .dconf, .dban, .dhorn.ready, .sway, .popin, .slidein, #card, #menuPop, .wv, .glint, .fall, .foam, .mist { animation: none !important; } }
+  @media (prefers-reduced-motion: reduce) { .roam, .roamf, .drift, .driftsh, .bob, .monok, .mudb, .dpush svg, .dconf, .dban, .dhorn.ready, .sway, .popin, .slidein, #card, #menuPop, .wv, .glint, .fall, .foam, .mist { animation: none !important; } }
   #toast { position: fixed; left: 50%; top: 24%; transform: translate(-50%, -50%) scale(.5); font-size: 84px; opacity: 0; pointer-events: none; z-index: 40;
     transition: opacity .25s, transform .25s; text-shadow: 0 4px 10px rgba(0,0,0,.3); white-space: nowrap; }
   #toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
@@ -836,11 +842,12 @@ function drawRails(g, routes, p, act) {
     el("circle", { cx: x, cy: y, r: 7.5, fill: "#9c6a35", stroke: "#6b4219", "stroke-width": 2 }, g);
   });
 }
+const ROAM = new Set(["vaca", "oveja", "pato", "elefante", "llama", "pinguino"]);
 function drawPiece(p, lay) {
   const d = DEFS[p.type], els = [];
   lay = lay || (k => k === "shadow" ? L.shadow : k === "paint" ? L.paint : k === "mon" ? L.lv[d.mon.layer].over : lvL(p.h)[k]);
   const bk = d.big || 1, cx = (p.c + bk / 2) * T, cy = (p.r + bk / 2) * T - p.h * E, tf = `translate(${cx} ${cy}) rotate(${p.rot * 90})`;
-  const g = el("g", {}, lay("piece")); els.push(g);
+  let g = el("g", {}, lay("piece")); els.push(g);
   p.els = els;
   if (d.gtile) {
     const pg = lay("paint") || g, x = p.c * T, y = p.r * T;
@@ -864,14 +871,17 @@ function drawPiece(p, lay) {
       const onWater = d.float && piecesIn(p.c, p.r).some(q => DEFS[q.type].water);
       let dg = bk > 1 ? el("g", { transform: `translate(${cx} ${cy}) scale(${bk}) translate(${-cx} ${-cy})` }, sg) : sg;
       if (onWater) dg = el("g", { class: "bob", style: `animation-delay:${(-(p.c * .53 + p.r * .31) % 3).toFixed(2)}s` }, dg);
+      if (p.faceL) dg = el("g", { transform: `translate(${cx} 0) scale(-1 1) translate(${-cx} 0)` }, dg);
       spr(dg, cx - 50, cy - 50, p.c * 7 + p.r * 13);
       if (onWater) dg.querySelectorAll("ellipse").forEach((e, i) => { if (i === 0) e.setAttribute("fill", "rgba(255,255,255,.35)"); });
       if (SWAY.has(p.type)) { const sw = el("g", { class: "sway", style: `animation-delay:${(-(p.c * 0.37 + p.r * 0.71) % 4).toFixed(2)}s` }, sg); while (sg.firstChild !== sw) sw.appendChild(sg.firstChild); }
       return;
     }
     const fs = DECO_FS[p.type] || 70;
+    if (ROAM.has(p.type)) g = el("g", { class: "roam", style: `animation-duration:${(9 + seeded(p.c, p.r, 3) * 6).toFixed(1)}s;animation-delay:${(-seeded(p.c, p.r, 4) * 12).toFixed(1)}s` }, g);
     el("ellipse", { cx, cy: cy + 18 + fs * .18, rx: fs * .46, ry: fs * .13, fill: "rgba(30,50,20,.2)" }, g);
-    const t = el("text", { x: cx, y: cy + 2 + (70 - fs) * .3, "font-size": fs, "text-anchor": "middle", "dominant-baseline": "central" }, g);
+    const t = el("text", { x: cx, y: cy + 2 + (70 - fs) * .3, "font-size": fs, "text-anchor": "middle", "dominant-baseline": "central", class: ROAM.has(p.type) ? "roamf" : "" }, g);
+    if (ROAM.has(p.type)) t.style.animationDuration = g.style.animationDuration, t.style.animationDelay = g.style.animationDelay;
     t.textContent = d.deco;
     return;
   }
@@ -1130,6 +1140,7 @@ function drawBigBen(g, X, Y) {
 //  toy-block style as the monuments (and the same on every device, unlike emoji)
 // =====================================================================
 const pick = (arr, k) => arr[((k % arr.length) + arr.length) % arr.length];
+const RM = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 function sShadow(g, cx, cy, rx, ry) { el("ellipse", { cx, cy, rx, ry, fill: "rgba(30,50,20,.22)" }, g); }
 function gable(g, x0, x1, yb, yf, h, r, col, dark) {
   const ym = (yb + yf) / 2, eF = yf + 4 - Zp(h), eB = yb - 4 - Zp(h), ridge = ym - Zp(h + r);
@@ -1304,15 +1315,23 @@ Object.assign(SPRITES, {
     [[-1, 1], [1, 1]].forEach(([sx]) => el("path", { d: `M${cx} ${cy - 30} q${sx * 14} -22 ${sx * 26} 18`, stroke: "#8fd3ff", "stroke-width": 4, fill: "none", "stroke-linecap": "round", opacity: .9 }, g));
     el("path", { d: `M${cx} ${cy - 28} v-20`, stroke: "#b8e6ff", "stroke-width": 5, "stroke-linecap": "round" }, g);
   },
-  noria(g, X, Y) {
-    const cx = X + 50, cy = Y + 22, R = 42;
+  noria(g, X, Y) { // the wheel turns slowly; the cabins hang level as they go round
+    const cx = X + 50, cy = Y + 22, R = 42, still = RM(), DUR = 24;
     sShadow(g, cx, Y + 84, 34, 9);
     el("path", { d: `M${cx - 26} ${Y + 82}L${cx} ${cy}L${cx + 26} ${Y + 82}`, stroke: "#7a8a99", "stroke-width": 6, fill: "none", "stroke-linejoin": "round" }, g);
-    el("circle", { cx, cy, r: R, fill: "none", stroke: "#d63a2f", "stroke-width": 5 }, g);
-    el("circle", { cx, cy, r: R - 9, fill: "none", stroke: "#f1c40f", "stroke-width": 2.5 }, g);
-    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; el("line", { x1: cx, y1: cy, x2: cx + Math.cos(a) * R, y2: cy + Math.sin(a) * R, stroke: "#f7f3ea", "stroke-width": 2.5 }, g); }
+    const wh = el("g", {}, g);
+    el("circle", { cx, cy, r: R, fill: "none", stroke: "#d63a2f", "stroke-width": 5 }, wh);
+    el("circle", { cx, cy, r: R - 9, fill: "none", stroke: "#f1c40f", "stroke-width": 2.5 }, wh);
+    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; el("line", { x1: cx, y1: cy, x2: cx + Math.cos(a) * R, y2: cy + Math.sin(a) * R, stroke: "#f7f3ea", "stroke-width": 2.5 }, wh); }
+    if (!still) el("animateTransform", { attributeName: "transform", type: "rotate", from: `0 ${cx} ${cy}`, to: `360 ${cx} ${cy}`, dur: DUR + "s", repeatCount: "indefinite" }, wh);
     const cols = ["#e74c3c", "#3498db", "#2ecc71", "#f1c40f", "#9b59b6", "#e67e22", "#1abc9c", "#ff6fb5"];
-    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R; el("rect", { x: x - 7, y: y - 2, width: 14, height: 11, rx: 4, fill: cols[i], stroke: "rgba(0,0,0,.35)", "stroke-width": 1.5 }, g); }
+    const ring = `M${cx + R} ${cy}A${R} ${R} 0 1 1 ${cx - R} ${cy}A${R} ${R} 0 1 1 ${cx + R} ${cy}`;
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4, cab = el("g", {}, g);
+      if (still) { el("rect", { x: cx + Math.cos(a) * R - 7, y: cy + Math.sin(a) * R - 2, width: 14, height: 11, rx: 4, fill: cols[i], stroke: "rgba(0,0,0,.35)", "stroke-width": 1.5 }, cab); continue; }
+      el("rect", { x: -7, y: -2, width: 14, height: 11, rx: 4, fill: cols[i], stroke: "rgba(0,0,0,.35)", "stroke-width": 1.5 }, cab);
+      el("animateMotion", { path: ring, dur: DUR + "s", begin: (-i * DUR / 8).toFixed(2) + "s", repeatCount: "indefinite" }, cab);
+    }
     el("circle", { cx, cy, r: 6, fill: "#555" }, g);
   },
   estadio(g, X, Y) {
@@ -1365,7 +1384,16 @@ Object.assign(SPRITES, {
     sShadow(g, cx, cy + 12, 40, 10);
     el("ellipse", { cx, cy: cy + 4, rx: 38, ry: 13, fill: "#d9c7a5", stroke: "rgba(40,25,10,.45)", "stroke-width": 2 }, g);
     el("ellipse", { cx, cy, rx: 38, ry: 13, fill: "#f3e6c8", stroke: "rgba(40,25,10,.45)", "stroke-width": 2 }, g);
-    [-26, -9, 9, 26].forEach((dx, i) => { el("line", { x1: cx + dx, y1: cy + 2, x2: cx + dx, y2: cy - 44, stroke: "#d4a017", "stroke-width": 2.5 }, g); el("ellipse", { cx: cx + dx, cy: cy - 14 - (i % 2) * 8, rx: 7, ry: 5, fill: ["#fff", "#e74c3c", "#3498db", "#f1c40f"][i], stroke: "rgba(0,0,0,.35)", "stroke-width": 1.5 }, g); });
+    if (!RM()) {
+      const orbit = `M${cx + 28} ${cy}A28 9 0 1 1 ${cx - 28} ${cy}A28 9 0 1 1 ${cx + 28} ${cy}`;
+      for (let i = 0; i < 4; i++) {
+        const hg = el("g", {}, g), hb = el("g", {}, hg);
+        el("line", { x1: 0, y1: 2, x2: 0, y2: -44, stroke: "#d4a017", "stroke-width": 2.5 }, hg);
+        el("ellipse", { cx: 0, cy: -16, rx: 7, ry: 5, fill: ["#fff", "#e74c3c", "#3498db", "#f1c40f"][i], stroke: "rgba(0,0,0,.4)", "stroke-width": 1.5 }, hb);
+        el("animateTransform", { attributeName: "transform", type: "translate", values: "0 0;0 -7;0 0", dur: "1.6s", begin: (-i * .4).toFixed(2) + "s", repeatCount: "indefinite" }, hb);
+        el("animateMotion", { path: orbit, dur: "8s", begin: (-i * 2) + "s", repeatCount: "indefinite" }, hg);
+      }
+    } else [-26, -9, 9, 26].forEach((dx, i) => { el("line", { x1: cx + dx, y1: cy + 2, x2: cx + dx, y2: cy - 44, stroke: "#d4a017", "stroke-width": 2.5 }, g); el("ellipse", { cx: cx + dx, cy: cy - 14 - (i % 2) * 8, rx: 7, ry: 5, fill: ["#fff", "#e74c3c", "#3498db", "#f1c40f"][i], stroke: "rgba(0,0,0,.35)", "stroke-width": 1.5 }, g); });
     for (let i = 0; i < 8; i++) face(g, `M${cx} ${cy - 66}L${cx - 40 + i * 10} ${cy - 44}H${cx - 30 + i * 10}Z`, i % 2 ? "#fff" : "#e74c3c", { "stroke-width": 1.2 });
     el("path", { d: `M${cx - 40} ${cy - 44}H${cx + 40}`, stroke: "#d4a017", "stroke-width": 3 }, g);
     el("circle", { cx, cy: cy - 68, r: 4, fill: "#f1c40f" }, g);
@@ -1454,9 +1482,10 @@ Object.assign(SPRITES, {
     el("path", { d: track, stroke: "#fff", "stroke-width": 2, fill: "none", "stroke-dasharray": "4 5" }, g);
     [[18, -66, "#3498db"], [27, -70, "#f1c40f"]].forEach(([x, y, c]) => el("rect", { x: X + x - 6, y: gy + y - 6, width: 12, height: 9, rx: 3, fill: c, stroke: "rgba(0,0,0,.4)", "stroke-width": 1.5 }, g));
   },
-  globo(g, X, Y) { // hot-air balloon floating above its shadow
-    const cx = X + 50, gy = Y + 84, by = Y + 18;
-    sShadow(g, cx, gy, 18, 5);
+  globo(g, X, Y) { // hot-air balloon floating above its shadow; it drifts up, down and about
+    const cx = X + 50, gy = Y + 84, by = Y + 18, dl = `animation-delay:${(-((X * 7 + Y * 3) % 900) / 100).toFixed(2)}s`;
+    sShadow(el("g", { class: "driftsh", style: dl }, g), cx, gy, 18, 5);
+    g = el("g", { class: "drift", style: dl }, g);
     const cols = ["#e74c3c", "#f1c40f", "#3498db", "#2ecc71", "#e74c3c"];
     for (let i = 0; i < 5; i++) { const x0 = cx - 26 + i * 10.4; face(g, `M${cx} ${by + 34}Q${x0 - 6} ${by + 10} ${x0 + 2} ${by - 18}Q${x0 + 5} ${by - 24} ${x0 + 10.4} ${by - 18}Q${x0 + 14} ${by + 10} ${cx} ${by + 34}Z`, cols[i], { "stroke-width": 1.2 }); }
     el("path", { d: `M${cx - 7} ${by + 34}L${cx - 6} ${by + 46}M${cx + 7} ${by + 34}L${cx + 6} ${by + 46}`, stroke: "#6b4a2a", "stroke-width": 1.5 }, g);
@@ -4272,7 +4301,52 @@ function playHzTap(wx, wy) {
   playHz = null; refreshHzPlay();
   return true;
 }
-function drvHzTick(dt) { idleTick(dt); faceTick(dt); bubbleTick(dt); drvTick(); stationTick(dt); boardingTick(); fireTrainTick(dt); trainBadges(); nightTick(dt); }
+// 🐉 every dragon puffs smoke as a warning, then breathes fire towards the nearest track
+function dragonTick(dt) {
+  if (!running) return;
+  pieces.forEach(p => {
+    if (p.type !== "dragon") return;
+    if (p.fireT == null) p.fireT = rnd(4, 8);
+    p.fireT -= dt;
+    const cx = (p.c + .5) * T, cy = (p.r + .5) * T;
+    if (p.fireT < 1.1 && p.fireT + dt >= 1.1) { // warning: smoke from the nose, and it turns to face the track
+      let best = null, bd = 1e9;
+      pieces.forEach(q => { if (!q.geo.routes.length || q.h > 1) return; const d = Math.hypot((q.c + .5) * T - cx, (q.r + .5) * T - cy); if (d < bd) { bd = d; best = q; } });
+      const left = best ? (best.c + .5) * T < cx - 5 : false;
+      if (!!p.faceL !== left) { p.faceL = left; redrawPiece(p); }
+      const m = dragonMouth(p); p.aim = best ? Math.atan2((best.r + .5) * T - best.h * E - m.y, (best.c + .5) * T - m.x) : (left ? Math.PI : 0);
+      for (let i = 0; i < 3; i++) setTimeout(() => dragonPuff(p), i * 250);
+    }
+    if (p.fireT <= 0) { p.fireT = rnd(7, 11); dragonBreath(p); }
+  });
+}
+function dragonMouth(p) { const dir = p.faceL ? -1 : 1, cx = (p.c + .5) * T, cy = (p.r + .5) * T; return { x: cx + dir * 32, y: cy - 14, dir }; }
+function dragonPuff(p) {
+  const m = dragonMouth(p), c = el("circle", { cx: m.x, cy: m.y, r: 6, fill: "#cfcfcf", opacity: .9 }, L.fx);
+  addFx(c, .9, (k, e) => { e.setAttribute("cx", m.x + m.dir * 20 * k); e.setAttribute("cy", m.y - 30 * k); e.setAttribute("r", 6 + 12 * k); e.setAttribute("opacity", .9 * (1 - k)); });
+}
+function dragonBreath(p) {
+  const m = dragonMouth(p), aim = p.aim != null ? p.aim : (m.dir < 0 ? Math.PI : 0), ux = Math.cos(aim), uy = Math.sin(aim), REACH = 260;
+  try { HORNS.roar(); } catch (e) {}
+  noise(1.1, 500, .7, .25, "lowpass");
+  for (let i = 0; i < 22; i++) setTimeout(() => {
+    if (!running) return;
+    const a = aim + rnd(-.25, .25), sp = rnd(REACH * .75, REACH), f = el("circle", { cx: m.x, cy: m.y, r: 8, fill: ["#ffd34d", "#ff9a3c", "#ff5d3c"][i % 3], opacity: .95 }, L.fx);
+    addFx(f, .55, (k, e) => { e.setAttribute("cx", m.x + Math.cos(a) * sp * k); e.setAttribute("cy", m.y + Math.sin(a) * sp * k - 12 * k); e.setAttribute("r", 8 + 18 * k); e.setAttribute("opacity", .95 * (1 - k * k)); });
+    if (i % 4 === 0) trains.forEach(tr => { // any car close to the flame's path gets singed
+      if (tr.wreck || tr.sootT > 0) return;
+      if (carPoses(tr).some(q => { const px = q.x - m.x, py = q.y - q.z * E - m.y, t = clamp(px * ux + py * uy, 0, REACH); return q.z <= 1 && Math.hypot(px - ux * t, py - uy * t) < 30 + t * .2; })) singe(tr);
+    });
+  }, i * 55);
+}
+function singe(tr) {
+  tr.sootT = 7; sfx.bump();
+  tr.gs.forEach(g => { const s = el("g", { class: "soot", "pointer-events": "none" }, g); for (let j = 0; j < 6; j++) el("ellipse", { cx: rnd(-26, 26), cy: rnd(-13, 13), rx: rnd(4, 9), ry: rnd(3, 6), fill: "#2b2b2b", opacity: .7 }, s); });
+  const q = carPoses(tr)[0]; if (q) burst(q.x, q.y - q.z * E - 30, ["💨", "💨"], 3);
+  say(tr, "singe", true);
+}
+function sootTick(dt) { trains.forEach(tr => { if (!(tr.sootT > 0)) return; tr.sootT -= dt; if (tr.sootT <= 0) tr.gs.forEach(g => g.querySelectorAll(".soot").forEach(e => e.remove())); }); }
+function drvHzTick(dt) { dragonTick(dt); sootTick(dt); idleTick(dt); faceTick(dt); bubbleTick(dt); drvTick(); stationTick(dt); boardingTick(); fireTrainTick(dt); trainBadges(); nightTick(dt); }
 
 // =====================================================================
 //  🏪 SHOP: spend the coins earned by carrying passengers and boxes
@@ -4390,6 +4464,7 @@ function drawFace(g, loco, mood, blink) {
   else { el("path", { d: `M${mx - 1} -6Q${mx + 7} 0 ${mx - 1} 6Z`, fill: "#7a2a2a", stroke: ink, "stroke-width": 1.8, "stroke-linejoin": "round" }, g); el("path", { d: `M${mx + 1.5} -2.5Q${mx + 4} 0 ${mx + 1.5} 2.5`, fill: "#ff8fa3" }, g); }
 }
 function moodOf(tr) {
+  if (tr.sootT > 4) return "ouch";
   if (tr.wreck) return "dizzy";
   if (tr.status === "bonk") return "ouch";
   if (tr.turbo > 0 || tr.jumpT >= 0) return "wow";
@@ -4446,6 +4521,7 @@ const LINES = {
   bonk: [["¡Uy, perdón, coche!", "Oops, sorry, car!", "Oups, pardon la voiture !"]],
   fire: [["¡Agua va!", "Here comes the water!", "Attention, de l'eau !"]],
   sleep: [["Qué sueño... buenas noches.", "So sleepy... good night.", "J'ai sommeil... bonne nuit."]],
+  singe: [["¡Ay, qué calor! ¡Ese dragón!", "Ouch, that's hot! That dragon!", "Aïe, ça chauffe ! Ce dragon !"], ["¡Uf, me he quedado negro!", "Phew, I'm all sooty!", "Ouf, je suis tout noir !"]],
 };
 const charOf = tr => CHAR[tr.kind] || CHAR.vapor;
 const L3 = a => LANG === "en" ? a[1] : LANG === "fr" ? a[2] : a[0];
@@ -4649,21 +4725,30 @@ function drawWater(p, g) {
   const x = p.c * T, y = p.r * T, c = p.c, r = p.r, R = i => seeded(c, r, i);
   const isW = (dc, dr) => piecesIn(c + dc, r + dr).some(q => DEFS[q.type].water);
   const ground = (dc, dr) => piecesIn(c + dc, r + dr).some(q => DEFS[q.type].water || DEFS[q.type].gtile);
-  el("rect", { x: x - .5, y: y - .5, width: T + 1, height: T + 1, fill: "#47a1dd" }, g);
-  el("rect", { x: x - .5, y: y + 50, width: T + 1, height: 50.5, fill: "#3f95d2", opacity: .5 }, g);
+  const N = isW(0, -1), S = isW(0, 1), W = isW(-1, 0), E2 = isW(1, 0), RC = 44, RF = 30;
+  const cNW = !N && !W, cNE = !N && !E2, cSE = !S && !E2, cSW = !S && !W;
+  const xl = x - (W ? .5 : 0), xr = x + T + (E2 ? .5 : 0), yt = y - (N ? .5 : 0), yb = y + T + (S ? .5 : 0);
+  el("path", { d: `M${xl + (cNW ? RC : 0)} ${yt}L${xr - (cNE ? RC : 0)} ${yt}${cNE ? `A${RC} ${RC} 0 0 1 ${xr} ${yt + RC}` : ""}L${xr} ${yb - (cSE ? RC : 0)}${cSE ? `A${RC} ${RC} 0 0 1 ${xr - RC} ${yb}` : ""}L${xl + (cSW ? RC : 0)} ${yb}${cSW ? `A${RC} ${RC} 0 0 1 ${xl} ${yb - RC}` : ""}L${xl} ${yt + (cNW ? RC : 0)}${cNW ? `A${RC} ${RC} 0 0 1 ${xl + RC} ${yt}` : ""}Z`, fill: "#47a1dd" }, g);
+  // inner corners: where the water turns, fill the corner of the empty square next to it so the bank curves
+  const empty = (dc, dr) => !piecesIn(c + dc, r + dr).some(q => !DEFS[q.type].gtile);
+  const fillet = (px, py, dx, dy) => { const f = dx * dy > 0 ? 1 : 0;
+    el("path", { d: `M${px + dx * RF} ${py}L${px} ${py}L${px} ${py + dy * RF}A${RF} ${RF} 0 0 ${f} ${px + dx * RF} ${py}Z`, fill: "#47a1dd" }, g);
+    el("path", { d: `M${px} ${py + dy * RF}A${RF} ${RF} 0 0 ${f} ${px + dx * RF} ${py}`, stroke: "#d8f1ff", "stroke-width": 5, fill: "none", "stroke-linecap": "round", opacity: .9 }, g); };
+  if (N && W && !isW(-1, -1) && empty(-1, -1)) fillet(x, y, -1, -1);
+  if (N && E2 && !isW(1, -1) && empty(1, -1)) fillet(x + T, y, 1, -1);
+  if (S && W && !isW(-1, 1) && empty(-1, 1)) fillet(x, y + T, -1, 1);
+  if (S && E2 && !isW(1, 1) && empty(1, 1)) fillet(x + T, y + T, 1, 1);
   const wv = el("g", { class: "wv", style: `animation-delay:${(-R(1) * 3).toFixed(2)}s` }, g);
-  [[14 + R(2) * 10, 30], [36 + R(3) * 10, 66]].forEach(([dx, dy]) => el("path", { d: `M${x + dx} ${y + dy}q10 -8 20 0t20 0`, stroke: "#bfe6ff", "stroke-width": 4, fill: "none", "stroke-linecap": "round", opacity: .9 }, wv));
+  [[22 + R(2) * 8, 32], [34 + R(3) * 8, 64]].forEach(([dx, dy]) => el("path", { d: `M${x + dx} ${y + dy}q10 -8 20 0t20 0`, stroke: "#bfe6ff", "stroke-width": 4, fill: "none", "stroke-linecap": "round", opacity: .9 }, wv));
   const sh = el("g", { class: "glint", style: `animation-delay:${(-R(4) * 4).toFixed(2)}s` }, g);
-  el("ellipse", { cx: x + 20 + R(5) * 60, cy: y + 15 + R(6) * 70, rx: 7, ry: 2.5, fill: "#fff", opacity: .85 }, sh);
-  const N = isW(0, -1), S = isW(0, 1), W = isW(-1, 0), E2 = isW(1, 0);
-  const rim = (d) => el("path", { d, stroke: "#d8f1ff", "stroke-width": 5, fill: "none", "stroke-linecap": "round", opacity: .9 }, g);
-  if (!N) rim(`M${x} ${y + 3}H${x + T}`); if (!S) rim(`M${x} ${y + T - 3}H${x + T}`);
-  if (!W) rim(`M${x + 3} ${y}V${y + T}`); if (!E2) rim(`M${x + T - 3} ${y}V${y + T}`);
-  const RR = 22, corner = (cx, cy, sx, sy) => el("path", { d: `M${cx} ${cy}h${sx * RR}a${RR} ${RR} 0 0 ${sx * sy > 0 ? 0 : 1} ${-sx * RR} ${sy * RR}Z`, fill: GRASS }, g);
-  if (!N && !W && !ground(-1, -1) && !ground(0, -1) && !ground(-1, 0)) corner(x, y, 1, 1);
-  if (!N && !E2 && !ground(1, -1) && !ground(0, -1) && !ground(1, 0)) corner(x + T, y, -1, 1);
-  if (!S && !W && !ground(-1, 1) && !ground(0, 1) && !ground(-1, 0)) corner(x, y + T, 1, -1);
-  if (!S && !E2 && !ground(1, 1) && !ground(0, 1) && !ground(1, 0)) corner(x + T, y + T, -1, -1);
+  el("ellipse", { cx: x + 30 + R(5) * 40, cy: y + 28 + R(6) * 44, rx: 7, ry: 2.5, fill: "#fff", opacity: .85 }, sh);
+  // a light shoreline along the banks, following the round corners
+  const q = RC, rimD = (!N ? `M${x + (cNW ? q : 0)} ${y + 2.5}L${x + T - (cNE ? q : 0)} ${y + 2.5}${cNE ? `A${q - 2.5} ${q - 2.5} 0 0 1 ${x + T - 2.5} ${y + q}` : ""}` : "")
+    + (!E2 ? `M${x + T - 2.5} ${y + (cNE ? q : 0)}L${x + T - 2.5} ${y + T - (cSE ? q : 0)}${cSE ? `A${q - 2.5} ${q - 2.5} 0 0 1 ${x + T - q} ${y + T - 2.5}` : ""}` : "")
+    + (!S ? `M${x + T - (cSE ? q : 0)} ${y + T - 2.5}L${x + (cSW ? q : 0)} ${y + T - 2.5}${cSW ? `A${q - 2.5} ${q - 2.5} 0 0 1 ${x + 2.5} ${y + T - q}` : ""}` : "")
+    + (!W ? `M${x + 2.5} ${y + T - (cSW ? q : 0)}L${x + 2.5} ${y + (cNW ? q : 0)}${cNW ? `A${q - 2.5} ${q - 2.5} 0 0 1 ${x + q} ${y + 2.5}` : ""}` : "");
+  if (rimD) el("path", { d: rimD, stroke: "#d8f1ff", "stroke-width": 5, fill: "none", "stroke-linecap": "round", opacity: .9 }, g);
+  void ground;
 }
 function refreshTilesAround(c, r) {
   if (tileRefreshOff) return;
