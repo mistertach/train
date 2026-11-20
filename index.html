@@ -250,7 +250,96 @@
   @keyframes foam { 0% { transform: scale(.75); } 100% { transform: scale(1.15); } }
   .mist { animation: mist 1.6s ease-out infinite; }
   @keyframes mist { 0% { transform: translateY(0); opacity: .8; } 100% { transform: translateY(-22px); opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) { .sway, .popin, .slidein, #card, #menuPop, .wv, .glint, .fall, .foam, .mist { animation: none !important; } }
+  #duel { z-index: 29; background: radial-gradient(circle at 50% 35%, #ffd98a, #f0a43c 75%); color: #3b2a18; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    padding: calc(10px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left)); gap: 12px; }
+  #duel.dpick { overflow-y: auto; justify-content: safe center; }
+  #duel.darena { background: #5bb6e8; justify-content: flex-start; touch-action: none; gap: 6px; overflow: hidden; }
+  #duel h1 { margin: 0; font-size: clamp(30px, 5vw, 56px); color: #fff8e8; text-shadow: 0 4px 0 #6b4219, 0 8px 20px rgba(0,0,0,.3); text-align: center; }
+  #duel .dx { position: absolute; left: calc(12px + env(safe-area-inset-left)); top: calc(10px + env(safe-area-inset-top)); z-index: 2; }
+  .dhint { font-size: 19px; font-weight: 700; color: #5a3a12; text-align: center; max-width: 820px; }
+  .dhint.sm { font-size: 16px; }
+  .dmodes { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+  .dchip { background: #fff8e8; border: 5px solid #a8743d; border-radius: 22px; padding: 10px 22px; font-size: 22px; font-weight: 800; cursor: pointer; box-shadow: 0 5px 0 #6b4219; white-space: nowrap; }
+  .dchip:active { transform: translateY(4px); box-shadow: 0 1px 0 #6b4219; }
+  .dchip.on { background: #ffe066; border-color: #d99a00; }
+  .dchip.sm { font-size: 18px; padding: 6px 16px; border-width: 4px; box-shadow: 0 4px 0 #6b4219; }
+  .dcols { display: flex; gap: 18px; width: min(1180px, 96vw); justify-content: center; flex-wrap: wrap; }
+  .dcol { flex: 1 1 400px; min-width: 0; background: #fff8e8; border: 6px solid #a8743d; border-radius: 26px; padding: 12px 14px; box-shadow: 0 7px 0 #6b4219; display: flex; flex-direction: column; gap: 8px; }
+  .dcol.p1 { border-color: #d63a2f; } .dcol.p2 { border-color: #2f6fd1; }
+  .dcol h2 { margin: 0; font-size: 24px; text-align: center; }
+  .dtrains { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 8px; scroll-snap-type: x proximity; }
+  .dtr { flex: 0 0 112px; scroll-snap-align: center; border: 4px solid #e6d3b3; border-radius: 18px; padding: 6px 4px; text-align: center; cursor: pointer; background: #fff; font-weight: 800; font-size: 16px; }
+  .dtr svg { width: 100%; height: 42px; display: block; }
+  .dtr.on { border-color: #2e9d4f; background: #e5f7dc; box-shadow: 0 0 0 3px #a6e39a; }
+  .dstats { display: grid; grid-template-columns: auto 1fr; gap: 5px 12px; align-items: center; font-weight: 800; font-size: 17px; }
+  .dstats .dtt { grid-column: 1 / -1; text-align: center; color: #a8743d; }
+  .dbar { height: 14px; background: #eadbc0; border-radius: 8px; overflow: hidden; }
+  .dbar i { display: block; height: 100%; background: linear-gradient(90deg, #ffb347, #ff7a3d); border-radius: 8px; transition: width .15s; }
+  .dgo { font: inherit; font-size: 30px; font-weight: 900; padding: 12px 42px; border-radius: 30px; background: #2e9d4f; color: #fff; border: 6px solid #1d6b33; box-shadow: 0 7px 0 #134a22; cursor: pointer; }
+  .dgo:active { transform: translateY(5px); box-shadow: 0 2px 0 #134a22; }
+  .dgo.alt { background: #fff8e8; color: #3b2a18; border-color: #a8743d; box-shadow: 0 7px 0 #6b4219; font-size: 24px; }
+  .dtop { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px; padding-left: 74px; min-height: 58px; }
+  .dname { display: flex; align-items: center; gap: 8px; font-size: 24px; font-weight: 900; color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.4); }
+  .dname svg { width: 70px; height: 40px; }
+  .dname.p2 { flex-direction: row-reverse; }
+  .dpips { font-size: 30px; color: #ffe066; letter-spacing: 2px; }
+  .dround { font-size: 22px; font-weight: 900; color: #fff8e8; background: rgba(59,42,24,.55); padding: 6px 16px; border-radius: 16px; }
+  .dstage { flex: 1 1 auto; min-height: 0; width: calc(100% + 28px); margin: 0 -14px; position: relative; overflow: hidden; }
+  #dsvg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .dpads { display: flex; width: 100%; justify-content: space-between; align-items: flex-end; gap: 10px; }
+  .dpad { display: flex; align-items: center; gap: 14px; }
+  .dpad.r { flex-direction: row-reverse; }
+  .dpad.ai { opacity: .8; pointer-events: none; }
+  .dpush { width: clamp(110px, 14vw, 168px); height: clamp(110px, 14vw, 168px); border: none; background: none; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; }
+  .dpush svg { width: 100%; height: 100%; overflow: visible; }
+  .dpush .bg { fill: #f2e6cf; stroke: #6b4219; stroke-width: 6; transition: fill .08s; }
+  .dpush .tr { fill: none; stroke: rgba(255,255,255,.55); stroke-width: 9; }
+  .dpush .pr { fill: none; stroke: #fff; stroke-width: 9; stroke-linecap: round; }
+  .dpush .em { font-size: 48px; text-anchor: middle; dominant-baseline: middle; }
+  .dpush .lb { font-size: 15px; font-weight: 900; text-anchor: middle; fill: #3b2a18; }
+  .dpush[data-st="now"] .bg { fill: #3ec46d; } .dpush[data-st="now"] .pr { stroke: #b8ffcf; } .dpush[data-st="now"] .lb { fill: #fff; font-size: 19px; }
+  .dpush[data-st="now"] svg { filter: drop-shadow(0 0 14px #7dffa8); }
+  .dpush[data-st="ok"] .bg { fill: #ffd34d; }
+  .dpush[data-st="over"] .bg { fill: #b9b9b9; } .dpush[data-st="over"] .em { opacity: .4; }
+  .dpush:active svg { transform: scale(.94); }
+  .dside { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .dhorn { width: 74px; height: 74px; border-radius: 50%; border: 5px solid #a8743d; background: #fff8e8; font-size: 36px; opacity: .4; box-shadow: 0 5px 0 #6b4219; cursor: pointer; padding: 0; touch-action: none; }
+  .dhorn.ready { opacity: 1; background: #ffe066; animation: tutPulse 1s ease-in-out infinite; outline: 6px solid rgba(255,212,0,.7); }
+  .dsteam { display: flex; align-items: center; gap: 6px; font-size: 20px; }
+  .dsteam .dbar { width: 110px; height: 16px; background: rgba(255,255,255,.4); border: 3px solid #fff; }
+  .dsteam .dbar i { background: linear-gradient(90deg, #8fd0f5, #ffffff); transition: none; }
+  .dsteam .dbar.low i { background: #ff7a5c; }
+  .dboost { display: flex; gap: 5px; } .dboost i { width: 16px; height: 16px; border-radius: 50%; background: rgba(255,255,255,.4); border: 3px solid #fff; }
+  .dboost i.on { background: #ffd34d; }
+  .dmid { flex: 1; text-align: center; font-weight: 800; font-size: 16px; color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.35); align-self: center; }
+  .dban { position: absolute; left: 50%; top: 42%; font-size: clamp(70px, 13vw, 150px); font-weight: 900; color: #fff8e8; text-shadow: 0 6px 0 #6b4219, 0 10px 30px rgba(0,0,0,.35);
+    pointer-events: none; animation: dban 1s ease-out both; white-space: nowrap; }
+  .dban.go { color: #b8ffcf; } .dban.sm { font-size: clamp(36px, 6vw, 64px); }
+  @keyframes dban { 0% { transform: translate(-50%, -50%) scale(.3); opacity: 0; } 25% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; } 70% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
+  .dfb { position: absolute; font-weight: 900; font-size: 26px; pointer-events: none; white-space: nowrap; color: #3b2a18; text-shadow: 0 0 6px #fff, 0 0 10px #fff; animation: dfb .8s ease-out forwards; }
+  .dfb.perfect { color: #1d8f45; font-size: 32px; } .dfb.weak { color: #b5462f; font-size: 22px; }
+  @keyframes dfb { 0% { transform: translate(-50%, 0) scale(.6); opacity: 0; } 20% { transform: translate(-50%, -10px) scale(1.1); opacity: 1; } 100% { transform: translate(-50%, -60px) scale(1); opacity: 0; } }
+  .dres { position: absolute; inset: 0; background: rgba(40,25,10,.45); display: flex; align-items: center; justify-content: center; z-index: 3; overflow: hidden; }
+  .dcard { background: #fff8e8; border: 7px solid #a8743d; border-radius: 32px; box-shadow: 0 9px 0 #6b4219; padding: 20px 34px; display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 90vw; text-align: center; animation: popin .4s cubic-bezier(.3, 1.6, .5, 1); }
+  .dcard h2 { margin: 0; font-size: clamp(26px, 4vw, 40px); }
+  .dtro { font-size: 90px; line-height: 1; }
+  .dwin { width: 240px; height: 110px; }
+  .dcoins { font-size: 40px; font-weight: 900; color: #e3a000; }
+  .dtip { font-size: 18px; font-weight: 700; max-width: 520px; }
+  .dbtns { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+  .dconf { position: absolute; top: -20px; width: 14px; height: 22px; border-radius: 4px; animation: dconf 2.6s linear forwards; }
+  @keyframes dconf { to { transform: translateY(110vh) rotate(720deg); } }
+  @media (max-height: 560px) {
+    #duel.dpick { gap: 6px; } #duel h1 { font-size: 26px; } .dhint { display: none; } .dhint.sm { display: block; } .dhint.sm { font-size: 12px; }
+    .dchip { font-size: 15px; padding: 5px 12px; border-width: 4px; box-shadow: 0 3px 0 #6b4219; } .dchip.sm { font-size: 13px; padding: 3px 10px; }
+    .dcols { flex-wrap: nowrap; gap: 10px; } .dcol { flex: 1 1 0; padding: 6px 8px; gap: 4px; border-width: 4px; box-shadow: 0 4px 0 #6b4219; } .dcol h2 { font-size: 16px; }
+    .dtr { flex-basis: 80px; font-size: 12px; padding: 3px; border-width: 3px; } .dtr svg { height: 28px; }
+    .dstats { font-size: 12px; gap: 1px 8px; } .dstats .dbar { height: 9px; }
+    .dgo { font-size: 20px; padding: 6px 26px; border-width: 4px; box-shadow: 0 4px 0 #134a22; } .dgo.alt { font-size: 17px; }
+    .dcard { padding: 10px 20px; gap: 6px; } .dtro { font-size: 50px; } .dwin { height: 60px; width: 150px; } .dcoins { font-size: 28px; }
+    .dtop { min-height: 44px; } .dname { font-size: 18px; } .dname svg { width: 50px; height: 30px; } .dpush { width: 96px; height: 96px; } .dhorn { width: 56px; height: 56px; font-size: 28px; } .dmid { font-size: 13px; } }
+  @media (max-width: 1400px) { .mode { width: min(250px, 80vw); padding: 14px; } .mode .big { font-size: 64px; } .mode b { font-size: 24px; } }
+  @media (prefers-reduced-motion: reduce) { .dconf, .dban, .dhorn.ready, .sway, .popin, .slidein, #card, #menuPop, .wv, .glint, .fall, .foam, .mist { animation: none !important; } }
   #toast { position: fixed; left: 50%; top: 24%; transform: translate(-50%, -50%) scale(.5); font-size: 84px; opacity: 0; pointer-events: none; z-index: 40;
     transition: opacity .25s, transform .25s; text-shadow: 0 4px 10px rgba(0,0,0,.3); white-space: nowrap; }
   #toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
@@ -380,6 +469,7 @@
   <div class="modes">
     <div class="mode" id="goAdv"><div class="big">🗺️</div><b>Aventura</b><span>Viaja por el mundo: lleva el tren de la estación A hasta la 🏁 construyendo la vía.</span></div>
     <div class="mode" id="goFree"><div class="big">🧱</div><b>Juego libre</b><span>Construye lo que quieras, con todas las piezas, trenes, coches y monumentos.</span></div>
+    <div class="mode" id="goDuel"><div class="big">🏆</div><b>Desafío de trenes</b><span>Dos trenes frente a frente: ¡empuja al otro fuera del muelle!</span></div>
     <div class="mode" id="goDraw"><div class="big">📚</div><b>Biblioteca</b><span>Ciudades, animales, comida y cosas para construir y jugar.</span></div>
   </div>
   <div class="tutrow">
@@ -4319,6 +4409,7 @@ const _s = (d, f, extra) => `<path d="${d}" fill="${f || "none"}" stroke="${IK}"
 const _c = (cx, cy, r, f, extra) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${f}" stroke="${IK}" stroke-width="2.6" ${extra || ""}/>`;
 const _r = (x, y, w, h, rx, f, extra) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${f}" stroke="${IK}" stroke-width="2.6" ${extra || ""}/>`;
 const ICONS = {
+  h_duel: _s("M24 4 L28 15 L40 12 L32 22 L42 30 L29 30 L24 42 L19 30 L6 30 L16 22 L8 12 L20 15 Z", "#ffd34d") + _r(1, 20, 17, 13, 4, "#d63a2f") + _r(30, 20, 17, 13, 4, "#2f6fd1") + _c(6, 36, 3, "#444") + _c(14, 36, 3, "#444") + _c(34, 36, 3, "#444") + _c(42, 36, 3, "#444"),
   play: _s("M16 10 L38 24 L16 38 Z", "#fff"),
   pause: _r(13, 10, 8, 28, 3, "#fff") + _r(27, 10, 8, 28, 3, "#fff"),
   reset: _s("M37 20a14 14 0 1 0 1 9", "none", 'stroke-width="4.5"') + _s("M30 12 L38 20 L39 9 Z", IK),
@@ -4395,7 +4486,7 @@ function applyIcons() {
   Object.entries(BTN_IC).forEach(([id, n]) => { const b = $(id); if (!b) return; const lbl = b.querySelector(".lbl"); b.innerHTML = ic(n); if (lbl) b.appendChild(lbl); });
   $("play").innerHTML = ic(running ? "pause" : "play");
   setMuteIcon();
-  [["goAdv", "h_adv"], ["goFree", "h_free"], ["goDraw", "h_lib"], ["goTut", "h_tut"], ["goTut2", "h_alto"]].forEach(([id, n]) => { const b = $(id) && $(id).querySelector(".big"); if (b) b.innerHTML = ic(n); });
+  [["goAdv", "h_adv"], ["goFree", "h_free"], ["goDuel", "h_duel"], ["goDraw", "h_lib"], ["goTut", "h_tut"], ["goTut2", "h_alto"]].forEach(([id, n]) => { const b = $(id) && $(id).querySelector(".big"); if (b) b.innerHTML = ic(n); });
 }
 function setMuteIcon() { const b = $("mute"); if (!b) return; const lbl = b.querySelector(".lbl"); b.innerHTML = ic(sfxOn ? "sound" : "mute"); if (lbl) b.appendChild(lbl); }
 // ---------- tools that only show up when they are useful
@@ -6083,7 +6174,7 @@ function offerTutorial() {
     row.appendChild(a); row.appendChild(b);
   });
 }
-function goHome() { if (running) setRunning(false); if (tut) endTutorial(!!tut.stash); closeModal(); $("advmap").hidden = true; $("home").hidden = false; markTutHome(); }
+function goHome() { if (typeof closeDuel === "function" && $("duel") && !$("duel").hidden) duelStop(), $("duel").hidden = true; if (running) setRunning(false); if (tut) endTutorial(!!tut.stash); closeModal(); $("advmap").hidden = true; $("home").hidden = false; markTutHome(); }
 $("homeBtn").onclick = () => { unlockAudio(); sfx.click(); goHome(); };
 $("parentBtn").onclick = () => goParents();
 $("goTut").onclick = () => { unlockAudio(); sfx.whistleShort(); startTutorial("basic"); };
@@ -6092,6 +6183,7 @@ $("goTut2").onclick = () => { unlockAudio(); sfx.whistleShort(); startTutorial("
 function markTutHome() { $("goTut").classList.toggle("new", !sget(KEY + "-tut")); }
 $("goAdv").onclick = () => { unlockAudio(); sfx.click(); openMap(); };
 $("goFree").onclick = () => { unlockAudio(); sfx.whistleShort(); enterFree(); };
+$("goDuel").onclick = () => { unlockAudio(); sfx.whistleShort(); openDuel(); };
 
 // ---------- the map (simplified real coastlines of Western Europe)
 const MAPP = (lon, lat) => [(lon + 13) * 31.25, (57 - lat) * 45];
@@ -6326,6 +6418,8 @@ const I18N_ROWS = [
 ["🚂 Constructor de trenes", "🚂 Train Builder", "🚂 Constructeur de trains"],
 ["Aventura", "Adventure", "Aventure"],
 ["Juego libre", "Free play", "Jeu libre"],
+["Desafío de trenes", "Train Challenge", "Défi des trains"],
+["Dos trenes frente a frente: ¡empuja al otro fuera del muelle!", "Two trains nose to nose: push the other one off the pier!", "Deux trains face à face : pousse l'autre hors du quai !"],
 ["Aprender a jugar", "Learn to play", "Apprendre à jouer"],
 ["Viaja por el mundo: lleva el tren de la estación A hasta la 🏁 construyendo la vía.", "Travel the world: build the track to take the train from station A to the 🏁.", "Voyage autour du monde : construis la voie pour amener le train de la gare A jusqu'au 🏁."],
 ["Construye lo que quieras, con todas las piezas, trenes, coches y monumentos.", "Build whatever you like, with every piece, train, car and monument.", "Construis ce que tu veux, avec toutes les pièces, trains, voitures et monuments."],
@@ -6713,6 +6807,416 @@ function langPicker(parent, after) {
   });
   parent.appendChild(d); return d;
 }
+
+// =====================================================================
+//  🏆 TRAIN CHALLENGE · Push-off: two engines nose to nose on a pier.
+//  Tap 💪 when the ring turns green; push the other one into the pond.
+//  Best of 3. Stats: power, weight, speed (how fast the ring fills), steam.
+// =====================================================================
+const DUEL_ST = { // p power · w weight · s speed · h steam  (balanced by simulation: every train wins 45–60%)
+  vapor:      { p: 6.3, w: 6, s: 5, h: 9 },
+  pasajeros:  { p: 5.9, w: 5, s: 7, h: 7 },
+  mercancias: { p: 6.8, w: 9, s: 2, h: 7 },
+  bala:       { p: 5.3, w: 5, s: 9, h: 7 },
+  metro:      { p: 5.9, w: 5, s: 7, h: 7 },
+  tranvia:    { p: 7.5, w: 6, s: 3, h: 10 },
+  oro:        { p: 6,   w: 6, s: 6, h: 8 },
+  arcoiris:   { p: 5.9, w: 5, s: 7, h: 8 },
+  dragonT:    { p: 6,   w: 7, s: 5, h: 7 },
+  bomberosT:  { p: 6,   w: 8, s: 4, h: 8 },
+};
+const DUEL_LV = {
+  easy:   { mu: .7,  sd: .35, skip: .4,  horn: 2.5, save: 0, coins: 3 },
+  normal: { mu: .88, sd: .3,  skip: .22, horn: 1.5, save: 1, coins: 5 },
+  hard:   { mu: 1.05, sd: .11, skip: .05, horn: .4,  save: 2, coins: 8 },
+};
+const DUEL_TX = {
+  start: [["¡A ver quién empuja más!", "Let's see who pushes harder!", "Voyons qui pousse le plus fort !"], ["¡No me moverás!", "You won't move me!", "Tu ne me feras pas bouger !"], ["¡Preparado!", "Ready!", "Prêt !"]],
+  win: [["¡Lo conseguí!", "I did it!", "J'ai réussi !"], ["¡Tuut-tuut! ¡Gané!", "Toot-toot! I won!", "Tuut-tuut ! J'ai gagné !"]],
+  fall: [["¡Plof! ¡Al agua!", "Splash! Into the water!", "Plouf ! Dans l'eau !"], ["¡Uy, qué fresquita!", "Ooh, it's chilly!", "Oh, elle est fraîche !"]],
+  tired: [["¡Uf, sin vapor!", "Phew, out of steam!", "Ouf, plus de vapeur !"]],
+  horn: [["¡Tuuuut! ¡Turbo!", "Toooot! Turbo!", "Tuuuut ! Turbo !"]],
+};
+const DS = 2.7, DCX = 800, DCY = 360, DRANGE = 250, DEDGE = [150, 1450], DFRONT = 38;
+let duelRAF = 0, duelG = 0;
+const DUEL = { pick: null, m: null };
+const duelKinds = () => Object.keys(KINDS).filter(k => !KINDS[k].shop || owns(k));
+const dStat = k => DUEL_ST[k] || DUEL_ST.vapor;
+const dRate = S => .7 + S.s * .07; // ring fills this many times a second
+const dName = k => (CHAR[k] || CHAR.vapor).names[0];
+const rndN = () => (Math.random() + Math.random() + Math.random() - 1.5) * 2;
+const dPick = a => L3(a[Math.floor(Math.random() * a.length)]);
+
+function openDuel() {
+  unlockAudio(); closeModal();
+  if (running) setRunning(false);
+  let d = $("duel");
+  if (!d) { d = document.createElement("div"); d.id = "duel"; document.body.appendChild(d); }
+  d.hidden = false; $("home").hidden = true;
+  if (!DUEL.pick) DUEL.pick = { mode: "ai", lvl: "easy", k: ["vapor", "mercancias"] };
+  duelPickScreen();
+}
+function duelStop() { cancelAnimationFrame(duelRAF); duelRAF = 0; DUEL.m = null; try { speechSynthesis.cancel(); } catch (e) {} }
+function closeDuel() { duelStop(); const d = $("duel"); if (d) d.hidden = true; $("home").hidden = false; }
+
+// ---------- choosing the trains
+function duelPickScreen() {
+  duelStop();
+  const d = $("duel"); d.innerHTML = ""; d.className = "screen dpick";
+  const P = DUEL.pick, kinds = duelKinds();
+  P.k = P.k.map((k, i) => kinds.includes(k) ? k : kinds[i % kinds.length]);
+  const x = addEl(d, "button", "b dx"); x.innerHTML = ic("home"); x.title = LX("Inicio", "Home", "Accueil"); x.onclick = () => { sfx.click(); closeDuel(); };
+  addEl(d, "h1", "", LX("🏆 Desafío de trenes", "🏆 Train Challenge", "🏆 Défi des trains"));
+  addEl(d, "div", "dhint", LX("Dos trenes frente a frente en el muelle. ¡Empuja al otro al agua! Gana quien gane 2 rondas.",
+    "Two trains nose to nose on the pier. Push the other one into the water! First to win 2 rounds wins.",
+    "Deux trains face à face sur le quai. Pousse l'autre dans l'eau ! Le premier à gagner 2 manches gagne."));
+  const modes = addEl(d, "div", "dmodes");
+  [["ai", LX("🤖 Contra el ordenador", "🤖 Against the computer", "🤖 Contre l'ordinateur")], ["2p", LX("👫 Dos jugadores", "👫 Two players", "👫 Deux joueurs")]].forEach(([m, t]) => {
+    const b = addEl(modes, "div", "dchip" + (P.mode === m ? " on" : ""), t);
+    b.onclick = () => { sfx.click(); P.mode = m; duelPickScreen(); };
+  });
+  if (P.mode === "ai") {
+    const lv = addEl(d, "div", "dmodes");
+    [["easy", LX("Fácil", "Easy", "Facile")], ["normal", LX("Normal", "Normal", "Normal")], ["hard", LX("Difícil", "Hard", "Difficile")]].forEach(([l, t]) => {
+      const b = addEl(lv, "div", "dchip sm" + (P.lvl === l ? " on" : ""), t + "  +" + DUEL_LV[l].coins + "🪙");
+      b.onclick = () => { sfx.click(); P.lvl = l; duelPickScreen(); };
+    });
+  }
+  const cols = addEl(d, "div", "dcols");
+  [0, 1].forEach(i => {
+    const col = addEl(cols, "div", "dcol p" + (i + 1));
+    addEl(col, "h2", "", i === 0 ? LX("Jugador 1", "Player 1", "Joueur 1") : P.mode === "ai" ? LX("🤖 Rival", "🤖 Rival", "🤖 Adversaire") : LX("Jugador 2", "Player 2", "Joueur 2"));
+    const row = addEl(col, "div", "dtrains");
+    kinds.forEach(k => {
+      const K = KINDS[k], c = addEl(row, "div", "dtr" + (P.k[i] === k ? " on" : ""));
+      const c1 = i === 1 && P.k[0] === k ? (K.c1[1] || K.c1[0]) : K.c1[0], c2 = i === 1 && P.k[0] === k ? (K.c2[1] || K.c2[0]) : K.c2[0];
+      const svg = trainIcon(k, 2, c1, c2); if (i === 1) svg.style.transform = "scaleX(-1)";
+      c.appendChild(svg); addEl(c, "div", "", dName(k));
+      c.onclick = () => { sfx.click(); P.k[i] = k; try { HORNS[K.horn](); } catch (e) {} duelPickScreen(); if (P.k[i] === k) { const C = CHAR[k] || CHAR.vapor; speak(LX(`¡Soy ${dName(k)}!`, `I'm ${dName(k)}!`, `Je suis ${dName(k)} !`), { pitch: C.pitch, rate: C.rate, raw: true }); } };
+      if (P.k[i] === k) setTimeout(() => { row.scrollLeft = c.offsetLeft - row.clientWidth / 2 + c.offsetWidth / 2; }, 0);
+    });
+    const S = dStat(P.k[i]), st = addEl(col, "div", "dstats");
+    addEl(st, "div", "dtt", trn(KINDS[P.k[i]].t));
+    [["💪", LX("Fuerza", "Power", "Force"), S.p], ["🪨", LX("Peso", "Weight", "Poids"), S.w], ["⚡", LX("Rapidez", "Speed", "Vitesse"), S.s], ["♨️", LX("Vapor", "Steam", "Vapeur"), S.h]].forEach(([e, n, v]) => {
+      addEl(st, "span", "", e + " " + n);
+      const b = addEl(st, "div", "dbar"); const f = addEl(b, "i"); f.style.width = (v * 10) + "%";
+    });
+  });
+  addEl(d, "div", "dhint sm", LX("💪 Toca cuando el círculo se ponga VERDE. Si tocas muy deprisa te quedas sin vapor. Con 3 empujones perfectos se enciende la 🎺 bocina turbo.",
+    "💪 Tap when the ring turns GREEN. Tap too fast and you run out of steam. 3 perfect pushes light up the 🎺 turbo horn.",
+    "💪 Touche quand le cercle devient VERT. Si tu touches trop vite, tu n'as plus de vapeur. 3 poussées parfaites allument le 🎺 klaxon turbo."));
+  const go = addEl(d, "button", "dgo", LX("¡A empujar!", "Let's push!", "On pousse !"));
+  go.onclick = () => { sfx.whistleShort(); duelStart(); };
+}
+
+// ---------- the match
+function duelStart() {
+  const P = DUEL.pick;
+  const mk = (k, i) => {
+    const K = KINDS[k], same = i === 1 && P.k[0] === k, S = dStat(k);
+    return { i, k, S, rate: dRate(S), c1: same ? (K.c1[1] || K.c1[0]) : K.c1[0], c2: same ? (K.c2[1] || K.c2[0]) : K.c2[0],
+      name: dName(k) + (same ? " 2" : ""), ai: P.mode === "ai" && i === 1, wins: 0 };
+  };
+  DUEL.m = { mode: P.mode, lvl: P.lvl, p: [mk(P.k[0], 0), mk(P.k[1], 1)], fx: [], r: null };
+  duelArena(); duelRound();
+  let last = performance.now();
+  const loop = now => { const dt = Math.min(.05, (now - last) / 1000); last = now; if (!DUEL.m) return; duelStep(dt); duelDraw(dt); duelRAF = requestAnimationFrame(loop); };
+  duelRAF = requestAnimationFrame(loop);
+}
+function duelArena() {
+  const m = DUEL.m, d = $("duel"); d.innerHTML = ""; d.className = "screen darena";
+  const x = addEl(d, "button", "b dx"); x.innerHTML = ic("home"); x.title = LX("Inicio", "Home", "Accueil"); x.onclick = () => { sfx.click(); closeDuel(); };
+  const top = addEl(d, "div", "dtop");
+  m.p.forEach(p => {
+    const n = addEl(top, "div", "dname p" + (p.i + 1));
+    const s = trainIcon(p.k, 1, p.c1, p.c2); if (p.i === 1) s.style.transform = "scaleX(-1)";
+    n.appendChild(s); addEl(n, "b", "", (p.ai ? "🤖 " : "") + p.name); p.pipsE = addEl(n, "span", "dpips");
+    if (p.i === 0) m.roundE = addEl(top, "div", "dround");
+  });
+  const stage = addEl(d, "div", "dstage");
+  const svg = el("svg", { id: "dsvg", viewBox: "0 0 1600 720", preserveAspectRatio: "xMidYMid meet" }, stage);
+  // always show the whole pier, as big as the space allows; the pond and banks fill whatever is left over
+  m.fit = () => { const r = stage.getBoundingClientRect(); if (r.height) svg.setAttribute("preserveAspectRatio", r.width / r.height > 1600 / 560 ? "xMidYMid slice" : "xMidYMid meet"); };
+  setTimeout(m.fit, 0);
+  m.svg = svg; duelScene(svg);
+  m.trainL = el("g", {}, svg); m.fxL = el("g", { "pointer-events": "none" }, svg);
+  m.p.forEach(p => {
+    p.g = el("g", {}, m.trainL);
+    carTypes(p.k, 1).forEach((type, j) => { const g = el("g", { transform: `translate(${-j * SP} 0)` }, p.g); drawCar(g, type, carColor(KINDS[p.k], j, p.c1), p.c2); if (j === 0) p.faceHost = g; });
+  });
+  const pads = addEl(d, "div", "dpads");
+  m.p.forEach(p => {
+    const pad = addEl(pads, "div", "dpad" + (p.i ? " r" : "") + (p.ai ? " ai" : ""));
+    const push = addEl(pad, "button", "dpush");
+    push.innerHTML = `<svg viewBox="-64 -64 128 128"><circle class="bg" r="50"/><circle class="tr" r="57"/><circle class="pr" r="57" transform="rotate(-90)" stroke-dasharray="358.1" stroke-dashoffset="358.1"/><text class="em" y="2">💪</text><text class="lb" y="36"></text></svg>`;
+    p.pushE = push; p.ringE = push.querySelector(".pr"); p.lblE = push.querySelector(".lb");
+    const side = addEl(pad, "div", "dside");
+    const horn = addEl(side, "button", "dhorn", "🎺"); p.hornE = horn;
+    const st = addEl(side, "div", "dsteam"); addEl(st, "span", "", "♨️"); const sb = addEl(st, "div", "dbar"); p.steamE = addEl(sb, "i");
+    const bo = addEl(side, "div", "dboost"); for (let j = 0; j < 3; j++) addEl(bo, "i"); p.boostE = bo;
+    if (!p.ai) {
+      push.addEventListener("pointerdown", e => { e.preventDefault(); duelPush(p.i); });
+      horn.addEventListener("pointerdown", e => { e.preventDefault(); duelHorn(p.i); });
+    }
+    if (p.i === 0) m.midE = addEl(pads, "div", "dmid", m.mode === "2p" && matchMedia("(hover: hover)").matches ? LX("Jugador 1: A · S    Jugador 2: L · K", "Player 1: A · S    Player 2: L · K", "Joueur 1 : A · S    Joueur 2 : L · K") : "");
+  });
+  if (m.mode !== "2p") m.midE.textContent = "";
+}
+function duelScene(svg) {
+  const defs = el("defs", {}, svg);
+  defs.innerHTML = `<linearGradient id="dwat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5bb6e8"/><stop offset="1" stop-color="#2f86c4"/></linearGradient>
+    <linearGradient id="dwood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9a066"/><stop offset="1" stop-color="#b9783f"/></linearGradient>
+    <pattern id="dstripe" width="28" height="28" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="14" height="28" fill="#f5c518"/><rect x="14" width="14" height="28" fill="#2b2b2b"/></pattern>`;
+  el("rect", { x: -1400, y: -1200, width: 4400, height: 3200, fill: "url(#dwat)" }, svg);
+  // grassy banks top and bottom, with reeds and flowers
+  el("path", { d: "M-1400 -1200H3000V70Q2400 90 2000 72T1800 110 1600 80T1200 90T800 70T400 95T0 75T-400 90T-1400 80Z", fill: "#7cc464" }, svg);
+  el("path", { d: "M-1400 1920H3000V650Q2400 630 2000 650T1800 620 1600 645T1200 630T800 650T400 625T0 648T-400 630T-1400 640Z", fill: "#7cc464" }, svg);
+  el("path", { d: "M-400 70Q0 98 400 88T800 76T1200 96T1600 86T2000 72", fill: "none", stroke: "#d8f1ff", "stroke-width": 6, opacity: .8 }, svg);
+  el("path", { d: "M-400 638Q0 652 400 632T800 656T1200 636T1600 652T2000 640", fill: "none", stroke: "#d8f1ff", "stroke-width": 6, opacity: .8 }, svg);
+  [[90, 40], [330, 30], [620, 45], [1010, 35], [1290, 40], [1520, 30], [180, 690], [520, 700], [940, 690], [1380, 700]].forEach(([x, y], i) => {
+    if (i % 2) ["#ff8fb1", "#fff", "#ffd34d"].forEach((c, j) => el("circle", { cx: x + j * 18 - 18, cy: y + (j % 2) * 8, r: 7, fill: c, stroke: "rgba(0,0,0,.25)", "stroke-width": 2 }, svg));
+    else for (let j = 0; j < 4; j++) el("path", { d: `M${x + j * 9} ${y + 26}q${-4 + j * 3} -20 ${-2 + j * 2} -34`, stroke: "#4f9a3f", "stroke-width": 5, fill: "none", "stroke-linecap": "round" }, svg);
+  });
+  // ripples
+  const rip = el("g", { opacity: .55 }, svg);
+  for (let i = 0; i < 26; i++) {
+    const x = rnd(-200, 1800), y = rnd(120, 610); if (y > 250 && y < 470 && x > 120 && x < 1480) continue;
+    const g = el("g", { class: "wv", style: `animation-delay:${(-rnd(0, 6)).toFixed(2)}s` }, rip);
+    el("path", { d: `M${x} ${y}q14 -8 28 0t28 0`, stroke: "#d8f1ff", "stroke-width": 4, fill: "none", "stroke-linecap": "round" }, g);
+  }
+  // lily pads and a duck
+  [[230, 190], [1390, 560], [520, 590], [1150, 170]].forEach(([x, y]) => { el("path", { d: `M${x} ${y}m-26 0a26 20 0 1 0 52 0a26 20 0 1 0 -52 0Z M${x} ${y}l24 -10`, fill: "#5cb85c", stroke: "#3a7f3a", "stroke-width": 3 }, svg); });
+  el("text", { x: 1290, y: 200, "font-size": 54, "text-anchor": "middle", class: "sway" }, svg).textContent = "🦆";
+  // the pier: posts, planks, track
+  const pier = el("g", {}, svg);
+  el("rect", { x: DEDGE[0], y: DCY - 100 + 14, width: DEDGE[1] - DEDGE[0], height: 200, rx: 10, fill: "rgba(0,0,0,.18)" }, pier);
+  for (let x = DEDGE[0] + 30; x < DEDGE[1]; x += 140) [DCY - 102, DCY + 92].forEach(y => el("circle", { cx: x, cy: y + 4, r: 16, fill: "#7a4a22", stroke: "#4e2e12", "stroke-width": 4 }, pier));
+  el("rect", { x: DEDGE[0], y: DCY - 100, width: DEDGE[1] - DEDGE[0], height: 200, rx: 8, fill: "url(#dwood)", stroke: "#6b4219", "stroke-width": 6 }, pier);
+  for (let x = DEDGE[0] + 42; x < DEDGE[1]; x += 42) el("line", { x1: x, y1: DCY - 97, x2: x, y2: DCY + 97, stroke: "#8a5a2b", "stroke-width": 3, opacity: .55 }, pier);
+  for (let x = DEDGE[0] + 20; x < DEDGE[1]; x += 38) el("rect", { x: x - 8, y: DCY - 76, width: 16, height: 152, rx: 3, fill: "#6e4520" }, pier);
+  [-57, 57].forEach(dy => { el("rect", { x: DEDGE[0], y: DCY + dy - 5, width: DEDGE[1] - DEDGE[0], height: 10, rx: 3, fill: "#9aa6b2", stroke: "#5b6670", "stroke-width": 2 }, pier); });
+  // striped danger ends, and a centre line
+  DEDGE.forEach((x, i) => el("rect", { x: i ? x - 26 : x, y: DCY - 100, width: 26, height: 200, fill: "url(#dstripe)", stroke: "#6b4219", "stroke-width": 4 }, pier));
+  el("line", { x1: DCX, y1: DCY - 96, x2: DCX, y2: DCY + 96, stroke: "#fff", "stroke-width": 6, "stroke-dasharray": "14 12", opacity: .75 }, pier);
+}
+function duelRound() {
+  const m = DUEL.m;
+  m.r = { x: 0, v: 0, t: 0, phase: "count", cn: 4, fallT: 0, loser: -1, shake: 0 };
+  m.p.forEach(p => { p.steam = p.S.h; p.boost = 0; p.over = 0; p.hornT = 0; p.lastTap = 0; p.aiT = null; p.hornWait = null; p.mood = "happy"; p.moodT = 0; p.faceKey = ""; p.g.removeAttribute("opacity"); });
+  m.roundE.textContent = LX("Ronda ", "Round ", "Manche ") + (m.p[0].wins + m.p[1].wins + 1);
+  m.p.forEach(p => { p.pipsE.textContent = "★".repeat(p.wins) + "☆".repeat(2 - p.wins); });
+  const who = m.p[Math.random() < .5 ? 0 : 1];
+  setTimeout(() => { if (DUEL.m === m) duelSay(who, dPick(DUEL_TX.start), true); }, 300);
+}
+function duelBanner(t, cls) { const b = addEl($("duel"), "div", "dban" + (cls ? " " + cls : ""), t); setTimeout(() => b.remove(), 1000); }
+// pushes grow stronger as a round goes on, so two well-matched trains never stall for long
+function duelForce(i) { const m = DUEL.m, p = m.p[i], o = m.p[1 - i], t = m.r && m.r.phase === "go" ? m.r.t : 0; return 1.25 * p.S.p / (o.S.w + 6) * (1 + t / 9); }
+function duelStep(dt) {
+  const m = DUEL.m, R = m.r; if (!R) return;
+  R.t += dt; duelG += dt;
+  if (R.phase === "count") {
+    const n = 3 - Math.floor(R.t - .6);
+    if (R.t > .6 && n !== R.cn) {
+      R.cn = n;
+      if (n > 0) { duelBanner(String(n)); tone([523], "sine", 0, .15, .14); }
+      else { duelBanner(LX("¡Ya!", "Go!", "Partez !"), "go"); tone([784, 1047], "square", .09, .22, .08); R.phase = "go"; R.t = 0; m.p.forEach(p => p.lastTap = duelG); }
+    }
+    return;
+  }
+  if (R.phase === "go") {
+    m.p.forEach(p => {
+      if (p.over > 0) { p.over -= dt; if (p.over <= 0) { p.steam = p.S.h * .5; p.lastTap = duelG; } }
+      else p.steam = Math.min(p.S.h, p.steam + dt * .9);
+      if (p.hornT > 0) { p.hornT -= dt; R.v += (p.i ? -1 : 1) * dt * 1.7 * duelForce(p.i); if (Math.random() < dt * 14) duelPuff(p, "#fff"); }
+      if (p.ai) duelAI(p, dt);
+      if (p.moodT > 0) p.moodT -= dt;
+    });
+    R.v *= Math.exp(-3 * dt); R.x += R.v * dt;
+    if (R.x <= -1 || R.x >= 1) duelFall(R.x <= -1 ? 0 : 1);
+    else if (R.t > 30) { // nobody budged: the one pushed back further loses; a dead heat is replayed
+      if (Math.abs(R.x) < .05) { duelBanner(LX("¡Empate!", "Draw!", "Égalité !")); R.phase = "end"; setTimeout(() => DUEL.m === m && duelRound(), 1300); }
+      else duelFall(R.x < 0 ? 0 : 1);
+    }
+  }
+  if (R.phase === "fall") {
+    R.fallT += dt;
+    if (R.fallT > 2.2 && !R.done) { R.done = true; duelPoint(); }
+  }
+  for (let i = m.fx.length - 1; i >= 0; i--) { const f = m.fx[i]; f.t += dt; const k = f.t / f.dur; if (k >= 1) { f.e.remove(); m.fx.splice(i, 1); } else f.fn(k, f.e); }
+  if (R.shake > 0) R.shake = Math.max(0, R.shake - dt * 30);
+}
+function duelPush(i) {
+  const m = DUEL.m; if (!m || !m.r) return;
+  const R = m.r, p = m.p[i];
+  if (R.phase !== "go" || p.over > 0) return;
+  const f = (duelG - p.lastTap) * p.rate; p.lastTap = duelG;
+  let mult, q;
+  if (f >= .9 && f <= 1.35) { mult = 1.6; q = "perfect"; p.boost = Math.min(1, p.boost + .34); }
+  else if (f > 1.35) { mult = 1; q = "good"; p.boost = Math.min(1, p.boost + .12); }
+  else { mult = .6 * f; q = "weak"; }
+  R.v += (i ? -1 : 1) * mult * duelForce(i);
+  p.steam -= 1;
+  if (q === "perfect") { sfx.bump(); R.shake = 7; p.mood = "wow"; p.moodT = .45; duelSpark(); }
+  else if (q === "good") { sfx.clank(); R.shake = 3; }
+  else sfx.toc();
+  if (KINDS[p.k].snd === "chuff") sfx.chuff(q !== "weak");
+  duelPuff(p, KINDS[p.k].smoke === "dark" ? "#6b6b6b" : KINDS[p.k].smoke === "fire" ? "#ff9a3c" : "#fff");
+  if (!p.ai) duelFeedback(p, q === "perfect" ? LX("¡Perfecto!", "Perfect!", "Parfait !") : q === "good" ? LX("Bien", "Good", "Bien") : LX("¡Espera al verde!", "Wait for green!", "Attends le vert !"), q);
+  if (p.steam <= 0) { p.steam = 0; p.over = 2; sfx.no(); duelSay(p, dPick(DUEL_TX.tired)); for (let j = 0; j < 4; j++) setTimeout(() => DUEL.m === m && duelPuff(p, "#e8f4ff"), j * 120); }
+}
+function duelHorn(i) {
+  const m = DUEL.m; if (!m || !m.r) return;
+  const p = m.p[i]; if (m.r.phase !== "go" || p.boost < 1 || p.over > 0) return;
+  p.boost = 0; p.hornT = 2; p.mood = "wow"; p.moodT = 2;
+  try { HORNS[KINDS[p.k].horn](); } catch (e) {}
+  duelSay(p, dPick(DUEL_TX.horn));
+}
+function duelAI(p, dt) {
+  const L = DUEL_LV[DUEL.m.lvl];
+  if (p.over > 0) return;
+  if (p.aiT == null) p.aiT = Math.max(.12, L.mu + rndN() * L.sd) + (Math.random() < L.skip ? rnd(.4, 1) : 0);
+  let target = p.aiT;
+  if (L.save && p.steam < L.save + 1) target = Math.max(target, 1.6 + (L.save - 1) * .6);
+  if ((duelG - p.lastTap) * p.rate >= target) { duelPush(p.i); p.aiT = null; }
+  if (p.boost >= 1) { p.hornWait = (p.hornWait == null ? L.horn + rnd(0, .6) : p.hornWait) - dt; if (p.hornWait <= 0) { duelHorn(p.i); p.hornWait = null; } }
+}
+function duelFall(loser) {
+  const m = DUEL.m, R = m.r; if (R.phase === "fall") return;
+  R.phase = "fall"; R.loser = loser; R.fallT = 0; R.x = loser ? 1 : -1;
+  const L = m.p[loser], W = m.p[1 - loser];
+  L.mood = "worried"; W.mood = "wow"; W.moodT = 3;
+  sfx.whoosh();
+  setTimeout(() => { if (DUEL.m !== m) return; duelSplash(loser); L.mood = "dizzy"; duelSay(L, dPick(DUEL_TX.fall), true); }, 750);
+  setTimeout(() => { if (DUEL.m !== m) return; duelSay(W, dPick(DUEL_TX.win), false); try { HORNS[KINDS[W.k].horn](); } catch (e) {} }, 1500);
+}
+function duelPoint() {
+  const m = DUEL.m, R = m.r, W = m.p[1 - R.loser];
+  W.wins++;
+  m.p.forEach(p => { p.pipsE.textContent = "★".repeat(p.wins) + "☆".repeat(2 - p.wins); });
+  if (W.wins >= 2) { setTimeout(() => DUEL.m === m && duelResult(W), 500); return; }
+  duelBanner(LX("¡Punto para ", "Point to ", "Point pour ") + W.name + "!", "sm");
+  setTimeout(() => DUEL.m === m && duelRound(), 1500);
+}
+function duelResult(W) {
+  const m = DUEL.m, d = $("duel"), L = m.p[1 - W.i];
+  m.r.phase = "end";
+  const human = m.mode === "ai" ? W.i === 0 : true;
+  const ov = addEl(d, "div", "dres"), card = addEl(ov, "div", "dcard");
+  addEl(card, "div", "dtro", human ? "🏆" : "💪");
+  const s = trainIcon(W.k, 2, W.c1, W.c2); s.classList.add("dwin"); card.appendChild(s);
+  addEl(card, "h2", "", m.mode === "2p" ? LX(`¡Gana el jugador ${W.i + 1}!`, `Player ${W.i + 1} wins!`, `Le joueur ${W.i + 1} gagne !`)
+    : human ? LX(`¡${W.name} ha ganado!`, `${W.name} won!`, `${W.name} a gagné !`) : LX(`¡Casi! ${W.name} ha ganado esta vez.`, `So close! ${W.name} won this time.`, `Presque ! ${W.name} a gagné cette fois.`));
+  if (m.mode === "ai" && human) {
+    const n = DUEL_LV[m.lvl].coins; coins = wallet() + n; sset(KEY + "-coins", coins); try { updateHud(); } catch (e) {}
+    addEl(card, "div", "dcoins", "+" + n + " 🪙");
+    tone([1319, 1568, 2093], "triangle", .07, .16, .1);
+  } else if (m.mode === "ai") addEl(card, "div", "dtip", LX("Consejo: espera a que el círculo se ponga verde, y guarda la bocina 🎺 para cuando te estén empujando.", "Tip: wait for the ring to turn green, and save the 🎺 horn for when you're being pushed.", "Astuce : attends que le cercle devienne vert, et garde le 🎺 klaxon pour quand on te pousse."));
+  if (human) { tone([523, 659, 784, 1047, 784, 1047], "square", .1, .2, .07); for (let i = 0; i < 26; i++) { const c = addEl(ov, "div", "dconf"); c.style.left = rnd(5, 95) + "%"; c.style.background = ["#ff5d5d", "#ffd34d", "#5cc96b", "#4fa3ff", "#c77dff"][i % 5]; c.style.animationDelay = rnd(0, .8) + "s"; } }
+  const C = CHAR[W.k] || CHAR.vapor; speak(card.querySelector("h2").textContent, { pitch: C.pitch, rate: C.rate, raw: true });
+  const bt = addEl(card, "div", "dbtns");
+  const again = addEl(bt, "button", "dgo", LX("Otra vez", "Again", "Encore")); again.onclick = () => { sfx.whistleShort(); duelStart(); };
+  const ch = addEl(bt, "button", "dgo alt", LX("Cambiar trenes", "Change trains", "Changer de trains")); ch.onclick = () => { sfx.click(); duelPickScreen(); };
+  void L;
+}
+
+// ---------- effects
+function duelFx(e, dur, fn) { DUEL.m.fx.push({ e, t: 0, dur, fn }); fn(0, e); }
+function duelPos(p) { // where the engine's nose is
+  const m = DUEL.m, R = m.r, cx = DCX + R.x * DRANGE;
+  return p.i ? cx + 4 : cx - 4;
+}
+function duelPuff(p, col) {
+  const m = DUEL.m, x0 = duelPos(p) + (p.i ? 1 : -1) * 40 * DS, y0 = DCY - 6;
+  const c = el("circle", { cx: x0, cy: y0, r: 10, fill: col, opacity: .9 }, m.fxL), dx = rnd(-20, 20) + (p.i ? 30 : -30), dy = rnd(-70, -40);
+  duelFx(c, .9, (k, e) => { e.setAttribute("cx", x0 + dx * k); e.setAttribute("cy", y0 + dy * k); e.setAttribute("r", 10 + 30 * k); e.setAttribute("opacity", .85 * (1 - k)); });
+}
+function duelSpark() {
+  const m = DUEL.m, x0 = DCX + m.r.x * DRANGE;
+  for (let i = 0; i < 7; i++) {
+    const a = rnd(0, Math.PI * 2), c = el("circle", { cx: x0, cy: DCY, r: 6, fill: i % 2 ? "#ffd34d" : "#fff" }, m.fxL);
+    duelFx(c, .45, (k, e) => { e.setAttribute("cx", x0 + Math.cos(a) * 90 * k); e.setAttribute("cy", DCY + Math.sin(a) * 90 * k); e.setAttribute("opacity", 1 - k); });
+  }
+}
+function duelSplash(loser) {
+  const m = DUEL.m, x0 = loser ? DEDGE[1] + 120 : DEDGE[0] - 120;
+  noise(.6, 900, .7, .4, "lowpass"); slide(700, 160, .45, "sine", .1); setTimeout(() => noise(.5, 2500, .6, .12, "highpass"), 150);
+  for (let j = 0; j < 3; j++) { const c = el("ellipse", { cx: x0, cy: DCY, rx: 10, ry: 7, fill: "none", stroke: "#fff", "stroke-width": 7 }, m.fxL); duelFx(c, 1.3 + j * .2, (k, e) => { e.setAttribute("rx", 30 + 220 * k * (1 - j * .2)); e.setAttribute("ry", 20 + 150 * k * (1 - j * .2)); e.setAttribute("opacity", 1 - k); }); }
+  for (let i = 0; i < 18; i++) {
+    const a = rnd(0, Math.PI * 2), sp = rnd(80, 200), c = el("circle", { cx: x0, cy: DCY, r: rnd(6, 13), fill: i % 3 ? "#d8f1ff" : "#fff" }, m.fxL);
+    duelFx(c, 1, (k, e) => { e.setAttribute("cx", x0 + Math.cos(a) * sp * k); e.setAttribute("cy", DCY + Math.sin(a) * sp * k - 140 * Math.sin(Math.PI * k)); e.setAttribute("opacity", 1 - k * k); });
+  }
+}
+function duelSay(p, text, voice) {
+  const m = DUEL.m; if (!m) return;
+  if (p.bub) p.bub.remove();
+  const x = clamp(duelPos(p) + (p.i ? 1 : -1) * 120, 260, 1340), y = 200;
+  const g = el("g", { "pointer-events": "none" }, m.fxL), w = Math.min(560, 40 + text.length * 15);
+  el("rect", { x: x - w / 2, y: y - 40, width: w, height: 64, rx: 22, fill: "#fff", stroke: "#3b2a18", "stroke-width": 4 }, g);
+  el("path", { d: `M${x - 14} ${y + 22}l${p.i ? 24 : -24} 34l${p.i ? 4 : 30} -34`, fill: "#fff", stroke: "#3b2a18", "stroke-width": 4, "stroke-linejoin": "round" }, g);
+  el("rect", { x: x - 30, y: y + 14, width: 46, height: 12, fill: "#fff" }, g);
+  const t = el("text", { x, y: y + 2, "font-size": 28, "font-weight": 800, fill: "#3b2a18", "text-anchor": "middle", "dominant-baseline": "middle" }, g); t.textContent = text;
+  const nm = el("text", { x: x - w / 2 + 14, y: y - 48, "font-size": 22, "font-weight": 900, fill: "#fff", stroke: "#6b4219", "stroke-width": 5, "paint-order": "stroke" }, g); nm.textContent = p.name;
+  p.bub = g; setTimeout(() => { if (p.bub === g) { g.remove(); p.bub = null; } }, 2200);
+  if (voice) { const C = CHAR[p.k] || CHAR.vapor; speak(text, { pitch: C.pitch, rate: C.rate, raw: true }); }
+}
+function duelFeedback(p, text, q) {
+  const r = p.pushE.getBoundingClientRect(), b = addEl($("duel"), "div", "dfb " + q, text);
+  b.style.left = (r.left + r.width / 2) + "px"; b.style.top = (r.top - 34) + "px";
+  setTimeout(() => b.remove(), 800);
+}
+
+// ---------- drawing each frame
+function duelDraw() {
+  const m = DUEL.m, R = m.r; if (!R) return;
+  const sh = R.shake ? rnd(-R.shake, R.shake) : 0, cx = DCX + R.x * DRANGE + sh;
+  m.p.forEach(p => {
+    const dir = p.i ? -1 : 1;
+    let x = cx - dir * DFRONT * DS, y = DCY, rot = 0, sc = DS, op = 1;
+    if (R.phase === "fall" || (R.phase === "end" && R.loser >= 0)) {
+      const t = R.fallT;
+      if (p.i === R.loser) {
+        const off = Math.min(t, .75) * 380 + Math.max(0, t - .75) * 60;
+        x -= dir * off;
+        if (t > .55) { const k = Math.min(1, (t - .55) / .5); rot = -dir * 25 * k; sc = DS * (1 - .45 * k); op = t > 1.7 ? Math.max(0, 1 - (t - 1.7) / .5) : 1; y += 10 * k; }
+      } else x += dir * Math.min(R.fallT, .4) * 40;
+    } else if (R.phase === "go") x -= dir * 3 * Math.sin(duelG * 18) * (p.hornT > 0 ? 1 : 0);
+    p.g.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot.toFixed(1)}) scale(${(dir * sc).toFixed(3)} ${sc.toFixed(3)})`);
+    p.g.setAttribute("opacity", op.toFixed(2));
+    // face
+    let mood = p.mood;
+    if (R.phase === "go" && p.moodT <= 0) mood = p.over > 0 ? "worried" : (p.i ? R.x : -R.x) > .55 ? "worried" : "happy";
+    if (R.phase === "count") mood = "happy";
+    p.blinkT = (p.blinkT == null ? rnd(1, 4) : p.blinkT) - 1 / 60;
+    const blink = p.blinkT < 0 && p.blinkT > -.14; if (p.blinkT < -.14) p.blinkT = rnd(2, 5);
+    const key = mood + (blink ? "b" : "");
+    if (key !== p.faceKey && FACE_AT[KINDS[p.k].loco]) { p.faceKey = key; if (p.faceG) p.faceG.remove(); p.faceG = el("g", {}, p.faceHost); drawFace(p.faceG, KINDS[p.k].loco, mood, blink); }
+    // pad
+    const f = R.phase === "go" ? (duelG - p.lastTap) * p.rate : 0;
+    const st = p.over > 0 ? "over" : R.phase !== "go" ? "wait" : f >= .9 && f <= 1.35 ? "now" : f > 1.35 ? "ok" : "fill";
+    if (p.pushE.dataset.st !== st) {
+      p.pushE.dataset.st = st;
+      p.lblE.textContent = st === "now" ? LX("¡YA!", "NOW!", "VAS-Y !") : st === "over" ? LX("sin vapor", "no steam", "plus de vapeur") : st === "fill" ? LX("espera…", "wait…", "attends…") : st === "ok" ? LX("empuja", "push", "pousse") : "";
+    }
+    p.ringE.setAttribute("stroke-dashoffset", (358.1 * (1 - Math.min(1, f / .9))).toFixed(1));
+    p.steamE.style.width = (100 * p.steam / p.S.h).toFixed(1) + "%";
+    p.steamE.parentNode.classList.toggle("low", p.steam < 1.5);
+    p.hornE.classList.toggle("ready", p.boost >= 1 && R.phase === "go");
+    [...p.boostE.children].forEach((e, j) => e.classList.toggle("on", p.boost >= (j + 1) * .33));
+  });
+}
+addEventListener("resize", () => { if (DUEL.m && DUEL.m.fit) DUEL.m.fit(); });
+document.addEventListener("keydown", e => {
+  const d = $("duel"); if (!d || d.hidden || !DUEL.m) return;
+  if (e.repeat) { e.preventDefault(); e.stopPropagation(); return; }
+  const k = e.key.toLowerCase(), two = DUEL.m.mode === "2p";
+  if (k === "a" || (!two && k === " ")) duelPush(0);
+  else if (k === "s") duelHorn(0);
+  else if (two && k === "l") duelPush(1);
+  else if (two && k === "k") duelHorn(1);
+  else if (k === "escape") closeDuel();
+  else return;
+  e.preventDefault(); e.stopPropagation();
+}, true);
 
 // =====================================================================
 //  START
