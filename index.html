@@ -637,6 +637,10 @@ html, body { background: #bfe3f5 repeating-linear-gradient(0deg, rgba(255,255,25
 .buyfull.busy { opacity: .75; pointer-events: none; }
 .fmsg { background: #f1f6fa; color: #2c3e50; border-radius: 14px; padding: 10px 14px; font-size: 15px; font-weight: 700; text-align: center; max-width: 520px; }
 .fmsg[hidden] { display: none; }
+.it.holding { transform: scale(.94); }
+.it .holdfill { position: absolute; left: 0; right: 0; bottom: 0; height: 0; border-radius: 14px; background: rgba(231,76,60,.38); pointer-events: none; animation: holdfill .9s linear forwards; }
+@keyframes holdfill { to { height: 100%; } }
+.it[data-id="erase"] { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
 </style>
 </head>
 <body>
@@ -5584,7 +5588,7 @@ function step(dt) {
 // =====================================================================
 const INFO = {
   hand: ["✋", "Mano", "Arrastra para mover el tablero. Toca una pieza para girarla, un desvío para cambiar su camino (flecha verde) y un tren para darle la vuelta."],
-  erase: ["🧽", "Borrar", "Toca una pieza o un tren para quitarlo. (Para cambiar una pieza no hace falta borrar: elige la nueva y tócala encima.)"],
+  erase: ["🧽", "Borrar", "Toca una pieza o un tren para quitarlo. Mantén pulsada la goma para borrarlo todo."],
   hz_senal: ["🚦", "Señal", "Ponla en una vía. Se pone roja y para al tren si otro tren está todavía en el tramo de delante (hasta la próxima señal). Así los trenes no chocan. Tócala con ✋ para ponerla roja tú."],
   hz_listo: ["🧠", "Desvío listo", "Toca un desvío para hacerlo listo. Después de cada tren cambia solo, y el siguiente va por el otro lado. Si un lado tiene un tren, manda el tren por el lado libre; si los dos están ocupados, el tren espera."],
   hz_barrera: ["🚧", "Barrera a mano", "Toca un paso a nivel: ahora tú bajas y subes la barrera con ✋. Si viene el tren y la barrera está subida… ¡bonk! La grúa se lleva el coche."],
@@ -5819,6 +5823,33 @@ function makeItem(id, onClick) {
   d.onclick = () => { unlockAudio(); onClick(); sfx.click(); };
   return d;
 }
+// ---------- hold the eraser to clear everything: restarts the level, or empties the free-play board (↩️ brings it back)
+const HOLD_MS = 900;
+let holdT = null, holdEl = null, holdDone = false, holdX = 0, holdY = 0;
+function holdCancel() { if (holdT) clearTimeout(holdT); holdT = null; if (holdEl) { holdEl.classList.remove("holding"); holdEl.querySelector(".holdfill")?.remove(); } holdEl = null; }
+function clearAllByHold() {
+  if (running) { wobble($("play")); toast("⏸️ 🔨"); return; }
+  endGuide(); slopeSel = null;
+  if (lvl) {
+    const before = snapshot(), i = lvl.index;
+    startLevel(i); // a fresh copy of the level: placed pieces back in the box, trains at the start
+    if (lvl && lvl.index === i) { undoStack.push(before); updUndo(); }
+  } else {
+    withUndo(clearBoard); curName = ""; setFloor(0); autosave();
+  }
+  sfx.whoosh ? sfx.whoosh() : sfx.toc(); toast("🧹");
+  try { const N = window.__NATIVE__; if (N && N.post) N.post({ t: "hap", k: "success" }); } catch (e) {}
+}
+$("palette").addEventListener("pointerdown", e => {
+  const it = e.target.closest('.it[data-id="erase"]'); if (!it || running) return;
+  holdCancel(); holdDone = false; holdEl = it; holdX = e.clientX; holdY = e.clientY;
+  it.classList.add("holding"); addEl(it, "span", "holdfill");
+  holdT = setTimeout(() => { holdT = null; holdDone = true; holdCancel(); clearAllByHold(); }, HOLD_MS);
+});
+$("palette").addEventListener("pointermove", e => { if (holdT && Math.hypot(e.clientX - holdX, e.clientY - holdY) > 14) holdCancel(); });
+["pointerup", "pointercancel", "pointerleave"].forEach(ev => $("palette").addEventListener(ev, () => { if (holdT) holdCancel(); }));
+$("palette").addEventListener("click", e => { if (holdDone) { holdDone = false; e.stopPropagation(); e.preventDefault(); } }, true);
+$("palette").addEventListener("contextmenu", e => { if (e.target.closest('.it[data-id="erase"]')) e.preventDefault(); });
 function levelPalette() {
   const pal = $("palette"); pal.innerHTML = "";
   pal.appendChild(makeItem("hand", () => selectTool("hand")));
@@ -7133,6 +7164,7 @@ function showWin() {
 }
 function startLevel(i) {
   if (!isFull() && !levelFree(i)) { askGrownUp(); return; }
+  $("play").classList.remove("hintplay");
   endGuide();
   clearUndo(); profSel = null; try { speechSynthesis.cancel(); } catch (e) {}
   closeModal(); $("home").hidden = true; $("advmap").hidden = true;
@@ -7202,7 +7234,7 @@ function offerTutorial() {
     speak(LX("¡Hola! ¿Te enseño a jugar?", "Hi! Shall I show you how to play?", "Salut ! Je te montre comment jouer ?", "Hallo! Soll ich dir zeigen, wie man spielt?"), { raw: true });
   });
 }
-function goHome() { if (typeof closeDuel === "function" && $("duel") && !$("duel").hidden) duelStop(), $("duel").hidden = true; if (running) setRunning(false); if (tut) endTutorial(!!tut.stash); closeModal(); $("advmap").hidden = true; $("home").hidden = false; markTutHome(); }
+function goHome() { $("play").classList.remove("hintplay"); if (typeof closeDuel === "function" && $("duel") && !$("duel").hidden) duelStop(), $("duel").hidden = true; if (running) setRunning(false); if (tut) endTutorial(!!tut.stash); closeModal(); $("advmap").hidden = true; $("home").hidden = false; markTutHome(); }
 $("homeBtn").onclick = () => { unlockAudio(); sfx.click(); goHome(); };
 $("parentBtn").onclick = () => goParents();
 $("goTut").onclick = () => { unlockAudio(); sfx.whistleShort(); startTutorial("basic"); };
@@ -8217,7 +8249,7 @@ const I18N_DE = {"Constructor de trenes":"Eisenbahn-Baumeister","🚂 Constructo
 const deOf = s => { if (!s) return ""; const k = s.trim(); return I18N_DE[s] || (I18N_DE[k] ? s.replace(k, I18N_DE[k]) : ""); };
 const LANGS = { es: "🇪🇸", en: "🇬🇧", fr: "🇫🇷", de: "🇩🇪" };
 const I18N = new Map();
-I18N_ROWS.push(["Desafío", "Challenge", "Défi", "Wettkampf"]);
+I18N_ROWS.push(["Desafío", "Challenge", "Défi", "Wettkampf"], ["Toca una pieza o un tren para quitarlo. Mantén pulsada la goma para borrarlo todo.", "Tap a piece or a train to remove it. Hold the eraser down to clear everything.", "Touche une pièce ou un train pour l'enlever. Garde le doigt sur la gomme pour tout effacer.", "Tippe ein Teil oder einen Zug an, um es wegzunehmen. Halte den Radierer gedrückt, um alles zu löschen."]);
 I18N_ROWS.forEach(([es, en, fr, de]) => I18N.set(es.trim(), { en, fr, de: de || I18N_DE[es.trim()] || en }));
 const LX = (es, en, fr, de) => LANG === "en" ? en : LANG === "fr" ? fr : LANG === "de" ? (de || deOf(es) || en) : es;
 const I18N_PAT = [
