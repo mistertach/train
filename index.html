@@ -7000,7 +7000,9 @@ LEVELS.push(
 const ZONES = { pueblo: "🏝️ Tu pueblo", espana: "🇪🇸 España", europa: "🇪🇺 Europa", sudamerica: "🌎 Sudamérica" };
 let adv = sget(KEY + "-adv") || { s: {} };
 const lvStars = i => adv.s[LEVELS[i].id] || 0;
-const lvOpen = i => i === 0 || !!adv.all || lvStars(i - 1) > 0;
+// with the full version every continent can be started straight away; inside a continent levels still open one by one
+const contFirst = i => i > 0 && contOf(i) !== contOf(i - 1);
+const lvOpen = i => i === 0 || !!adv.all || lvStars(i - 1) > 0 || (contFirst(i) && isFull());
 const usedPieces = () => [...pieces.values()].filter(p => !p.fixed && !DEFS[p.type].deco && !DEFS[p.type].mon && !DEFS[p.type].road).length;
 
 let freeStash = null, invDirty = false;
