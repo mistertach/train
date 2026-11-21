@@ -634,6 +634,9 @@ html, body { background: #bfe3f5 repeating-linear-gradient(0deg, rgba(255,255,25
 @media (max-width: 820px), (max-height: 560px) { .dchip.ev { width: 92px; height: 78px; border-radius: 20px; } .dchip.ev .dem { font-size: 28px; } .dchip.ev b { font-size: 12px; } }
 @media (max-height: 560px) { .dchip.ev { width: auto; height: 42px; flex-direction: row; padding: 0 14px 0 8px; gap: 6px; border-radius: 999px; } .dchip.ev .dem { font-size: 22px; } .dchip.ev b { font-size: 13px; white-space: nowrap; } .dchip.ev .dlk { position: static; font-size: 12px; } #duel h1 { font-size: 24px !important; } .dcol { padding: 6px 10px; } .dgo { font-size: 20px; padding: 6px 26px; } }
 .picon { cursor: default; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+.buyfull.busy { opacity: .75; pointer-events: none; }
+.fmsg { background: #f1f6fa; color: #2c3e50; border-radius: 14px; padding: 10px 14px; font-size: 15px; font-weight: 700; text-align: center; max-width: 520px; }
+.fmsg[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -5098,9 +5101,11 @@ function fullSection(card) {
     [LX("Un solo pago", "One payment", "Un seul paiement", "Einmal zahlen"), LX("Sin anuncios", "No ads", "Sans publicité", "Keine Werbung"), LX("Sin suscripción", "No subscription", "Sans abonnement", "Kein Abo"), LX("Para toda la familia", "For the whole family", "Pour toute la famille", "Für die ganze Familie")].forEach(t => addEl(tr, "span", "", "✓ " + t));
     const cta = addEl(sec, "div", "fcta");
     if (N && N.post) {
-      const buy = mkBtn("⭐ " + LX("Desbloquear todo", "Unlock everything", "Tout débloquer") + (N.price ? " · " + N.price : ""), "", () => { sfx.click(); N.post({ t: "buy" }); });
-      buy.classList.add("buyfull"); cta.appendChild(buy);
-      const rs = document.createElement("button"); rs.className = "flink"; rs.textContent = LX("Restaurar compra", "Restore purchase", "Restaurer l'achat"); rs.onclick = () => { sfx.click(); N.post({ t: "restore" }); }; cta.appendChild(rs);
+      const buy = mkBtn("⭐ " + LX("Desbloquear todo", "Unlock everything", "Tout débloquer") + (N.price ? " · " + N.price : ""), "", () => { if (storeBusy) return; sfx.click(); N.post({ t: "buy" }); });
+      buy.classList.add("buyfull"); buy.id = "buyfull"; cta.appendChild(buy);
+      const rs = document.createElement("button"); rs.className = "flink"; rs.textContent = LX("Restaurar compra", "Restore purchase", "Restaurer l'achat"); rs.onclick = () => { if (storeBusy) return; sfx.click(); N.post({ t: "restore" }); }; cta.appendChild(rs);
+      const msg = addEl(cta, "div", "fmsg"); msg.id = "fmsg"; msg.hidden = true;
+      if (storeBusy) setBuyBusy(true);
     } else addEl(cta, "p", "", "📱 " + LX("La versión completa está en la app para iPad, iPhone y Android (muy pronto).", "The full version is in the app for iPad, iPhone and Android (coming soon).", "La version complète est dans l'application pour iPad, iPhone et Android (bientôt)."));
     addEl(sec, "p", "ffree", LX("Gratis para siempre: vías en el suelo, el campo, 3 trenes, la aventura del pueblo, 2 ciudades y el desafío de empujar.", "Free forever: track on the ground, the countryside, 3 trains, the village adventure, 2 cities and the Push-off challenge.", "Gratuit pour toujours : voies au sol, la campagne, 3 trains, l'aventure du village, 2 villes et le défi de poussée.", "Für immer kostenlos: Gleise auf dem Boden, das Land, 3 Züge, das Dorf-Abenteuer, 2 Städte und der Schiebe-Wettkampf."));
   }
@@ -5112,6 +5117,44 @@ function onFullChanged() {
   try { if ($("duel") && !$("duel").hidden && !DUEL.m) duelPickScreen(); } catch (e) {}
   try { if (!$("advmap").hidden) openMap(); } catch (e) {}
   try { markTutHome(); } catch (e) {}
+}
+// ---------- the store's answers (sent by the app: see train-app/src/purchases.ts)
+let storeBusy = false;
+function setBuyBusy(on) {
+  const b = $("buyfull"); if (!b) return;
+  if (on) { if (!b.dataset.label) b.dataset.label = b.textContent; b.textContent = "⏳ " + LX("Un momento…", "One moment…", "Un instant…", "Einen Moment…"); b.classList.add("busy"); }
+  else { if (b.dataset.label) b.textContent = b.dataset.label; b.classList.remove("busy"); }
+}
+function storeMsg(em, text) {
+  const m = $("fmsg");
+  if (m && !$("modal").hidden) { m.hidden = false; m.textContent = em + " " + text; }
+  else toast(em);
+}
+function celebrateFull() {
+  sfx.fanfare && sfx.fanfare();
+  openModal(card => {
+    card.classList.add("welcome");
+    addEl(card, "div", "agbig", "⭐");
+    h2(card, LX("¡Gracias! Ya tienes todo Little Loco", "Thank you! You've got all of Little Loco", "Merci ! Tu as tout Little Loco", "Danke! Jetzt hast du ganz Little Loco"));
+    const ics = addEl(card, "div", "agicons"); ["🗺️", "⛰️", "🏙️", "🚗", "🚄", "🏆"].forEach(e => addEl(ics, "span", "", e));
+    const row = addEl(card, "div", "bigrow");
+    const a = mkBtn("🚂 " + LX("¡A jugar!", "Let's play!", "On joue !", "Los geht's!"), "", () => { sfx.click(); closeModal(); }); a.classList.add("yes"); row.appendChild(a);
+  });
+}
+function storeEvent(kind, msg) {
+  const N = window.__NATIVE__ || {};
+  if (kind === "price") { if (!$("modal").hidden && $("card").classList.contains("parents")) openParents(); return; }
+  if (kind === "busy") { storeBusy = true; setBuyBusy(true); return; }
+  const waiting = storeBusy; storeBusy = false; setBuyBusy(false);
+  if (kind === "bought") { onFullChanged(); celebrateFull(); return; }
+  if (kind === "owned") { onFullChanged(); if (waiting) celebrateFull(); return; }
+  if (kind === "revoked") { onFullChanged(); if (!$("modal").hidden && $("card").classList.contains("parents")) openParents(); return; }
+  if (kind === "cancel") return;
+  if (kind === "pending") storeMsg("⏳", LX("Hemos pedido permiso al organizador de la familia. Se desbloqueará solo en cuanto lo apruebe.", "We've asked the family organiser for permission. Everything unlocks by itself as soon as they approve.", "Nous avons demandé l'autorisation à l'organisateur de la famille. Tout se débloquera dès son accord.", "Wir haben den Familienorganisator um Erlaubnis gebeten. Alles wird freigeschaltet, sobald er zustimmt."));
+  else if (kind === "none") storeMsg("🔍", LX("No hemos encontrado ninguna compra con esta cuenta de la tienda.", "We couldn't find a purchase for this store account.", "Aucun achat trouvé pour ce compte.", "Für dieses Store-Konto wurde kein Kauf gefunden."));
+  else if (kind === "offline") storeMsg("📶", LX("No se puede conectar con la tienda. Comprueba internet e inténtalo otra vez.", "Can't reach the store. Check the internet connection and try again.", "Impossible de joindre la boutique. Vérifiez internet et réessayez.", "Der Store ist nicht erreichbar. Prüfe die Internetverbindung und versuche es noch einmal."));
+  else if (kind === "error") storeMsg("⚠️", LX("La compra no se ha completado. No se ha cobrado nada.", "The purchase didn't go through. Nothing was charged.", "L'achat n'a pas abouti. Rien n'a été débité.", "Der Kauf wurde nicht abgeschlossen. Es wurde nichts berechnet.") + (msg ? " (" + msg + ")" : ""));
+  void N;
 }
 // secret switch for testing: 5 quick taps on the parents' page icon
 let secretTaps = [];
