@@ -3677,16 +3677,68 @@ function slide(f0, f1, len, type = "triangle", vol = .18, at = 0) {
     o.connect(g).connect(a.destination); o.start(t); o.stop(t + len + .05);
   } catch (e) {}
 }
-function whistle(len = 1.1) {
+// ---------- train sounds, synthesised to sound like the real thing
+// soft-clip curve: makes reeds sound brassy instead of like a beep
+let _shCurve = null;
+function brassy(a) { if (!_shCurve) { _shCurve = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 512 - 1; _shCurve[i] = Math.tanh(2.4 * x) / Math.tanh(2.4); } } const w = a.createWaveShaper(); w.curve = _shCurve; return w; }
+// blasts: [[start, length], ...] — each blast gets its own attack, little pitch scoop, and release
+function blastEnv(a, g, t0, blasts, att, rel) {
+  g.gain.setValueAtTime(.0001, t0);
+  blasts.forEach(([s, l]) => { const t = t0 + s; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(1, t + att); g.gain.setValueAtTime(1, t + Math.max(att, l - rel)); g.gain.exponentialRampToValueAtTime(.0001, t + l); });
+  return t0 + Math.max(...blasts.map(([s, l]) => s + l)) + .15;
+}
+// 🚆 diesel / electric air horn: a chord of reed horns, brassy, with a scoop up to pitch and a hiss of air
+function airHorn(freqs, blasts, vol = .1, bright = 2600) {
   if (!sfxOn) return;
   try {
-    const a = ac(), t = a.currentTime, m = a.createGain();
-    m.gain.setValueAtTime(.0001, t); m.gain.exponentialRampToValueAtTime(.14, t + .06);
-    m.gain.setValueAtTime(.14, t + len - .2); m.gain.exponentialRampToValueAtTime(.0001, t + len);
-    m.connect(a.destination);
-    const lfo = a.createOscillator(), lg = a.createGain(); lfo.frequency.value = 7; lg.gain.value = 8; lfo.connect(lg);
-    [587, 740, 880].forEach(f => { const o = a.createOscillator(); o.type = "triangle"; o.frequency.value = f; lg.connect(o.frequency); o.connect(m); o.start(t); o.stop(t + len + .05); });
-    lfo.start(t); lfo.stop(t + len + .05);
+    const a = ac(), t0 = a.currentTime + .02, env = a.createGain(), sh = brassy(a), lp = a.createBiquadFilter(), pk = a.createBiquadFilter(), out = a.createGain();
+    lp.type = "lowpass"; lp.frequency.value = bright; lp.Q.value = .6; pk.type = "peaking"; pk.frequency.value = 850; pk.gain.value = 5; pk.Q.value = 1.1; out.gain.value = vol;
+    env.connect(sh).connect(pk).connect(lp).connect(out).connect(a.destination);
+    const end = blastEnv(a, env, t0, blasts, .06, .18);
+    freqs.forEach(f => [["sawtooth", .55], ["square", .25]].forEach(([type, gv]) => {
+      const o = a.createOscillator(), g = a.createGain(); o.type = type; o.detune.value = (Math.random() - .5) * 10; g.gain.value = gv / freqs.length;
+      o.frequency.setValueAtTime(f, t0); blasts.forEach(([s, l]) => { const t = t0 + s; o.frequency.setValueAtTime(f * .93, t); o.frequency.exponentialRampToValueAtTime(f, t + .1); o.frequency.setValueAtTime(f, t + l - .1); o.frequency.exponentialRampToValueAtTime(f * .985, t + l); });
+      o.connect(g).connect(env); o.start(t0); o.stop(end);
+    }));
+    const n = a.createBufferSource(), nf = a.createBiquadFilter(), ng = a.createGain(); n.buffer = noiseBuf; n.loop = true;
+    nf.type = "bandpass"; nf.frequency.value = 2200; nf.Q.value = .7; ng.gain.value = .05; n.connect(nf).connect(ng).connect(env); n.start(t0); n.stop(end);
+  } catch (e) {}
+}
+// 🚂 steam chime whistle: breathy pipes (a tone plus filtered steam noise at each pitch), rising in and sagging out
+function steamWhistle(freqs, blasts, vol = .17) {
+  if (!sfxOn) return;
+  try {
+    const a = ac(), t0 = a.currentTime + .02, env = a.createGain(), hp = a.createBiquadFilter(), out = a.createGain();
+    hp.type = "highpass"; hp.frequency.value = 280; out.gain.value = vol;
+    env.connect(hp).connect(out).connect(a.destination);
+    const end = blastEnv(a, env, t0, blasts, .09, .28);
+    const lfo = a.createOscillator(), lg = a.createGain(); lfo.frequency.value = 5.2; lg.gain.value = 3; lfo.connect(lg); lfo.start(t0); lfo.stop(end);
+    freqs.forEach(f => {
+      [[1, "sine", .5], [2, "triangle", .07]].forEach(([m, type, gv]) => {
+        const o = a.createOscillator(), g = a.createGain(); o.type = type; g.gain.value = gv / freqs.length; lg.connect(o.detune);
+        o.frequency.setValueAtTime(f * m, t0); blasts.forEach(([s, l]) => { const t = t0 + s; o.frequency.setValueAtTime(f * m * .96, t); o.frequency.exponentialRampToValueAtTime(f * m, t + .14); o.frequency.setValueAtTime(f * m, t + l - .22); o.frequency.exponentialRampToValueAtTime(f * m * .93, t + l); });
+        o.connect(g).connect(env); o.start(t0); o.stop(end);
+      });
+      const n = a.createBufferSource(), bp = a.createBiquadFilter(), ng = a.createGain(); n.buffer = noiseBuf; n.loop = true; n.playbackRate.value = .7 + Math.random() * .6;
+      bp.type = "bandpass"; bp.frequency.value = f; bp.Q.value = 22; ng.gain.value = 2.2 / freqs.length; n.connect(bp).connect(ng).connect(env); n.start(t0); n.stop(end);
+    });
+    const hiss = a.createBufferSource(), hf = a.createBiquadFilter(), hg = a.createGain(); hiss.buffer = noiseBuf; hiss.loop = true; hf.type = "highpass"; hf.frequency.value = 3500; hg.gain.value = .05;
+    hiss.connect(hf).connect(hg).connect(env); hiss.start(t0); hiss.stop(end);
+  } catch (e) {}
+}
+function whistle(len = 1.1) { steamWhistle([440, 554, 659], len < .6 ? [[0, len + .1]] : [[0, .42], [.55, len]]); }
+// 🔔 a struck bell: inharmonic partials that ring and fade (tram bell, station chimes)
+function bellHit(f, at = 0, vol = .12, ring = 1.2) {
+  if (!sfxOn) return;
+  try {
+    const a = ac(), t = a.currentTime + .01 + at, out = a.createGain(); out.gain.value = vol; out.connect(a.destination);
+    [[1, 1, 1], [2.0, .45, .55], [2.76, .5, .45], [5.4, .22, .25], [8.9, .08, .12]].forEach(([m, gv, dk]) => {
+      const o = a.createOscillator(), g = a.createGain(); o.type = "sine"; o.frequency.value = f * m;
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(gv, t + .004); g.gain.exponentialRampToValueAtTime(.0001, t + ring * dk + .05);
+      o.connect(g).connect(out); o.start(t); o.stop(t + ring * dk + .1);
+    });
+    const n = a.createBufferSource(), nf = a.createBiquadFilter(), ng = a.createGain(); n.buffer = noiseBuf; nf.type = "highpass"; nf.frequency.value = 4000;
+    ng.gain.setValueAtTime(.25, t); ng.gain.exponentialRampToValueAtTime(.0001, t + .03); n.connect(nf).connect(ng).connect(out); n.start(t); n.stop(t + .05);
   } catch (e) {}
 }
 const sfx = {
@@ -3709,12 +3761,12 @@ const sfx = {
 };
 
 const HORNS = {
-  whistle: () => whistle(1.1),
-  horn2: () => { tone([440], "square", 0, .6, .05); tone([554], "square", 0, .6, .045); },
-  hornLow: () => { tone([294], "sawtooth", 0, .85, .06); tone([370], "sawtooth", 0, .85, .05); },
-  chime: () => tone([784, 988, 1175, 1568], "sine", .14, .4, .12),
-  chime2: () => tone([659, 523, 659], "sine", .2, .35, .12),
-  bell: () => { sfx.ding(); setTimeout(sfx.ding, 380); },
+  whistle: () => whistle(1.1),                                                       // steam: "whoo-whooo"
+  horn2: () => airHorn([311, 370, 466], [[0, .38], [.5, .75]], .09),                  // passenger diesel: two-tone "toot-tooot"
+  hornLow: () => airHorn([156, 185, 233, 277], [[0, 1.15]], .11, 1700),               // freight: one deep, long blast
+  chime: () => [988, 1319, 1175, 1568].forEach((f, i) => bellHit(f, i * .16, .07, .9)), // bullet train: a bright station melody
+  chime2: () => { bellHit(831, 0, .09, 1.4); bellHit(659, .42, .09, 1.6); },           // metro: "ding-dong"
+  bell: () => { bellHit(1480, 0, .1, 1.1); bellHit(1480, .26, .09, 1.3); },            // tram: "ding-ding"
   roar: () => { slide(240, 80, .9, "sawtooth", .12); noise(.8, 400, .8, .2, "lowpass"); },
   siren: () => { [0, .3, .6].forEach(t => { slide(650, 950, .15, "square", .05, t); slide(950, 650, .15, "square", .05, t + .15); }); },
   fanfare: () => tone([523, 659, 784, 1047, 784, 1047], "square", .1, .2, .07),
