@@ -46,6 +46,15 @@
   .tab { flex: 0 0 auto; min-width: 70px; height: 54px; border-radius: 16px 16px 0 0; background: #c99158; display: flex; flex-direction: column; align-items: center; justify-content: center;
     font-size: 26px; cursor: pointer; line-height: 1; padding: 2px 8px; color: #3b2a18; }
   .tab small { font-size: 11px; font-weight: 700; margin-top: 2px; }
+  .tab, .stab { position: relative; } .tlock { position: absolute; top: 2px; right: 3px; font-size: 12px; line-height: 1; }
+  .stab .tlock { position: static; margin-left: 2px; } #goTut2 { position: relative; } #goTut2 .tlock { top: 8px; right: 12px; font-size: 22px; }
+  .proj.plock, .dtr.plock { position: relative; } .proj.plock canvas, .proj.plock .nm, .dtr.plock svg { opacity: .55; filter: grayscale(.5); }
+  .plockb { position: absolute; top: 8px; right: 8px; background: #fff3b0; border: 3px solid #e0b000; border-radius: 14px; padding: 2px 8px; font-size: 18px; }
+  .dtr .plockb { top: 2px; right: 2px; font-size: 13px; padding: 0 4px; border-width: 2px; }
+  #card.askgrown { text-align: center; } .agbig { font-size: 70px; line-height: 1; } .agicons { font-size: 34px; letter-spacing: 6px; margin: 8px 0 14px; }
+  .fullsec { background: #fff3b0; border: 4px solid #e0b000; border-radius: 20px; padding: 6px 16px 10px; margin: 8px 0 14px; }
+  .fullsec h3 { margin: 8px 0 4px; } .fulllist { margin: 6px 0; padding-left: 4px; list-style: none; font-size: 17px; line-height: 1.6; }
+  .buyfull { background: #2e9d4f !important; color: #fff !important; border-color: #1d6b33 !important; font-weight: 900; }
   .roam { animation: roam 12s ease-in-out infinite; } .roamf { animation: roamf 12s step-end infinite; transform-box: fill-box; transform-origin: center; }
   @keyframes roam { 0%, 12% { transform: translate(0, 0); } 40%, 52% { transform: translate(26px, 6px); } 80%, 100% { transform: translate(0, 0); } }
   @keyframes roamf { 0% { transform: scaleX(-1); } 46% { transform: scaleX(1); } 100% { transform: scaleX(-1); } }
@@ -2339,6 +2348,7 @@ function fixMoves(s) {
   const { c, r, e: ein, z } = s, out = [];
   for (const [type, cost] of FIX_TYPES) for (let rot = 0; rot < 4; rot++) {
     if (type === "corta" && rot > 1) continue;
+    if (isSlope(type) && fullLocked(type)) continue;
     const P = FIX_REL[type][rot];
     for (let j = 0; j < P.length; j++) {
       if (P[j].e !== ein) continue;
@@ -2415,6 +2425,7 @@ function fixRepair(st) {
       if (keep.length !== 1) continue;
       const K = keep[0];
       for (const [type] of FIX_TYPES) for (let rot = 0; rot < 4; rot++) {
+        if (isSlope(type) && fullLocked(type)) continue;
         const rel = FIX_REL[type][rot];
         for (let j = 0; j < 2; j++) {
           if (rel[j].e !== K.e) continue;
@@ -4756,6 +4767,90 @@ function openShop(focus) {
     if (focus) setTimeout(() => { const f = card.querySelector(".focus"); if (f) f.scrollIntoView({ block: "center" }); }, 30);
   });
 }
+// =====================================================================
+//  ⭐ FULL VERSION: the free game is flat track, country scenery, three trains, the village
+//  adventure, two cities, three pictures and Push-off; one purchase (made by a grown-up, behind
+//  the parents' gate) unlocks the rest. Nothing a child built is ever locked.
+// =====================================================================
+const FULL_TEST = true; // the "test" switch on the parents' page — turn off before the store release
+const fullKey = () => KEY + "-full";
+const FREE_CITIES = ["Pueblo", "Tokio"], FREE_PICS = ["elefante", "manzana", "corazon"];
+const FULL_TRAINS = ["bala", "metro", "tranvia"];
+let fullSet = null;
+function fullItems() {
+  if (fullSet) return fullSet;
+  fullSet = new Set(["rampa", "subeI", "subeD", "paso", ...FULL_TRAINS]);
+  TABS.filter(t => ["calles", "ciudad", "monumentos"].includes(t.id)).forEach(t => t.items.forEach(i => fullSet.add(i)));
+  return fullSet;
+}
+const isFull = () => !!(window.__NATIVE__ && window.__NATIVE__.full) || sget(fullKey()) === true;
+const fullLocked = id => !lvl && !isFull() && fullItems().has(id);
+const levelFree = i => LEVELS[i] && LEVELS[i].zone === "pueblo";
+const cityFree = pr => FREE_CITIES.includes(pr.name);
+function fullBadge(d) { d.classList.add("shoplock", "fulllock"); const b = document.createElement("span"); b.className = "lockb"; b.textContent = "🔒"; d.appendChild(b); }
+// a child tapped something from the full version: no price here, just "ask a grown-up"
+function askGrownUp() {
+  sfx.no(); if (running) setRunning(false);
+  openModal(card => {
+    card.classList.add("askgrown");
+    addEl(card, "div", "agbig", "🔒⭐");
+    h2(card, LX("¡Esto es de la versión completa!", "This is part of the full version!", "Ça fait partie de la version complète !"));
+    addEl(card, "p", "", LX("Pide a un mayor que lo mire contigo.", "Ask a grown-up to have a look with you.", "Demande à un grand de regarder avec toi."));
+    addEl(card, "div", "agicons", "⛰️ 🚗 🏙️ 🏛️ 🚄 🗺️ 🏆");
+    const row = addEl(card, "div", "saveRow"); row.style.justifyContent = "center";
+    const a = mkBtn("👨‍👩‍👧 " + LX("Llamar a un mayor", "Get a grown-up", "Appeler un grand"), "", () => { sfx.click(); parentGate(() => openParents("full")); });
+    a.style.width = "auto"; a.style.padding = "0 18px"; a.style.fontSize = "18px"; row.appendChild(a);
+    const ok = mkBtn("👍 " + LX("Vale", "OK", "D'accord"), "", () => { sfx.click(); closeModal(); });
+    ok.style.width = "auto"; ok.style.padding = "0 18px"; ok.style.fontSize = "18px"; row.appendChild(ok);
+    speak(LX("Esto es de la versión completa. Pide a un mayor que lo mire contigo.", "This is part of the full version. Ask a grown-up to have a look with you.", "Ça fait partie de la version complète. Demande à un grand de regarder avec toi."), { raw: true });
+  });
+}
+// the grown-ups' part of the parents' page
+function fullSection(card) {
+  const sec = addEl(card, "div", "fullsec"); sec.id = "fullsec";
+  addEl(sec, "h3", "", "⭐ " + LX("Versión completa", "Full version", "Version complète"));
+  if (isFull() && !(sget(fullKey()) === true && !(window.__NATIVE__ && window.__NATIVE__.full))) { addEl(sec, "p", "", "✅ " + LX("Tienes la versión completa. ¡Gracias por apoyar el juego!", "You have the full version. Thank you for supporting the game!", "Vous avez la version complète. Merci de soutenir le jeu !")); }
+  else {
+    addEl(sec, "p", "", LX("La versión gratuita incluye construir vías en el suelo, el campo, tres trenes, la aventura del pueblo, dos ciudades y el desafío de empujar. La versión completa añade:", "The free version includes building track on the ground, the countryside, three trains, the village adventure, two cities and the Push-off challenge. The full version adds:", "La version gratuite comprend la construction de voies au sol, la campagne, trois trains, l'aventure du village, deux villes et le défi de poussée. La version complète ajoute :"));
+    const ul = addEl(sec, "ul", "fulllist");
+    [LX("⛰️ Construir hacia arriba: rampas, puentes y espirales", "⛰️ Building upwards: ramps, bridges and spirals", "⛰️ Construire en hauteur : rampes, ponts et spirales"),
+     LX("🚗 Calles, coches, pasos a nivel y tranvías", "🚗 Streets, cars, level crossings and trams", "🚗 Rues, voitures, passages à niveau et tramways"),
+     LX("🏙️ La ciudad, los monumentos, el dragón y las atracciones", "🏙️ The city, monuments, the dragon and the fairground", "🏙️ La ville, les monuments, le dragon et les manèges"),
+     LX("🚄 Tren bala, metro y tranvía", "🚄 Bullet train, metro and tram", "🚄 TGV, métro et tramway"),
+     LX("🗺️ Toda la aventura por el mundo y 8 ciudades más", "🗺️ The whole adventure around the world and 8 more cities", "🗺️ Toute l'aventure autour du monde et 8 villes de plus"),
+     LX("🏆 Todos los desafíos de trenes y niveles", "🏆 Every train challenge and level", "🏆 Tous les défis de trains et niveaux")].forEach(t => addEl(ul, "li", "", t));
+    addEl(sec, "p", "ds", LX("Un solo pago, sin suscripciones ni anuncios. Se comparte con tu familia.", "One payment, no subscriptions or ads. Shared with your family.", "Un seul paiement, sans abonnement ni publicité. Partagé avec votre famille."));
+    const row = addEl(sec, "div", "saveRow"); row.style.margin = "8px 0";
+    const N = window.__NATIVE__;
+    if (N && N.post) {
+      const buy = mkBtn("⭐ " + LX("Desbloquear todo", "Unlock everything", "Tout débloquer") + (N.price ? " · " + N.price : ""), "", () => { sfx.click(); N.post({ t: "buy" }); });
+      buy.style.width = "auto"; buy.style.padding = "0 18px"; buy.style.fontSize = "18px"; buy.classList.add("buyfull"); row.appendChild(buy);
+      const rs = mkBtn("🔁 " + LX("Restaurar compra", "Restore purchase", "Restaurer l'achat"), "", () => { sfx.click(); N.post({ t: "restore" }); });
+      rs.style.width = "auto"; rs.style.padding = "0 16px"; rs.style.fontSize = "16px"; row.appendChild(rs);
+    } else addEl(sec, "p", "", "📱 " + LX("La versión completa está en la app para iPad, iPhone y Android (muy pronto).", "The full version is in the app for iPad, iPhone and Android (coming soon).", "La version complète est dans l'application pour iPad, iPhone et Android (bientôt)."));
+  }
+  if (FULL_TEST) {
+    const r = addEl(sec, "div", "saveRow"); r.style.margin = "8px 0";
+    const on = sget(fullKey()) === true;
+    const t = mkBtn("🧪 " + LX("Prueba: versión completa ", "Test: full version ", "Test : version complète ") + (on ? "✅" : "⬜"), "", () => { sset(fullKey(), !on); onFullChanged(); openParents("full"); });
+    t.style.width = "auto"; t.style.padding = "0 14px"; t.style.fontSize = "15px"; r.appendChild(t);
+  }
+}
+// the purchase (or the test switch) changed: redraw whatever shows locks
+function onFullChanged() {
+  if (!lvl) try { selectTab(curTab); } catch (e) {}
+  try { buildFullBadges(); } catch (e) {}
+  try { if ($("duel") && !$("duel").hidden && !DUEL.m) duelPickScreen(); } catch (e) {}
+}
+function buildFullBadges() {
+  document.querySelectorAll(".tlock").forEach(e => e.remove());
+  if (isFull()) return;
+  const tag = e => { if (e) { const s = document.createElement("span"); s.className = "tlock"; s.textContent = "🔒"; e.appendChild(s); } };
+  tag(document.querySelector('.tab[data-grp="calles"]'));
+  ["subir", "ciudad", "monumentos"].forEach(id => tag(document.querySelector(`.stab[data-tab="${id}"]`)));
+  tag($("goTut2"));
+}
+
 function lockItem(d, id) {
   const it = SHOP.find(x => x.id === id); d.classList.add("shoplock");
   const b = document.createElement("span"); b.className = "lockb"; b.textContent = "🔒" + it.price; d.appendChild(b);
@@ -5413,7 +5508,7 @@ function selectTab(id) {
   if (!TABS.some(t => t.id === id)) id = "vias";
   curTab = id; lastSub[grpOf(id)] = id;
   document.querySelectorAll(".tab").forEach(e => e.classList.toggle("sel", e.dataset.grp === grpOf(id)));
-  renderSubtabs();
+  renderSubtabs(); try { buildFullBadges(); } catch (e) {}
   const pal = $("palette"); pal.innerHTML = "";
   pal.appendChild(makeItem("hand", () => selectTool("hand")));
   pal.appendChild(makeItem("erase", () => selectTool("erase")));
@@ -5424,9 +5519,9 @@ function selectTab(id) {
       const it = document.createElement("div"); it.className = "it wide"; it.dataset.kind = k; it.title = K.t;
       it.appendChild(trainIcon(k, 2, K.c1[0], K.c2[0]));
       const bd = document.createElement("span"); bd.className = "badge"; bd.textContent = "⚡".repeat(K.spd); it.appendChild(bd);
-      const locked = shopLocked(k);
-      if (locked) lockItem(it, k);
-      it.onclick = () => { if (locked) { openShop(k); sfx.click(); return; } trainKind = k; selectTool("train"); updateCarsUI(); sfx.click(); };
+      const flk = fullLocked(k), locked = !flk && shopLocked(k);
+      if (flk) fullBadge(it); else if (locked) lockItem(it, k);
+      it.onclick = () => { if (fullLocked(k)) { askGrownUp(); return; } if (locked) { openShop(k); sfx.click(); return; } trainKind = k; selectTool("train"); updateCarsUI(); sfx.click(); };
       pal.appendChild(it);
     });
     pal.appendChild(Object.assign(document.createElement("div"), { className: "sep" }));
@@ -5444,7 +5539,7 @@ function selectTab(id) {
     selectTool("train");
     updateCarsUI();
   } else {
-    tab.items.filter(allowedItem).forEach(it => { const lk = shopLocked(it), d = makeItem(it, () => shopLocked(it) ? openShop(it) : selectTool(it)); if (lk) lockItem(d, it); pal.appendChild(d); });
+    tab.items.filter(allowedItem).forEach(it => { const fl = fullLocked(it), lk = !fl && shopLocked(it), d = makeItem(it, () => fullLocked(it) ? askGrownUp() : shopLocked(it) ? openShop(it) : selectTool(it)); if (fl) fullBadge(d); else if (lk) lockItem(d, it); pal.appendChild(d); });
     if (id === "subir" && proMode && tab.items.some(allowedItem)) {
       pal.appendChild(Object.assign(document.createElement("div"), { className: "sep" }));
       const sw = document.createElement("div"); sw.className = "dirsw"; sw.title = "¿La pieza sube o baja?";
@@ -5456,7 +5551,7 @@ function selectTab(id) {
       });
       pal.appendChild(sw);
     }
-    const its = tab.items.filter(allowedItem);
+    const its = tab.items.filter(allowedItem).filter(x => !fullLocked(x));
     if (tool === "hand" || tool === "erase" || !its.length) selectTool(its.length || tool === "erase" ? tool : "hand");
     else selectTool(its.includes(tool) ? tool : its[0]);
     invChanged();
@@ -5465,6 +5560,7 @@ function selectTab(id) {
   layoutUI();
 }
 function selectTool(id) {
+  if (fullLocked(id) || (id === "train" && fullLocked(trainKind))) { askGrownUp(); id = "hand"; }
   const wasMon = DEFS[tool] && DEFS[tool].mon;
   tool = id; document.body.classList.toggle("toolhand", id === "hand");
   if (wasMon || (DEFS[id] && DEFS[id].mon)) setTimeout(refreshHints, 0); if (typeof updateGrid === "function") setTimeout(updateGrid, 0);
@@ -5900,7 +5996,8 @@ function openLibrary(fid) {
       const c = addEl(g, "div", "proj"); c.title = trn("Cargar") + " " + trn(pr.name);
       const cv = addEl(c, "canvas"); cv.width = 340; cv.height = 224; drawThumb(cv, pr.data);
       addEl(c, "div", "nm", pr.emoji + " " + pr.name); addEl(c, "div", "ds", pr.desc);
-      c.onclick = () => { endGuide(); loadNamed(pr.data, pr.name); };
+      const lockd = !isFull() && !cityFree(pr); if (lockd) { c.classList.add("plock"); addEl(c, "div", "plockb", "🔒⭐"); }
+      c.onclick = () => { if (!isFull() && !cityFree(pr)) { askGrownUp(); return; } endGuide(); loadNamed(pr.data, pr.name); };
     });
     else F.pics.map(id => DRAWINGS.find(d => d.id === id)).filter(Boolean).forEach(D => {
       const c = addEl(g, "div", "proj"); c.title = trn("Cargar") + " " + trn(D.nm);
@@ -5908,7 +6005,8 @@ function openLibrary(fid) {
       if (!thumbCache.has(D.id)) thumbCache.set(D.id, pictureData(D));
       drawThumb(cv, thumbCache.get(D.id));
       addEl(c, "div", "nm", D.em + " " + D.nm);
-      c.onclick = () => { unlockAudio(); loadPicture(D); };
+      if (!isFull() && !FREE_PICS.includes(D.id)) { c.classList.add("plock"); addEl(c, "div", "plockb", "🔒⭐"); }
+      c.onclick = () => { unlockAudio(); if (!isFull() && !FREE_PICS.includes(D.id)) { askGrownUp(); return; } loadPicture(D); };
     });
   });
 }
@@ -6666,6 +6764,7 @@ function showWin() {
   });
 }
 function startLevel(i) {
+  if (!isFull() && !levelFree(i)) { askGrownUp(); return; }
   endGuide();
   clearUndo(); profSel = null; try { speechSynthesis.cancel(); } catch (e) {}
   closeModal(); $("home").hidden = true; $("advmap").hidden = true;
@@ -6737,7 +6836,7 @@ $("homeBtn").onclick = () => { unlockAudio(); sfx.click(); goHome(); };
 $("parentBtn").onclick = () => goParents();
 $("goTut").onclick = () => { unlockAudio(); sfx.whistleShort(); startTutorial("basic"); };
 $("goDraw").onclick = () => { unlockAudio(); sfx.click(); openLibrary(); };
-$("goTut2").onclick = () => { unlockAudio(); sfx.whistleShort(); startTutorial("alto"); };
+$("goTut2").onclick = () => { unlockAudio(); if (!isFull()) { askGrownUp(); return; } sfx.whistleShort(); startTutorial("alto"); };
 function markTutHome() { $("goTut").classList.toggle("new", !sget(KEY + "-tut")); }
 $("goAdv").onclick = () => { unlockAudio(); sfx.click(); openMap(); };
 $("goFree").onclick = () => { unlockAudio(); sfx.whistleShort(); enterFree(); };
@@ -6807,10 +6906,12 @@ function parentGate(then) {
     });
   });
 }
-function openParents() {
+function openParents(focus) {
   if (running) setRunning(false);
   openModal(card => {
     h2(card, "👨‍👩‍👧 Página para padres");
+    fullSection(card);
+    if (focus === "full") setTimeout(() => { const f = $("fullsec"); if (f) f.scrollIntoView({ block: "start" }); }, 30);
     const canSave = sset(KEY + "-probe", 1);
     if (!canSave) addEl(card, "div", "warn", "⚠️ En esta vista el navegador no deja guardar nada: el progreso y los ajustes se pierden al cerrar. Abre constructor.html con doble clic para que se guarden.");
     // progress
@@ -6909,7 +7010,8 @@ function openMap(opts) {
   addEl(top, "div", "title", "⭐ " + total + " / " + LEVELS.length * 3);
   Object.entries(MAPS).forEach(([k, M]) => {
     const first = LEVELS.findIndex((_, i) => contOf(i) === k), open = lvOpen(first);
-    const b = mkBtn((open ? "" : "🔒 ") + M.name, M.name, () => { if (!open) { sfx.no(); toast("🔒"); return; } sfx.click(); openMap({ cont: k }); });
+    const fl = !isFull() && k !== "eu";
+    const b = mkBtn((open && !fl ? "" : "🔒 ") + M.name, M.name, () => { if (fl) { askGrownUp(); return; } if (!open) { sfx.no(); toast("🔒"); return; } sfx.click(); openMap({ cont: k }); });
     b.style.width = "auto"; b.style.padding = "0 14px"; b.style.fontSize = "18px"; if (k === cont) { b.style.background = "#ffd34d"; b.style.borderColor = "#b8860b"; }
     top.appendChild(b);
   });
@@ -6926,7 +7028,7 @@ function openMap(opts) {
   const P = {}; idx.forEach(i => P[i] = proj(LEVELS[i].pos[0], LEVELS[i].pos[1]));
   el("polyline", { points: idx.map(i => P[i].map(v => v.toFixed(1)).join(",")).join(" "), fill: "none", stroke: "#8a5a2b", "stroke-width": 7, "stroke-dasharray": "2 14", "stroke-linecap": "round" }, m);
   idx.forEach(i => {
-    const l = LEVELS[i], [x, y] = P[i], open = lvOpen(i), st = lvStars(i);
+    const l = LEVELS[i], [x, y] = P[i], fl = !isFull() && !levelFree(i), open = lvOpen(i) && !fl, st = lvStars(i);
     const g = el("g", { class: "lvnode" + (open ? "" : " locked") + (i === nextI ? " next" : ""), transform: `translate(${x} ${y})` }, m);
     el("circle", { r: 32, fill: st ? "#ffd34d" : open ? "#fff8e8" : "#c9c2b5", stroke: "#7a4e22", "stroke-width": 5 }, g);
     const e = el("text", { y: 2, "font-size": 32, "text-anchor": "middle", "dominant-baseline": "central", opacity: open ? 1 : .45 }, g); e.textContent = open ? l.emoji : "🔒";
@@ -6934,7 +7036,8 @@ function openMap(opts) {
     const n = el("text", { x: -26, y: -25, "font-size": 15, "font-weight": 900, fill: "#fff", "text-anchor": "middle", "dominant-baseline": "central" }, g); n.textContent = i + 1;
     const s = el("text", { y: 50, "font-size": 18, "text-anchor": "middle" }, g); s.textContent = open ? "⭐".repeat(st) + "☆".repeat(3 - st) : "";
     if (l.zone !== "pueblo") { const t = el("text", { y: 74, "font-size": 21, "font-weight": 900, fill: "#3b2a18", "text-anchor": "middle", stroke: "#fff8e8", "stroke-width": 5, "paint-order": "stroke" }, g); t.textContent = l.name; }
-    g.addEventListener("click", () => { unlockAudio(); if (!open) { sfx.no(); toast("🔒"); return; } sfx.whistleShort(); startLevel(i); });
+    if (fl) { const b2 = el("g", { transform: "translate(24 -24)" }, g); el("circle", { r: 14, fill: "#ffd34d", stroke: "#b8860b", "stroke-width": 3 }, b2); el("text", { y: 1, "font-size": 15, "text-anchor": "middle", "dominant-baseline": "central" }, b2).textContent = "⭐"; }
+    g.addEventListener("click", () => { unlockAudio(); if (fl) { askGrownUp(); return; } if (!open) { sfx.no(); toast("🔒"); return; } sfx.whistleShort(); startLevel(i); });
   });
   // the little train: travels to the next city after a level, or waits at the next one
   const tg = el("g", { "pointer-events": "none" }, m);
@@ -7447,13 +7550,15 @@ function duelPickScreen() {
   const d = $("duel"); d.innerHTML = ""; d.className = "screen dpick";
   const P = DUEL.pick, kinds = duelKinds();
   P.ev = P.ev || "push";
+  if (!isFull()) { if (P.ev !== "push") P.ev = "push"; if (P.lvl !== "easy") P.lvl = "easy"; P.k = P.k.map((k, i) => FULL_TRAINS.includes(k) ? ["vapor", "mercancias"][i] : k); }
   P.k = P.k.map((k, i) => kinds.includes(k) ? k : kinds[i % kinds.length]);
   const x = addEl(d, "button", "b dx"); x.innerHTML = ic("home"); x.title = LX("Inicio", "Home", "Accueil"); x.onclick = () => { sfx.click(); closeDuel(); };
   addEl(d, "h1", "", LX("🏆 Desafío de trenes", "🏆 Train Challenge", "🏆 Défi des trains"));
   const evs = addEl(d, "div", "dmodes");
   Object.keys(DUEL_EV).forEach(ev => {
-    const b = addEl(evs, "div", "dchip ev" + (P.ev === ev ? " on" : ""), evName(ev));
-    b.onclick = () => { sfx.click(); P.ev = ev; duelPickScreen(); };
+    const lk = !isFull() && ev !== "push";
+    const b = addEl(evs, "div", "dchip ev" + (P.ev === ev ? " on" : ""), (lk ? "🔒 " : "") + evName(ev));
+    b.onclick = () => { if (lk) { askGrownUp(); return; } sfx.click(); P.ev = ev; duelPickScreen(); };
   });
   addEl(d, "div", "dhint", P.ev === "race"
     ? LX("Dos trenes suben una montaña. Acelera, salta las vacas y las rocas, y no te quedes sin vapor. ¡El primero en la cima gana la ronda!",
@@ -7476,8 +7581,9 @@ function duelPickScreen() {
   });
   if (P.mode === "ai") {
     [["easy", LX("Fácil", "Easy", "Facile")], ["normal", LX("Normal", "Normal", "Normal")], ["hard", LX("Difícil", "Hard", "Difficile")]].forEach(([l, t]) => {
-      const b = addEl(modes, "div", "dchip sm" + (P.lvl === l ? " on" : ""), t + "  +" + DUEL_LV[l].coins + "🪙");
-      b.onclick = () => { sfx.click(); P.lvl = l; duelPickScreen(); };
+      const lk = !isFull() && l !== "easy";
+      const b = addEl(modes, "div", "dchip sm" + (P.lvl === l ? " on" : ""), (lk ? "🔒 " : "") + t + "  +" + DUEL_LV[l].coins + "🪙");
+      b.onclick = () => { if (lk) { askGrownUp(); return; } sfx.click(); P.lvl = l; duelPickScreen(); };
     });
   }
   const cols = addEl(d, "div", "dcols");
@@ -7490,7 +7596,8 @@ function duelPickScreen() {
       const c1 = i === 1 && P.k[0] === k ? (K.c1[1] || K.c1[0]) : K.c1[0], c2 = i === 1 && P.k[0] === k ? (K.c2[1] || K.c2[0]) : K.c2[0];
       const svg = trainIcon(k, 2, c1, c2); if (i === 1) svg.style.transform = "scaleX(-1)";
       c.appendChild(svg); addEl(c, "div", "", dName(k));
-      c.onclick = () => { sfx.click(); P.k[i] = k; try { HORNS[K.horn](); } catch (e) {} duelPickScreen(); const C = CHAR[k] || CHAR.vapor; speak(LX(`¡Soy ${dName(k)}!`, `I'm ${dName(k)}!`, `Je suis ${dName(k)} !`), { pitch: C.pitch, rate: C.rate, raw: true }); };
+      const tlk = !isFull() && FULL_TRAINS.includes(k); if (tlk) { c.classList.add("plock"); addEl(c, "div", "plockb", "🔒"); }
+      c.onclick = () => { if (tlk) { askGrownUp(); return; } sfx.click(); P.k[i] = k; try { HORNS[K.horn](); } catch (e) {} duelPickScreen(); const C = CHAR[k] || CHAR.vapor; speak(LX(`¡Soy ${dName(k)}!`, `I'm ${dName(k)}!`, `Je suis ${dName(k)} !`), { pitch: C.pitch, rate: C.rate, raw: true }); };
       if (P.k[i] === k) setTimeout(() => { row.scrollLeft = c.offsetLeft - row.clientWidth / 2 + c.offsetWidth / 2; }, 0);
     });
     const S = dStat(P.k[i]), st = addEl(col, "div", "dstats");
