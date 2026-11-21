@@ -145,7 +145,10 @@
   #advmap svg { width: 100%; height: 100%; }
   .lvnode { cursor: pointer; }
   .lvnode.locked { cursor: default; }
-  .lvnode.next > circle { animation: pulse 1.1s ease-in-out infinite; }
+  .lvnode .lvring { animation: lvring 1.3s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes lvring { 0%, 100% { opacity: .9; transform: scale(.92); } 50% { opacity: .25; transform: scale(1.08); } }
+  .mboat { animation: bob 3s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 80%; }
+  .mcloud { animation: mcloud 80s linear infinite; } @keyframes mcloud { 0% { transform: translateX(-140px); } 50% { transform: translateX(140px); } 100% { transform: translateX(-140px); } }
   body.playing #bottom, body.playing #floorBox, body.playing #mini, body.playing #miniBtn, body.playing #center,
   body.playing #helpBtn, body.playing #saveBtn, body.playing #clearBtn, body.playing #tutBtn, body.playing #undoBtn, body.playing #lvlbar .clean { display: none !important; }
   #camBox { display: none; flex-direction: column; gap: 8px; background: rgba(255,248,232,.85); border-radius: 22px; padding: 6px; box-shadow: 0 3px 10px rgba(0,0,0,.18); }
@@ -393,7 +396,7 @@
     .dcard { padding: 10px 20px; gap: 6px; } .dtro { font-size: 50px; } .dwin { height: 60px; width: 150px; } .dcoins { font-size: 28px; }
     .djump { width: 76px; height: 76px; } .djump .je { font-size: 32px; } .djump .jl { font-size: 12px; } .dprog { height: 26px; } .dpdot { width: 40px; height: 22px; } .dtop { min-height: 44px; } .dname { font-size: 18px; } .dname svg { width: 50px; height: 30px; } .dpush { width: 96px; height: 96px; } .dhorn { width: 56px; height: 56px; font-size: 28px; } .dmid { font-size: 13px; } }
   @media (max-width: 1400px) { .mode { width: min(250px, 80vw); padding: 14px; } .mode .big { font-size: 64px; } .mode b { font-size: 24px; } }
-  @media (prefers-reduced-motion: reduce) { .roam, .roamf, .drift, .driftsh, .bob, .monok, .mudb, .dpush svg, .dconf, .dban, .dhorn.ready, .sway, .popin, .slidein, #card, #menuPop, .wv, .glint, .fall, .foam, .mist { animation: none !important; } }
+  @media (prefers-reduced-motion: reduce) { .lvring, .mboat, .mcloud, .roam, .roamf, .drift, .driftsh, .bob, .monok, .mudb, .dpush svg, .dconf, .dban, .dhorn.ready, .sway, .popin, .slidein, #card, #menuPop, .wv, .glint, .fall, .foam, .mist { animation: none !important; } }
   #toast { position: fixed; left: 50%; top: 24%; transform: translate(-50%, -50%) scale(.5); font-size: 84px; opacity: 0; pointer-events: none; z-index: 40;
     transition: opacity .25s, transform .25s; text-shadow: 0 4px 10px rgba(0,0,0,.3); white-space: nowrap; }
   #toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
@@ -6557,6 +6560,18 @@ const LEVELS = [
     build() { lvStart(11, 14); lvGoal(24, 10, 0, 2); lvCoin(20, 12, 2);
       deco("montana", [[24, 10], [25, 10], [22, 13], [23, 14], [26, 12], [15, 17], [17, 17], [19, 17], [12, 10], [14, 9], [26, 15]]); deco("pino", [[16, 11], [13, 17], [21, 16], [23, 7]]); deco("vaca", [[11, 11]]); },
     sol: [[13, 14, 1, 0, "S U S U S L S S S R S S S"]] },
+  { id: "roma", zone: "europa", name: "Roma", emoji: "⛲", pos: [12.5, 41.9], par: 18, inv: { corta: 16, curva: 6, recta: 6 },
+    intro: "En Roma la plaza de la fuente está llena de gente. Rodéala por arriba y recoge la 🪙 por el camino.", view: [8, 6, 30, 19],
+    build() { lvStart(10, 14); lvGoal(26, 10); lvCoin(20, 11);
+      wall(["tienda", "ciudad", "casa"], [[17, 13], [18, 13], [19, 13], [21, 13], [22, 13], [23, 13], [24, 13], [17, 15], [18, 15], [19, 15], [20, 15], [21, 15], [22, 15], [23, 15], [24, 15], [16, 14], [24, 14], [25, 14], [26, 14], [27, 14]]);
+      deco("fuente", [[20, 14]]); deco("flores", [[18, 14], [22, 14], [20, 13]]); deco("iglesia", [[13, 9]]); deco("palmera", [[22, 9], [18, 9], [12, 17]]); deco("arbol", [[28, 12], [14, 17]]); },
+    sol: [[12, 14, 1, 0, "S S S L S S R S*9 L R"]] },
+  { id: "berlin", zone: "europa", name: "Berlín", emoji: "🐻", pos: [13.4, 52.5], par: 11, inv: { corta: 12, rampa: 3, recta: 4, curva: 2 },
+    intro: "Pasa por el arco del medio de la gran puerta y cruza el río por un puente: sube con una rampa y baja con otra.", view: [9, 5, 28, 24],
+    build() { addPiece("alcala", 16, 14, 0, 0, 0); area("agua", 4, 10, 32, 11); lvStart(18, 22, 3); lvGoal(18, 7, 3); lvCoin(18, 10, 1);
+      wall(["ciudad", "tienda"], [[10, 14], [11, 14], [12, 14], [13, 14], [14, 14], [15, 14], [21, 14], [22, 14], [23, 14], [24, 14], [25, 14], [26, 14]]);
+      deco("torre", [[23, 7]]); deco("arbol", [[14, 17], [22, 18], [13, 20], [23, 20]]); deco("bus", [[14, 8]]); deco("velero", [[11, 10], [26, 11]]); },
+    sol: [[18, 20, 0, 0, "S*7 U S S D"]] },
 ];
 LEVELS.push(
   { id: "baires", zone: "sudamerica", name: "Buenos Aires", emoji: "🚇", pos: [-58.4, -34.6], par: 8, inv: { corta: 12, recta: 6, rampa: 3 },
@@ -6863,8 +6878,8 @@ const LAND = [
 const BORDERS = [[[-8.2, 42.1], [-6.2, 41.6], [-6.9, 40.3], [-7.0, 39.0], [-7.4, 37.2]], [[-1.8, 43.4], [0.7, 42.8], [3.2, 42.4]],
   [[2.5, 51.1], [4.2, 50.0], [5.8, 49.5], [8.2, 49.0], [7.6, 47.6], [6.1, 46.2], [7.0, 45.9], [6.8, 44.1], [7.6, 43.8]],
   [[6.2, 50.3], [6.0, 51.8], [7.0, 53.4]], [[7.0, 45.9], [8.5, 46.3], [10.5, 46.5], [12.4, 47.0], [13.7, 46.5]], [[14.2, 53.9], [14.7, 51.0], [12.1, 50.3], [13.0, 48.5], [13.0, 47.5]]];
-const COUNTRY = [["ESPAÑA", -4, 39.4], ["PORTUGAL", -8.2, 39.9], ["FRANCIA", 2.4, 46.8], ["REINO UNIDO", -2.2, 52.9], ["IRLANDA", -8.2, 53.2], ["ALEMANIA", 10.4, 51.3],
-  ["ITALIA", 12.6, 42.9], ["SUIZA", 8.2, 46.8], ["PAÍSES BAJOS", 5.6, 52.7], ["ÁFRICA", 2, 34.2], ["OCÉANO ATLÁNTICO", -9.5, 47.5]];
+const COUNTRY = [["ESPAÑA", -4, 39.4], ["PORTUGAL", -8.2, 39.9], ["FRANCIA", 0.4, 46.4], ["REINO UNIDO", -2.2, 52.9], ["IRLANDA", -8.2, 53.2], ["ALEMANIA", 10.4, 51.3],
+  ["ITALIA", 12.6, 42.9], ["SUIZA", 9.4, 47.5], ["PAÍSES BAJOS", 6.4, 53.35], ["ÁFRICA", 2, 34.2], ["OCÉANO ATLÁNTICO", -9.5, 47.5]];
 const LAND_SA = [
   [[-77.3, 8.6], [-75.5, 10.5], [-72.0, 11.8], [-71.3, 10.9], [-68.0, 10.6], [-63.0, 10.7], [-61.0, 10.0], [-58.5, 6.8], [-54.0, 5.8], [-51.5, 4.3], [-50.0, 1.8], [-49.5, -0.2],
    [-44.5, -2.5], [-40.0, -2.9], [-35.2, -5.4], [-35.0, -9.0], [-38.5, -13.0], [-39.0, -17.5], [-40.5, -20.5], [-43.2, -23.0], [-48.5, -26.5], [-48.8, -28.6], [-52.0, -32.2],
@@ -6885,8 +6900,17 @@ const BORDERS_SA = [
 const COUNTRY_SA = [["ARGENTINA", -65, -37], ["CHILE", -72.6, -27], ["BRASIL", -52, -10], ["PERÚ", -75.5, -9], ["BOLIVIA", -64.5, -17], ["COLOMBIA", -73.5, 4],
   ["VENEZUELA", -66, 8.8], ["GUYANA", -59.6, 7.2], ["SURINAM", -55.6, 3.0], ["GUAYANA FR.", -52.6, 2.6], ["URUGUAY", -56, -32], ["PARAGUAY", -58.5, -23], ["ECUADOR", -78.8, -1.5], ["OCÉANO PACÍFICO", -81, -24], ["OCÉANO ATLÁNTICO", -38, -33]];
 const MAPS = {
-  eu: { name: "🇪🇺 Europa", proj: MAPP, land: LAND, borders: BORDERS, country: COUNTRY, vb: "-70 30 1090 1020", sand: LAND.length - 1 },
-  sa: { name: "🌎 Sudamérica", proj: (lon, lat) => [(lon + 86) * 16.5, (14 - lat) * 15.5], land: LAND_SA, borders: BORDERS_SA, country: COUNTRY_SA, vb: "0 -10 950 1130", sand: -1 },
+  eu: { name: "🇪🇺 Europa", proj: MAPP, land: LAND, borders: BORDERS, country: COUNTRY, vb: "-70 30 1090 1020", sand: LAND.length - 1, relief: {
+    mountains: [[6.6, 45.9, 1.1], [8.4, 46.4, 1.2], [10.2, 46.6, 1.1], [12.2, 47, 1], [-0.8, 42.8, .9], [1.2, 42.6, .9], [-3.3, 37.1, .8], [-5.2, 43.05, .7], [2.9, 45.2, .7], [-4.6, 57, .7], [-4.1, 40.4, .7], [12.6, 43.4, .7], [14.6, 41.6, .7]],
+    forests: [[8.2, 48.2, 1], [5.6, 50.1, .9], [11.6, 48.9, 1], [-0.8, 44.2, .9], [-7.9, 42.8, .9], [-1.4, 51.2, .8], [-7.6, 53.3, .8], [14, 51, .9], [-2.6, 39.6, .7]],
+    rivers: [[[8.6, 47.6], [7.6, 48.6], [8.4, 49.5], [7.6, 50.4], [6.8, 51.2], [6.1, 51.9], [4.4, 51.9]], [[4.6, 48.3], [3.5, 48.5], [2.3, 48.85], [1.2, 49.3], [0.2, 49.45]], [[4, 46.1], [3, 47.4], [1.5, 47.7], [0, 47.3], [-2.1, 47.3]], [[8.5, 48], [10.5, 48.6], [12.1, 49], [13.5, 48.6], [16.4, 48.2]], [[-4, 43], [-2, 42.5], [-0.9, 41.6], [0.8, 40.7]], [[-2, 40.4], [-4, 39.9], [-6.5, 39.6], [-9.1, 38.7]], [[-3, 38], [-4.8, 37.9], [-6, 37.4], [-6.3, 36.8]], [[-1.8, 51.7], [-0.1, 51.5], [0.7, 51.45]], [[6.1, 46.2], [4.8, 45.75], [4.8, 44.5], [4.6, 43.6]]],
+    boats: [[-13, 50], [-10, 40.5], [4.5, 38.5], [2.8, 55.5]] } },
+  sa: { name: "🌎 Sudamérica", proj: (lon, lat) => [(lon + 86) * 16.5, (14 - lat) * 15.5], land: LAND_SA, borders: BORDERS_SA, country: COUNTRY_SA, vb: "0 -10 950 1130", sand: -1, relief: {
+    mountains: [[-73, 7, .9], [-75.6, 3.5, .9], [-77.8, -.5, 1], [-78.2, -4, .9], [-76.8, -9, 1], [-73.8, -13, 1.1], [-70.6, -16, 1.1], [-68.2, -21, 1], [-68.4, -25.5, 1.1], [-69.6, -29.5, 1.1], [-70.2, -34, 1.1], [-71, -38.5, 1], [-71.8, -43, .9], [-72.6, -48, .8], [-61.5, 5.2, .7], [-45.5, -19.5, .7], [-48.5, -15.5, .6]],
+    forests: [[-68.5, -3, 1.1], [-63.5, -4.5, 1.1], [-58.5, -3.2, 1.1], [-55, -6.5, 1], [-61.5, -8.5, 1], [-66.5, -7.5, 1], [-52.5, -2, 1], [-70.5, -9.5, .9], [-57.5, -10.5, 1], [-60.5, .5, .9], [-74.5, -1.5, .8], [-47, -24, .7]],
+    rivers: [[[-73.5, -4.5], [-70, -3.6], [-65, -3.4], [-60, -3.1], [-55, -2.4], [-51.5, -1.2], [-49.6, -.3]], [[-51, -20], [-53, -23], [-54.6, -25.5], [-56.5, -27.3], [-59, -29], [-60.7, -32.9], [-58.4, -34.3]], [[-67.5, 6.2], [-64.5, 7.8], [-62, 8.5], [-60.6, 8.6]], [[-45.5, -20], [-44, -15], [-43, -10], [-38.5, -9.2], [-36.6, -10.5]]],
+    deserts: [[-69.6, -23.5, 26], [-68, -45, 34]],
+    boats: [[-82, -12], [-36, -24], [-48, 4], [-80, -40]] } },
 };
 const contOf = i => LEVELS[i].zone === "sudamerica" ? "sa" : "eu";
 // =====================================================================
@@ -6996,6 +7020,63 @@ function confirmReset() {
     yn.appendChild(big(mkBtn("✖️", "No", () => openMap())));
   });
 }
+// ---------- the adventure maps: sea, shaded land, relief, rivers, compass and a title banner
+function smoothPath(ps) { // Catmull-Rom through the stations
+  if (!ps.length) return "";
+  let d = `M${ps[0][0].toFixed(1)} ${ps[0][1].toFixed(1)}`;
+  for (let i = 0; i < ps.length - 1; i++) {
+    const p0 = ps[Math.max(0, i - 1)], p1 = ps[i], p2 = ps[i + 1], p3 = ps[Math.min(ps.length - 1, i + 2)];
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6], c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    d += `C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
+function drawMapArt(m, MP, cont, pts, proj) {
+  const [vx, vy, vw, vh] = MP.vb.split(" ").map(Number);
+  const defs = el("defs", {}, m);
+  defs.innerHTML = `<radialGradient id="msea" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="#8fd3f4"/><stop offset=".7" stop-color="#5fb3e3"/><stop offset="1" stop-color="#3f8fc7"/></radialGradient>
+    <linearGradient id="mland" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c3e6a3"/><stop offset="1" stop-color="#93c97a"/></linearGradient>
+    <pattern id="mwave" width="140" height="70" patternUnits="userSpaceOnUse"><path d="M10 20q10 -7 20 0t20 0M80 52q10 -7 20 0t20 0" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".28"/></pattern>
+    <pattern id="mtex" width="46" height="46" patternUnits="userSpaceOnUse"><circle cx="8" cy="10" r="3" fill="#6fae58" opacity=".18"/><circle cx="30" cy="28" r="4" fill="#e8f5d6" opacity=".25"/><circle cx="38" cy="6" r="2" fill="#6fae58" opacity=".2"/><circle cx="16" cy="38" r="2.5" fill="#6fae58" opacity=".18"/></pattern>
+    <radialGradient id="mgold" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#fff2a8"/><stop offset="1" stop-color="#f2b900"/></radialGradient>
+    <radialGradient id="mcream" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#f1e4c8"/></radialGradient>
+    <radialGradient id="mvig" cx="50%" cy="50%" r="72%"><stop offset=".62" stop-color="#0b3a5c" stop-opacity="0"/><stop offset="1" stop-color="#0b3a5c" stop-opacity=".35"/></radialGradient>`;
+  el("rect", { x: vx - 600, y: vy - 600, width: vw + 1200, height: vh + 1200, fill: "url(#msea)" }, m);
+  el("rect", { x: vx - 600, y: vy - 600, width: vw + 1200, height: vh + 1200, fill: "url(#mwave)" }, m);
+  const land = MP.land.map(pts);
+  // shallow water around the coasts, then a soft shadow under the land
+  land.forEach(p => el("polygon", { points: p, fill: "#bfe9fb", stroke: "#bfe9fb", "stroke-width": 34, "stroke-linejoin": "round", opacity: .45 }, m));
+  land.forEach(p => el("polygon", { points: p, fill: "#d7f3fd", stroke: "#d7f3fd", "stroke-width": 14, "stroke-linejoin": "round", opacity: .7 }, m));
+  land.forEach(p => el("polygon", { points: p, fill: "rgba(20,60,40,.22)", transform: "translate(5 8)" }, m));
+  land.forEach((p, i) => { el("polygon", { points: p, fill: i === MP.sand ? "#f3d98b" : "url(#mland)", stroke: "#5f9e4f", "stroke-width": 3.5, "stroke-linejoin": "round" }, m); if (i !== MP.sand) el("polygon", { points: p, fill: "url(#mtex)" }, m); });
+  const R = MP.relief || {};
+  (R.deserts || []).forEach(([lo, la, s]) => { const [x, y] = proj(lo, la); el("ellipse", { cx: x, cy: y, rx: s * 1.4, ry: s * .8, fill: "#ecd79e", opacity: .85 }, m); for (let k = 0; k < 6; k++) el("circle", { cx: x + Math.cos(k * 2.1) * s * .8, cy: y + Math.sin(k * 2.1) * s * .4, r: 2, fill: "#c9a85a", opacity: .7 }, m); });
+  (R.rivers || []).forEach(r => { const d = smoothPath(r.map(([lo, la]) => proj(lo, la))); el("path", { d, fill: "none", stroke: "#4f9fd6", "stroke-width": 6, "stroke-linecap": "round", "stroke-linejoin": "round" }, m); el("path", { d, fill: "none", stroke: "#9fd6f5", "stroke-width": 2.5, "stroke-linecap": "round" }, m); });
+  MP.borders.forEach(b => { el("polyline", { points: pts(b), fill: "none", stroke: "rgba(70,110,55,.45)", "stroke-width": 4 }, m); el("polyline", { points: pts(b), fill: "none", stroke: "#f4fbe9", "stroke-width": 2, "stroke-dasharray": "7 6" }, m); });
+  (R.forests || []).forEach(([lo, la, s]) => { const [x, y] = proj(lo, la), k = s || 1; [[-12, 4], [0, -6], [12, 5], [-3, 10]].forEach(([dx, dy]) => { el("rect", { x: x + dx * k - 1.5, y: y + dy * k + 4, width: 3, height: 7, fill: "#7a5230" }, m); el("circle", { cx: x + dx * k, cy: y + dy * k, r: 8 * k, fill: "#3f8f3a", stroke: "#2f6b2a", "stroke-width": 1.5 }, m); el("circle", { cx: x + dx * k - 2.5, cy: y + dy * k - 2.5, r: 3 * k, fill: "#6fbf5c" }, m); }); });
+  (R.mountains || []).forEach(([lo, la, s]) => { const [x, y] = proj(lo, la), k = s || 1;
+    [[-14, 4, .75], [0, 0, 1], [14, 5, .7]].forEach(([dx, dy, sc]) => { const h = 30 * k * sc, w = 22 * k * sc, X = x + dx * k, Y = y + dy * k;
+      el("path", { d: `M${X - w} ${Y + h * .4}L${X} ${Y - h * .6}L${X + w} ${Y + h * .4}Z`, fill: "#a39882", stroke: "#6f6655", "stroke-width": 2, "stroke-linejoin": "round" }, m);
+      el("path", { d: `M${X} ${Y - h * .6}L${X + w} ${Y + h * .4}L${X + w * .15} ${Y + h * .4}Z`, fill: "#8a7f6b" }, m);
+      el("path", { d: `M${X - w * .38} ${Y - h * .22}L${X} ${Y - h * .6}L${X + w * .38} ${Y - h * .22}L${X + w * .14} ${Y - h * .3}L${X} ${Y - h * .18}L${X - w * .16} ${Y - h * .3}Z`, fill: "#fff" }, m); }); });
+  // names: countries in spaced capitals, seas in blue italics
+  MP.country.forEach(([n, lo, la]) => { const [x, y] = proj(lo, la), sea = /OC[EÉ]ANO|MAR |GOLFO|ATLÁNTICO|PACÍFICO|ÍNDICO/.test(n);
+    const t = el("text", { x, y, "font-size": sea ? 22 : n.length > 10 ? 19 : 23, "font-weight": sea ? 700 : 800, "font-style": sea ? "italic" : "normal", "font-family": "Georgia, 'Times New Roman', serif", fill: sea ? "rgba(255,255,255,.75)" : "rgba(55,80,40,.55)", "text-anchor": "middle", "letter-spacing": sea ? 3 : 5, stroke: sea ? "none" : "rgba(240,250,230,.6)", "stroke-width": sea ? 0 : 3, "paint-order": "stroke" }, m); t.textContent = n; });
+  if (cont === "eu") { const [x, y] = MAPP(-11.4, 45.7); el("rect", { x: x - 92, y: y - 20, width: 184, height: 30, rx: 15, fill: "#fff8e8", stroke: "#a8743d", "stroke-width": 3 }, m); const t = el("text", { x, y: y + 1, "font-size": 20, "font-weight": 900, fill: "#6b4219", "text-anchor": "middle", "dominant-baseline": "middle" }, m); t.textContent = ZONES.pueblo; }
+  // boats and clouds on the sea
+  (R.boats || []).forEach(([lo, la], k) => { const [x, y] = proj(lo, la); const b = el("text", { x, y, "font-size": 34, "text-anchor": "middle", class: "mboat", style: `animation-delay:${-k * .9}s` }, m); b.textContent = k % 2 ? "🚢" : "⛵"; });
+  for (let k = 0; k < 4; k++) { const cg = el("g", { class: "mcloud", style: `animation-delay:${-k * 17}s;animation-duration:${70 + k * 9}s`, opacity: .55 }, m); const cx = vx + 120 + (k * 271) % (vw - 200), cy = vy + 90 + (k * 337) % (vh - 200); [[0, 0, 46, 20], [-34, 8, 30, 15], [34, 7, 32, 15]].forEach(([dx, dy, rx, ry]) => el("ellipse", { cx: cx + dx, cy: cy + dy, rx, ry, fill: "#fff" }, cg)); }
+  // compass rose and title banner
+  const cx = vx + 80, cy = vy + vh - 95, cg = el("g", { transform: `translate(${cx} ${cy})`, opacity: .9 }, m);
+  el("circle", { r: 46, fill: "rgba(255,248,232,.85)", stroke: "#7a4e22", "stroke-width": 3 }, cg); el("circle", { r: 36, fill: "none", stroke: "#a8743d", "stroke-width": 1.5, "stroke-dasharray": "3 4" }, cg);
+  [[0, -1, "#d63a2f"], [1, 0, "#7a4e22"], [0, 1, "#7a4e22"], [-1, 0, "#7a4e22"]].forEach(([dx, dy, c]) => el("path", { d: `M${dx * 34} ${dy * 34}L${dy * 7} ${-dx * 7}L${-dy * 7} ${dx * 7}Z`, fill: c }, cg));
+  el("text", { y: -38, "font-size": 14, "font-weight": 900, fill: "#d63a2f", "text-anchor": "middle" }, cg).textContent = "N";
+  const tName = trn(MP.name), tw = Math.max(220, tName.length * 17 + 30), bx = vx + vw - tw / 2 - 30, by = vy + vh - 50, bg = el("g", { transform: `translate(${bx} ${by})` }, m);
+  el("path", { d: `M${-tw / 2 - 24} -6l18 -16v44l-18 -16z M${tw / 2 + 24} -6l-18 -16v44l18 -16z`, fill: "#a8743d" }, bg);
+  el("rect", { x: -tw / 2, y: -24, width: tw, height: 46, rx: 8, fill: "#fff3d6", stroke: "#7a4e22", "stroke-width": 3 }, bg);
+  el("text", { y: 1, "font-size": 26, "font-weight": 900, "font-family": "Georgia, 'Times New Roman', serif", fill: "#6b4219", "text-anchor": "middle", "dominant-baseline": "middle", "letter-spacing": 2 }, bg).textContent = tName;
+  el("rect", { x: vx - 600, y: vy - 600, width: vw + 1200, height: vh + 1200, fill: "url(#mvig)", "pointer-events": "none" }, m);
+}
 function openMap(opts) {
   opts = opts || {};
   if (running) setRunning(false);
@@ -7018,25 +7099,35 @@ function openMap(opts) {
   const rs = mkBtn("👨‍👩‍👧", "Página para padres", goParents); rs.style.marginLeft = "auto"; top.appendChild(rs);
   const m = el("svg", { viewBox: MP.vb, preserveAspectRatio: "xMidYMid meet" }, box);
   const pts = arr => arr.map(([lo, la]) => proj(lo, la).map(v => v.toFixed(1)).join(",")).join(" ");
-  el("rect", { x: -500, y: -500, width: 2000, height: 2200, fill: "#7cc4ea" }, m);
-  for (let i = 0; i < 14; i++) el("path", { d: `M${60 + (i * 137) % 900} ${80 + (i * 211) % 950} q14 -10 28 0 t28 0`, stroke: "#a9dcf5", "stroke-width": 4, fill: "none" }, m);
-  MP.land.forEach((poly, i) => el("polygon", { points: pts(poly), fill: i === MP.sand ? "#f3d98b" : "#a7d98b", stroke: "#5f9e4f", "stroke-width": 4, "stroke-linejoin": "round" }, m));
-  MP.borders.forEach(b => el("polyline", { points: pts(b), fill: "none", stroke: "#6f9a5e", "stroke-width": 3, "stroke-dasharray": "8 7" }, m));
-  MP.country.forEach(([n, lo, la]) => { const [x, y] = proj(lo, la); const t = el("text", { x, y, "font-size": n.length > 10 ? 20 : 24, "font-weight": 800, fill: "rgba(40,70,30,.45)", "text-anchor": "middle", "letter-spacing": 2 }, m); t.textContent = n; });
-  if (cont === "eu") { const [x, y] = MAPP(-11.4, 45.7); const t = el("text", { x, y, "font-size": 22, "font-weight": 900, fill: "#6b4219", "text-anchor": "middle" }, m); t.textContent = ZONES.pueblo; }
+  drawMapArt(m, MP, cont, pts, proj);
   const idx = LEVELS.map((_, i) => i).filter(i => contOf(i) === cont);
   const P = {}; idx.forEach(i => P[i] = proj(LEVELS[i].pos[0], LEVELS[i].pos[1]));
-  el("polyline", { points: idx.map(i => P[i].map(v => v.toFixed(1)).join(",")).join(" "), fill: "none", stroke: "#8a5a2b", "stroke-width": 7, "stroke-dasharray": "2 14", "stroke-linecap": "round" }, m);
+  // the route as a real railway: ballast, sleepers and two rails, curving smoothly from station to station
+  const route = smoothPath(idx.map(i => P[i]));
+  const done = idx.filter(i => lvStars(i) > 0), lastDone = done.length ? idx.indexOf(done[done.length - 1]) : -1;
+  el("path", { d: route, fill: "none", stroke: "rgba(60,40,20,.22)", "stroke-width": 22, "stroke-linecap": "round", "stroke-linejoin": "round", transform: "translate(3 5)" }, m);
+  el("path", { d: route, fill: "none", stroke: "#d9c49a", "stroke-width": 20, "stroke-linecap": "round", "stroke-linejoin": "round" }, m);
+  el("path", { d: route, fill: "none", stroke: "#7a4a22", "stroke-width": 16, "stroke-dasharray": "4 7" }, m);
+  el("path", { d: route, fill: "none", stroke: "#5e6470", "stroke-width": 9, "stroke-linecap": "round", "stroke-linejoin": "round" }, m);
+  el("path", { d: route, fill: "none", stroke: "#d9c49a", "stroke-width": 4, "stroke-linecap": "round", "stroke-linejoin": "round" }, m);
+  if (lastDone > 0) el("path", { d: smoothPath(idx.slice(0, lastDone + 1).map(i => P[i])), fill: "none", stroke: "#ffd34d", "stroke-width": 4, "stroke-linecap": "round", "stroke-linejoin": "round", opacity: .9 }, m);
   idx.forEach(i => {
     const l = LEVELS[i], [x, y] = P[i], fl = !isFull() && !levelFree(i), open = lvOpen(i) && !fl, st = lvStars(i);
     const g = el("g", { class: "lvnode" + (open ? "" : " locked") + (i === nextI ? " next" : ""), transform: `translate(${x} ${y})` }, m);
-    el("circle", { r: 32, fill: st ? "#ffd34d" : open ? "#fff8e8" : "#c9c2b5", stroke: "#7a4e22", "stroke-width": 5 }, g);
-    const e = el("text", { y: 2, "font-size": 32, "text-anchor": "middle", "dominant-baseline": "central", opacity: open ? 1 : .45 }, g); e.textContent = open ? l.emoji : "🔒";
-    el("circle", { cx: -26, cy: -26, r: 13, fill: "#7a4e22" }, g);
-    const n = el("text", { x: -26, y: -25, "font-size": 15, "font-weight": 900, fill: "#fff", "text-anchor": "middle", "dominant-baseline": "central" }, g); n.textContent = i + 1;
-    const s = el("text", { y: 50, "font-size": 18, "text-anchor": "middle" }, g); s.textContent = open ? "⭐".repeat(st) + "☆".repeat(3 - st) : "";
-    if (l.zone !== "pueblo") { const t = el("text", { y: 74, "font-size": 21, "font-weight": 900, fill: "#3b2a18", "text-anchor": "middle", stroke: "#fff8e8", "stroke-width": 5, "paint-order": "stroke" }, g); t.textContent = l.name; }
-    if (fl) { const b2 = el("g", { transform: "translate(24 -24)" }, g); el("circle", { r: 14, fill: "#ffd34d", stroke: "#b8860b", "stroke-width": 3 }, b2); el("text", { y: 1, "font-size": 15, "text-anchor": "middle", "dominant-baseline": "central" }, b2).textContent = "⭐"; }
+    el("ellipse", { cx: 3, cy: 30, rx: 30, ry: 9, fill: "rgba(40,30,15,.25)" }, g);
+    if (i === nextI) el("circle", { r: 44, fill: "none", stroke: "#ffd34d", "stroke-width": 6, class: "lvring" }, g);
+    el("circle", { r: 35, fill: "#fff8e8", stroke: "#7a4e22", "stroke-width": 4 }, g);
+    el("circle", { r: 28, fill: st ? "url(#mgold)" : open ? "url(#mcream)" : "#cfc8bb", stroke: st ? "#b8860b" : "rgba(122,78,34,.35)", "stroke-width": 2.5 }, g);
+    const e = el("text", { y: 2, "font-size": 30, "text-anchor": "middle", "dominant-baseline": "central", opacity: open ? 1 : .5 }, g); e.textContent = open ? l.emoji : "🔒";
+    el("circle", { cx: -27, cy: -26, r: 13, fill: "#7a4e22", stroke: "#fff8e8", "stroke-width": 3 }, g);
+    const n = el("text", { x: -27, y: -25, "font-size": 14, "font-weight": 900, fill: "#fff", "text-anchor": "middle", "dominant-baseline": "central" }, g); n.textContent = i + 1;
+    if (open) { el("rect", { x: -33, y: 37, width: 66, height: 22, rx: 11, fill: "#7a4e22" }, g); const s = el("text", { y: 49, "font-size": 15, "text-anchor": "middle", "dominant-baseline": "central", "letter-spacing": 1 }, g); s.textContent = "⭐".repeat(st) + "☆".repeat(3 - st); s.setAttribute("fill", "#ffd34d"); }
+    if (l.zone !== "pueblo") {
+      const nm = trn(l.name), w = Math.max(70, nm.length * 11 + 22), ty = open ? 76 : 56;
+      el("rect", { x: -w / 2, y: ty - 14, width: w, height: 28, rx: 14, fill: "rgba(255,248,232,.95)", stroke: "rgba(122,78,34,.5)", "stroke-width": 2 }, g);
+      const t = el("text", { y: ty + 1, "font-size": 18, "font-weight": 900, fill: "#3b2a18", "text-anchor": "middle", "dominant-baseline": "central" }, g); t.textContent = l.name;
+    }
+    if (fl) { const b2 = el("g", { transform: "translate(26 -26)" }, g); el("circle", { r: 14, fill: "#ffd34d", stroke: "#b8860b", "stroke-width": 3 }, b2); el("text", { y: 1, "font-size": 15, "text-anchor": "middle", "dominant-baseline": "central" }, b2).textContent = "⭐"; }
     g.addEventListener("click", () => { unlockAudio(); if (fl) { askGrownUp(); return; } if (!open) { sfx.no(); toast("🔒"); return; } sfx.whistleShort(); startLevel(i); });
   });
   // the little train: travels to the next city after a level, or waits at the next one
@@ -7079,6 +7170,9 @@ const I18N_ROWS = [
 ["🚂 Constructor de trenes", "🚂 Train Builder", "🚂 Constructeur de trains"],
 ["Aventura", "Adventure", "Aventure"],
 ["Juego libre", "Free play", "Jeu libre"],
+["Roma", "Rome", "Rome"], ["Berlín", "Berlin", "Berlin"],
+["En Roma la plaza de la fuente está llena de gente. Rodéala por arriba y recoge la 🪙 por el camino.", "In Rome the fountain square is full of people. Go round it along the top and pick up the 🪙 on the way.", "À Rome, la place de la fontaine est pleine de monde. Contourne-la par le haut et ramasse la 🪙 en chemin."],
+["Pasa por el arco del medio de la gran puerta y cruza el río por un puente: sube con una rampa y baja con otra.", "Go through the middle arch of the great gate and cross the river on a bridge: go up with one ramp and down with another.", "Passe sous l'arche du milieu de la grande porte et traverse la rivière sur un pont : monte avec une rampe et descends avec une autre."],
 ["Decorar", "Decorate", "Décorer"], ["Estación", "Station", "Gare"], ["Desvío", "Switch", "Aiguillage"], ["Curva rampa", "Ramp curve", "Courbe en rampe"], ["El tiempo", "Weather", "La météo"],
 ["La vía se divide en dos: recto o curva. Se coloca solo hacia el lado que encaja; tócalo con esta misma pieza para girarlo o darle la vuelta. Con ✋ cambias el camino del tren.", "The track splits in two: straight on or curve. It places itself facing the way that fits; tap it with the same piece to turn it or flip it. Use ✋ to change the train's way.", "La voie se sépare en deux : tout droit ou en courbe. Il se place tout seul du côté qui convient ; touche-le avec la même pièce pour le tourner ou le retourner. Avec ✋ tu changes le chemin du train."],
 ["Gira y cambia un piso: se coloca sola hacia el lado que encaja. Pon 4 seguidas (con ➕ seguir) y harás una espiral, como una montaña rusa. El botón ⇅ la cambia de subir a bajar.", "Turns and changes floor: it places itself facing the way that fits. Put 4 in a row (with ➕ continue) to make a spiral, like a roller coaster. The ⇅ button switches it between up and down.", "Tourne et change d'étage : elle se place toute seule du côté qui convient. Mets-en 4 à la suite (avec ➕ continuer) pour faire une spirale, comme des montagnes russes. Le bouton ⇅ la fait monter ou descendre."],
