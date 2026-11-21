@@ -633,6 +633,7 @@ html, body { background: #bfe3f5 repeating-linear-gradient(0deg, rgba(255,255,25
 .dgo.alt { background: #fff; color: var(--ll-ink); border: 0; box-shadow: 0 6px 0 #cfdbe6, 0 10px 20px rgba(30,60,90,.18); }
 @media (max-width: 820px), (max-height: 560px) { .dchip.ev { width: 92px; height: 78px; border-radius: 20px; } .dchip.ev .dem { font-size: 28px; } .dchip.ev b { font-size: 12px; } }
 @media (max-height: 560px) { .dchip.ev { width: auto; height: 42px; flex-direction: row; padding: 0 14px 0 8px; gap: 6px; border-radius: 999px; } .dchip.ev .dem { font-size: 22px; } .dchip.ev b { font-size: 13px; white-space: nowrap; } .dchip.ev .dlk { position: static; font-size: 12px; } #duel h1 { font-size: 24px !important; } .dcol { padding: 6px 10px; } .dgo { font-size: 20px; padding: 6px 26px; } }
+.picon { cursor: default; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
 </style>
 </head>
 <body>
@@ -5040,7 +5041,7 @@ function openShop(focus) {
 //  adventure, two cities, three pictures and Push-off; one purchase (made by a grown-up, behind
 //  the parents' gate) unlocks the rest. Nothing a child built is ever locked.
 // =====================================================================
-const FULL_TEST = true; // the "test" switch on the parents' page — turn off before the store release
+// test mode for the full version: tap the 👨‍👩‍👧 icon in the parents' page title 5 times (stored like a purchase, on this device only)
 const fullKey = () => KEY + "-full";
 const FREE_CITIES = ["Pueblo", "Tokio"], FREE_PICS = ["elefante", "manzana", "corazon"];
 const FULL_TRAINS = ["bala", "metro", "tranvia"];
@@ -5074,9 +5075,9 @@ function askGrownUp() {
 // the grown-ups' part of the parents' page
 function fullSection(card) {
   const N = window.__NATIVE__;
-  if (isFull() && !(sget(fullKey()) === true && !(N && N.full))) {
+  if (isFull()) {
     const o = addEl(card, "div", "fowned"); o.id = "fullsec";
-    addEl(o, "div", "fe", "⭐");
+    addEl(o, "div", "fe", sget(fullKey()) === true && !(N && N.full) ? "🧪" : "⭐");
     addEl(o, "div", "", LX("Tienes la versión completa. ¡Gracias por apoyar el juego!", "You have the full version. Thank you for supporting the game!", "Vous avez la version complète. Merci de soutenir le jeu !"));
   } else {
     const sec = addEl(card, "div", "fullsec2"); sec.id = "fullsec";
@@ -5103,18 +5104,24 @@ function fullSection(card) {
     } else addEl(cta, "p", "", "📱 " + LX("La versión completa está en la app para iPad, iPhone y Android (muy pronto).", "The full version is in the app for iPad, iPhone and Android (coming soon).", "La version complète est dans l'application pour iPad, iPhone et Android (bientôt)."));
     addEl(sec, "p", "ffree", LX("Gratis para siempre: vías en el suelo, el campo, 3 trenes, la aventura del pueblo, 2 ciudades y el desafío de empujar.", "Free forever: track on the ground, the countryside, 3 trains, the village adventure, 2 cities and the Push-off challenge.", "Gratuit pour toujours : voies au sol, la campagne, 3 trains, l'aventure du village, 2 villes et le défi de poussée.", "Für immer kostenlos: Gleise auf dem Boden, das Land, 3 Züge, das Dorf-Abenteuer, 2 Städte und der Schiebe-Wettkampf."));
   }
-  if (FULL_TEST) {
-    const on = sget(fullKey()) === true;
-    const r = addEl(card, "div", "saveRow"); r.style.margin = "-6px 0 12px";
-    const t = document.createElement("button"); t.className = "pbtn"; t.textContent = "🧪 " + LX("Prueba: versión completa ", "Test: full version ", "Test : version complète ") + (on ? "✅" : "⬜");
-    t.onclick = () => { sset(fullKey(), !on); onFullChanged(); openParents("full"); }; r.appendChild(t);
-  }
 }
 // the purchase (or the test switch) changed: redraw whatever shows locks
 function onFullChanged() {
   if (!lvl) try { selectTab(curTab); } catch (e) {}
   try { buildFullBadges(); } catch (e) {}
   try { if ($("duel") && !$("duel").hidden && !DUEL.m) duelPickScreen(); } catch (e) {}
+  try { if (!$("advmap").hidden) openMap(); } catch (e) {}
+  try { markTutHome(); } catch (e) {}
+}
+// secret switch for testing: 5 quick taps on the parents' page icon
+let secretTaps = [];
+function secretTap() {
+  const now = Date.now(); secretTaps = secretTaps.filter(t => now - t < 2500); secretTaps.push(now);
+  if (secretTaps.length < 5) return;
+  secretTaps = [];
+  const on = sget(fullKey()) !== true; sset(fullKey(), on);
+  sfx.bell && sfx.bell(); toast(on ? "🔓⭐" : "🔒");
+  onFullChanged(); openParents("full");
 }
 function buildFullBadges() {
   document.querySelectorAll(".tlock").forEach(e => e.remove());
@@ -5974,7 +5981,7 @@ function drawThumb(cv, data) {
   const s = Math.min(W / (c1 - c0 + 3), H / (r1 - r0 + 3)), ox = (W - (c1 - c0 + 1) * s) / 2, oy = (H - (r1 - r0 + 1) * s) / 2;
   cells.sort((a, b) => a[3] - b[3]).forEach(([a, b, t, h]) => { const d = DEFS[t]; x.fillStyle = d.gtile ? d.gtile : d.water ? "#4aa3df" : d.road ? "#777" : d.mon ? "#e9dcc0" : d.deco ? "#2f6b2f" : hcol(h); x.fillRect(ox + (a - c0) * s, oy + (b - r0) * s, s + .5, s + .5); });
 }
-function openModal(build) { const card = $("card"); card.innerHTML = ""; card.classList.remove("wob"); build(card); $("modal").hidden = false; card.scrollTop = 0; }
+function openModal(build) { const card = $("card"); card.innerHTML = ""; card.className = "card"; build(card); $("modal").hidden = false; card.scrollTop = 0; }
 function closeModal() { $("modal").hidden = true; }
 $("modal").addEventListener("pointerdown", e => { if (e.target === $("modal")) closeModal(); });
 function mkBtn(txt, title, fn) { const b = document.createElement("button"); b.className = "b"; b.textContent = txt; b.title = title; b.onclick = fn; return b; }
@@ -7480,7 +7487,9 @@ function openParents(focus) {
   const sc = $("card").classList.contains("parents") && !$("modal").hidden ? $("card").scrollTop : 0;
   openModal(card => {
     card.classList.add("parents");
-    h2(card, "👨‍👩‍👧 Página para padres");
+    h2(card, LX("Página para padres", "Parents' page", "Espace parents", "Seite für Eltern"));
+    const pic = document.createElement("span"); pic.className = "picon"; pic.textContent = "👨‍👩‍👧"; pic.onclick = e => { e.stopPropagation(); secretTap(); };
+    card.querySelector("h2").prepend(pic);
     const canSave = sset(KEY + "-probe", 1);
     if (!canSave) addEl(card, "div", "warn", "⚠️ En esta vista el navegador no deja guardar nada: el progreso y los ajustes se pierden al cerrar. Abre constructor.html con doble clic para que se guarden.");
     fullSection(card);
