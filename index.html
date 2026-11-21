@@ -511,6 +511,8 @@
 #card.welcome h2, #card.askgrown h2 { justify-content: center; font-size: 30px; margin: 8px 0 4px; position: relative; }
 #card.welcome, #card.askgrown { position: relative; } #card.welcome h2 .x, #card.askgrown h2 .x { position: absolute; right: 14px; top: 14px; }
 #card.welcome h2, #card.askgrown h2 { position: static !important; }
+#card.welcome h2, #card.askgrown h2 { padding: 0 48px; }
+@media (max-width: 640px) { .stkgrid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); } .stk { width: 54px; height: 54px; font-size: 32px; } }
 .bigrow { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
 .bigrow .b { width: auto !important; padding: 0 26px; height: 64px; font-size: 22px; font-weight: 900; border-radius: 999px; }
 .bigrow .b.yes { background: #2fb34f; color: #fff; border-color: #1f8a3b; box-shadow: 0 5px 0 #17652b; }
@@ -641,6 +643,81 @@ html, body { background: #bfe3f5 repeating-linear-gradient(0deg, rgba(255,255,25
 .it .holdfill { position: absolute; left: 0; right: 0; bottom: 0; height: 0; border-radius: 14px; background: rgba(231,76,60,.38); pointer-events: none; animation: holdfill .9s linear forwards; }
 @keyframes holdfill { to { height: 100%; } }
 .it[data-id="erase"] { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+
+/* tastes, missions, stickers, photo */
+.it .lockb.trialb { background: #e6f7e9; border-color: #34c759; font-size: 15px; animation: hbob 1.6s ease-in-out infinite; }
+.trialic svg { width: 200px; height: 90px; display: block; margin: 6px auto 0; }
+#card.world { width: min(680px, 94vw); }
+.wconts { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 16px 0 8px; }
+.wcont { width: 104px; padding: 10px 4px; border-radius: 24px; background: #fff; box-shadow: 0 4px 0 #eadbc0, 0 8px 18px rgba(120,80,0,.12); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; animation: wpop .55s cubic-bezier(.3,1.7,.5,1) both; }
+.wcont .we { font-size: 44px; line-height: 1; } .wcont b { font-size: 13px; }
+@keyframes wpop { 0% { transform: scale(0) rotate(-20deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
+#daily { position: fixed; right: calc(10px + env(safe-area-inset-right)); z-index: 5; display: flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; padding: 6px 14px 6px 8px; font-family: inherit;
+  background: rgba(255,255,255,.92); box-shadow: 0 6px 18px rgba(30,60,90,.2); cursor: pointer; color: #2c3e50; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+#daily[hidden] { display: none; }
+#daily .de { width: 34px; height: 34px; border-radius: 50%; background: #ffe58a; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+#daily .dm { font-size: 22px; } #daily b { font-size: 17px; }
+#daily.done .de { background: #c8f0d0; }
+#daily.bump { animation: dbump .45s ease-out; } @keyframes dbump { 40% { transform: scale(1.18); } }
+.dmtx { font-size: 20px !important; font-weight: 700; } .dmbar { height: 16px; margin: 10px auto; max-width: 360px; } .dmrw { color: #7a6248; }
+.stk { width: 64px; height: 64px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 38px; box-shadow: 0 0 0 4px #fff, 0 4px 10px rgba(30,60,90,.2); overflow: hidden; }
+.stk svg { width: 58px; height: 34px; }
+.stkpop { position: fixed; left: 50%; bottom: calc(150px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 45; display: flex; align-items: center; gap: 12px; background: #fff; border-radius: 999px;
+  padding: 8px 22px 8px 8px; box-shadow: 0 14px 34px rgba(20,40,70,.3); animation: stkin .5s cubic-bezier(.3,1.7,.5,1); cursor: pointer; }
+.stkpop.out { animation: stkout .4s ease-in forwards; }
+.stkpop small { display: block; font-size: 13px; font-weight: 800; color: #ff7a1a; text-transform: uppercase; letter-spacing: .5px; } .stkpop b { font-size: 19px; }
+@keyframes stkin { 0% { transform: translate(-50%, 60px) scale(.6); opacity: 0; } 100% { transform: translateX(-50%); opacity: 1; } }
+@keyframes stkout { to { transform: translate(-50%, 40px) scale(.8); opacity: 0; } }
+#card.stkbook { width: min(860px, 94vw); background: linear-gradient(#fffaf0, #fff3dc); }
+.stkgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 14px 10px; margin-top: 10px; }
+.stkslot { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; text-align: center; }
+.stkslot span { font-size: 13px; font-weight: 800; color: #6b5a44; line-height: 1.15; }
+.stkslot:not(.on) .stk { background: #efe6d6; box-shadow: inset 0 0 0 3px #e0d2bb; filter: grayscale(1); opacity: .35; }
+.stkslot.on .stk { animation: none; }
+.stkslot.wob { animation: wob .4s; }
+#goStk .big { background: #ffd9e6; } #goStk .stkn { font-size: 14px; font-weight: 800; color: #b06a00; margin-left: 2px; }
+.flash { position: fixed; inset: 0; background: #fff; z-index: 60; pointer-events: none; animation: flash .6s ease-out forwards; }
+@keyframes flash { 0% { opacity: .95; } 100% { opacity: 0; } }
+#card.photo { width: min(900px, 94vw); text-align: center; }
+#card.photo .shot { width: 100%; max-height: 62vh; object-fit: contain; border-radius: 18px; box-shadow: 0 10px 30px rgba(20,40,70,.25); margin: 8px 0; background: #fff; }
+body.playing #photoBtn { display: inline-flex !important; }
+
+/* tutorial card: can shrink to a pill */
+#tut .tb.ghost { background: none; box-shadow: none; color: #8a9aaa; font-weight: 700; text-decoration: underline; margin-left: auto; }
+#tut .tem { cursor: pointer; }
+#tut.mini { width: auto; padding: 6px 16px 6px 8px; gap: 8px; align-items: center; cursor: pointer; border-width: 3px; border-radius: 999px; animation: hglow 1.6s ease-in-out infinite; }
+#tut.mini .tbody { display: none; }
+#tut.mini .tem { font-size: 28px; }
+#tut.mini::after { content: "▾ " attr(data-mini); font-weight: 900; font-size: 15px; color: #2c3e50; white-space: nowrap; }
+/* phones: smaller controls so the board stays usable */
+@media (max-height: 500px), (max-width: 600px) {
+  .b { width: 44px; height: 44px; border-radius: 14px; }
+  #play { width: 54px; height: 54px; }
+  .grp { gap: 5px; padding: 4px; border-radius: 20px; }
+  #speed { width: 84px; height: 14px; } #speed::-webkit-slider-thumb { width: 30px; height: 30px; border-width: 3px; }
+  .ico { font-size: 20px; }
+  #side { gap: 5px; } #side .b { width: 42px; height: 42px; }
+  #floorBox { padding: 4px; gap: 4px; } #floorShow { width: 42px; height: 46px; font-size: 20px; }
+  #tabs { padding: 4px 8px 2px; gap: 5px; border-radius: 20px 20px 0 0; }
+  .tab { min-width: 46px; height: 40px; padding: 0 6px; border-radius: 12px; } .tab small { display: none; } .tab .ic { width: 26px; height: 24px; }
+  .stab { height: 32px; font-size: 12px; padding: 0 8px 0 6px; } .stab .ic { width: 22px; height: 20px; }
+  #subtabs { margin-left: 6px; padding-left: 8px; gap: 4px; }
+  #palette { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; gap: 6px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); }
+  #palette > * { flex-shrink: 0; }
+  .it { flex: 0 0 50px; height: 50px; border-width: 3px; border-radius: 14px; font-size: 26px; box-shadow: 0 2px 0 #d5e1ec; } .it.wide { flex-basis: 82px; }
+  .it.sel { transform: translateY(-2px); box-shadow: 0 4px 0 #e08600; }
+  .it .cnt { min-width: 22px; height: 22px; font-size: 12px; top: -6px; right: -6px; border-width: 2px; }
+  #info { font-size: 13px; min-height: 32px; padding: 3px 10px; gap: 6px; max-width: min(70vw, 560px); }
+  #info .iic { width: 26px; height: 26px; flex-basis: 26px; } #info b { font-size: 14px; }
+  #info span.tx { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  #lvlbar { font-size: 14px; gap: 6px; padding: 4px 6px; } #lvlbar .b { width: 38px; height: 38px; } #lvlbar .chip { padding: 3px 8px; }
+  #daily { padding: 4px 10px 4px 5px; } #daily .de { width: 26px; height: 26px; font-size: 15px; } #daily .dm { font-size: 17px; } #daily b { font-size: 14px; }
+  #play.hintplay::after { font-size: 15px; padding: 6px 12px; }
+  #tut { width: min(520px, calc(100vw - 120px)); padding: 8px 12px; gap: 8px; border-width: 3px; border-radius: 18px; max-height: 46vh; overflow: auto; }
+  #tut .tem { font-size: 30px; } #tut .ttx { font-size: 15px; line-height: 1.3; } #tut .tb { font-size: 14px; padding: 5px 10px; }
+  #tut .tbtns { gap: 6px; margin-top: 6px; } #tut .tdots i { width: 7px; height: 7px; }
+  .stkpop { bottom: calc(80px + env(safe-area-inset-bottom)); }
+}
 </style>
 </head>
 <body>
@@ -681,6 +758,7 @@ html, body { background: #bfe3f5 repeating-linear-gradient(0deg, rgba(255,255,25
     <span class="ico">🐢</span><input type="range" id="speed" min="0.3" max="2.6" step="0.1" value="1" title="Velocidad"><span class="ico">🐇</span>
   </div>
   <div class="grp">
+    <button class="b" id="photoBtn" title="Foto de mi circuito">📸</button>
     <button class="b" id="homeBtn" title="Inicio">🏠</button>
     <button class="b" id="tutBtn" title="Tutorial paso a paso">🎓</button>
     <button class="b" id="helpBtn" title="Ayuda: cómo se juega">❓</button>
@@ -744,6 +822,7 @@ html, body { background: #bfe3f5 repeating-linear-gradient(0deg, rgba(255,255,25
   <div class="tutrow">
     <div id="goTut" class="hpill"><div class="big">🎓</div><b>Aprender a jugar</b></div>
     <div id="goTut2" class="hpill" hidden><div class="big">⛰️</div><b>Subir y bajar</b></div>
+    <div id="goStk" class="hpill"><div class="big stkb">📒</div><b>Pegatinas</b><span class="stkn"></span></div>
   </div>
 </div>
 <div id="advmap" class="screen" hidden></div>
@@ -2527,7 +2606,8 @@ function updUndo() { $("undoBtn").classList.toggle("off", !undoStack.length); }
 function clearUndo() { undoStack.length = 0; updUndo(); }
 function withUndo(fn) {
   if (running) return fn();
-  const before = snapshot(), r = fn();
+  const before = snapshot(), n0 = pieces.size, r = fn();
+  if (!lvl && pieces.size > n0) dailyProg("build", pieces.size - n0);
   if (snapshot() !== before) { undoStack.push(before); if (undoStack.length > 60) undoStack.shift(); updUndo(); }
   if (sideOn) refreshSide();
   return r;
@@ -2852,7 +2932,7 @@ function handleTap0(wx, wy) {
   if (hzTapFix(wx, wy)) return;
   const tr = trainAt(wx, wy), car = carAt(wx, wy);
   if (running) { // while playing: only switches, horns and honks
-    if (tr && !tr.wreck) { hornOf(tr); drvSelect(tr); say(tr, "hi", true); return; }
+    if (tr && !tr.wreck) { hornOf(tr); dailyProg("toot"); drvSelect(tr); say(tr, "hi", true); return; }
     if (car) { sfx.beep(); return; }
     const p = pickTop(wx, wy);
     if (p && DEFS[p.type].sw) { p.state = (p.state + 1) % 2; redrawPiece(p); sfx.clack(); autosave(); }
@@ -2871,7 +2951,7 @@ function handleTap0(wx, wy) {
   if (tr && (tool === "hand" || tool === "train")) {
     if (tr.wreck) { if (tr.status === "derailed") resetTrain(tr); return; }
     if (lvl) { hornOf(tr); return; }
-    turnInPlace(tr); hornOf(tr); say(tr, "hi", true); autosave(); return;
+    turnInPlace(tr); hornOf(tr); dailyProg("toot"); say(tr, "hi", true); autosave(); return;
   }
   if (car && (tool === "hand" || tool.startsWith("car_"))) {
     const R = pieces.get(car.pid).geo.rroutes[car.ri];
@@ -2893,6 +2973,12 @@ function handleTap0(wx, wy) {
     const n = nearestOnPiece(p, wx, wy);
     const t = addTrain(trainKind, trainCars, p.id, n.ri, 1, n.d, owns("pintura") ? trainPaint : null);
     if (!t) { toast("🚂 × " + MAXT + " ✋"); sfx.no(); return; }
+    if (trialKind && trainKind === trialKind && !isFull()) { // today's free test ride starts
+      t.trial = TRIAL_S; sset(KEY + "-trial", today()); trialKind = null; trainKind = "vapor";
+      toast("🎟️"); speak(LX("¡Pulsa ▶️ y disfruta del viaje de prueba!", "Press ▶️ and enjoy the test ride!", "Appuie sur ▶️ et profite de l'essai !", "Drück ▶️ und genieß die Probefahrt!"), { raw: true });
+      try { selectTab(curTab); } catch (e) {}
+    }
+    if (!lvl) dailyProg("trains", trains.filter(x => !x.ambient).length);
     sfx.whistleShort(); autosave(); return;
   }
   if (tool === "hand") {
@@ -4753,7 +4839,7 @@ function stationStop(tr, p) {
   const off = tr.load.filter(o => o !== p.id).length;
   tr.load = tr.load.filter(o => o === p.id);
   for (let i = 0; i < off; i++) hop(em, qx, qy, s.x + s.nx * (fr ? -110 : 110) + rnd(-40, 40), s.y + s.ny * (fr ? -110 : 110) + rnd(-40, 40), i * .15);
-  if (off) { delivered[fr ? "box" : "pax"] += off; pay(off * (fr ? 2 : 1), s.x, s.y); }
+  if (off) { delivered[fr ? "box" : "pax"] += off; pay(off * (fr ? 2 : 1), s.x, s.y); dailyProg(fr ? "box" : "pax", off); }
   // nobody gets on by themselves: the child taps each passenger or box to load it
   const key = fr ? "box" : "pax";
   if (off) { tr.wait = 1.6 + .3 * off; updateHud(); say(tr, "deliver"); }
@@ -4980,7 +5066,7 @@ function singe(tr) {
   say(tr, "singe", true);
 }
 function sootTick(dt) { trains.forEach(tr => { if (!(tr.sootT > 0)) return; tr.sootT -= dt; if (tr.sootT <= 0) tr.gs.forEach(g => g.querySelectorAll(".soot").forEach(e => e.remove())); }); }
-function drvHzTick(dt) { dragonTick(dt); sootTick(dt); idleTick(dt); faceTick(dt); bubbleTick(dt); drvTick(); stationTick(dt); boardingTick(); fireTrainTick(dt); trainBadges(); nightTick(dt); }
+function drvHzTick(dt) { trialTick(dt); dragonTick(dt); sootTick(dt); idleTick(dt); faceTick(dt); bubbleTick(dt); drvTick(); stationTick(dt); boardingTick(); fireTrainTick(dt); trainBadges(); nightTick(dt); }
 
 // =====================================================================
 //  🏪 SHOP: spend the coins earned by carrying passengers and boxes
@@ -5061,7 +5147,7 @@ function fullItems() {
 }
 const isFull = () => !!(window.__NATIVE__ && window.__NATIVE__.full) || sget(fullKey()) === true;
 const fullLocked = id => !lvl && !isFull() && fullItems().has(id);
-const levelFree = i => LEVELS[i] && LEVELS[i].zone === "pueblo";
+const levelFree = i => LEVELS[i] && (LEVELS[i].zone === "pueblo" || contFirst(i)); // the village + a taste of every continent
 const cityFree = pr => FREE_CITIES.includes(pr.name);
 function fullBadge(d) { d.classList.add("shoplock", "fulllock"); const b = document.createElement("span"); b.className = "lockb"; b.textContent = "🔒"; d.appendChild(b); }
 // a child tapped something from the full version: no price here, just "ask a grown-up"
@@ -5111,7 +5197,7 @@ function fullSection(card) {
       const msg = addEl(cta, "div", "fmsg"); msg.id = "fmsg"; msg.hidden = true;
       if (storeBusy) setBuyBusy(true);
     } else addEl(cta, "p", "", "📱 " + LX("La versión completa está en la app para iPad, iPhone y Android (muy pronto).", "The full version is in the app for iPad, iPhone and Android (coming soon).", "La version complète est dans l'application pour iPad, iPhone et Android (bientôt)."));
-    addEl(sec, "p", "ffree", LX("Gratis para siempre: vías en el suelo, el campo, 3 trenes, la aventura del pueblo, 2 ciudades y el desafío de empujar.", "Free forever: track on the ground, the countryside, 3 trains, the village adventure, 2 cities and the Push-off challenge.", "Gratuit pour toujours : voies au sol, la campagne, 3 trains, l'aventure du village, 2 villes et le défi de poussée.", "Für immer kostenlos: Gleise auf dem Boden, das Land, 3 Züge, das Dorf-Abenteuer, 2 Städte und der Schiebe-Wettkampf."));
+    addEl(sec, "p", "ffree", LX("Gratis para siempre: vías en el suelo, el campo, 3 trenes, la aventura del pueblo, un nivel en cada continente, una prueba diaria de un tren especial, 2 ciudades y el desafío de empujar.", "Free forever: track on the ground, the countryside, 3 trains, the village adventure, one level on every continent, a daily test ride on a special train, 2 cities and the Push-off challenge.", "Gratuit pour toujours : voies au sol, la campagne, 3 trains, l'aventure du village, un niveau sur chaque continent, un essai quotidien d'un train spécial, 2 villes et le défi de poussée.", "Für immer kostenlos: Gleise auf dem Boden, das Land, 3 Züge, das Dorf-Abenteuer, ein Level auf jedem Kontinent, eine tägliche Probefahrt mit einem besonderen Zug, 2 Städte und der Schiebe-Wettkampf."));
   }
 }
 // the purchase (or the test switch) changed: redraw whatever shows locks
@@ -5160,6 +5246,260 @@ function storeEvent(kind, msg) {
   else if (kind === "error") storeMsg("⚠️", LX("La compra no se ha completado. No se ha cobrado nada.", "The purchase didn't go through. Nothing was charged.", "L'achat n'a pas abouti. Rien n'a été débité.", "Der Kauf wurde nicht abgeschlossen. Es wurde nichts berechnet.") + (msg ? " (" + msg + ")" : ""));
   void N;
 }
+
+// =====================================================================
+//  🎟️ TASTES OF THE FULL VERSION · 🎯 DAILY MISSION · 📒 STICKERS · 📸 PHOTO · ⭐ RATING
+// =====================================================================
+const today = () => { const d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); };
+// ---------- a one-minute ride on a full-version train, once a day
+const TRIAL_S = 60;
+let trialKind = null;
+const trialFree = () => !isFull() && sget(KEY + "-trial") !== today();
+function startTrialPick(k) {
+  trialKind = k; trainKind = k; selectTool("train"); updateCarsUI(); sfx.bell && sfx.bell(); toast("🎟️");
+  speak(LX("¡Prueba gratis de hoy! Pon el tren en una vía: tienes un minuto de viaje.", "Today's free test ride! Put the train on a track: you get one minute of riding.",
+    "L'essai gratuit du jour ! Pose le train sur une voie : tu as une minute de voyage.", "Die Gratis-Probefahrt von heute! Stell den Zug auf ein Gleis: Du hast eine Minute Fahrt."), { raw: true });
+}
+function trialTick(dt) {
+  if (!running) return;
+  trains.slice().forEach(t => {
+    if (!t.trial) return;
+    t.trial -= dt;
+    if (t.trial <= 0) endTrial(t);
+  });
+}
+function endTrial(t) {
+  const k = t.kind, K = KINDS[k];
+  try { hornOf(t); const q = carPoses(t)[0]; burst(q.x, q.y - q.z * E, ["💨", "✨", "⭐"], 10); } catch (e) {}
+  removeTrain(t); autosave(); setRunning(false);
+  openModal(card => {
+    card.classList.add("welcome");
+    const ic = addEl(card, "div", "trialic"); ic.appendChild(trainIcon(k, 2, K.c1[0], K.c2[0]));
+    h2(card, LX("¡Se acabó el viaje de prueba!", "The test ride is over!", "L'essai est terminé !", "Die Probefahrt ist vorbei!"));
+    addEl(card, "p", "", LX("Pide a un mayor que te deje este tren para siempre. ¡Mañana hay otra prueba gratis!", "Ask a grown-up to keep this train forever. There's another free test ride tomorrow!",
+      "Demande à un grand de garder ce train pour toujours. Demain, il y a un nouvel essai gratuit !", "Frag einen Erwachsenen, ob du diesen Zug für immer behalten darfst. Morgen gibt es wieder eine Gratis-Probefahrt!"));
+    const row = addEl(card, "div", "bigrow");
+    const a = mkBtn("👨‍👩‍👧 " + LX("Llamar a un mayor", "Get a grown-up", "Appeler un grand"), "", () => { sfx.click(); parentGate(() => openParents("full")); }); a.classList.add("yes"); row.appendChild(a);
+    row.appendChild(mkBtn("👍 " + LX("Vale", "OK", "D'accord"), "", () => { sfx.click(); closeModal(); }));
+    speak(LX("¡Se acabó el viaje de prueba! Pide a un mayor que te deje este tren para siempre.", "The test ride is over! Ask a grown-up to keep this train forever.",
+      "L'essai est terminé ! Demande à un grand de garder ce train pour toujours.", "Die Probefahrt ist vorbei! Frag einen Erwachsenen, ob du diesen Zug für immer behalten darfst."), { raw: true });
+  });
+}
+// ---------- after the village adventure: the whole world lights up
+function openWorld() {
+  sfx.fanfare && sfx.fanfare();
+  const title = LX("¡Tu tren está listo para ver el mundo!", "Your train is ready to see the world!", "Ton train est prêt à voir le monde !", "Dein Zug ist bereit, die Welt zu sehen!");
+  openModal(card => {
+    card.classList.add("welcome", "world");
+    h2(card, title);
+    const row = addEl(card, "div", "wconts");
+    [["eu", "🗼"], ["sa", "🦙"], ["as", "🐼"], ["na", "🗽"], ["af", "🦒"]].forEach(([k, e], j) => {
+      const b = addEl(row, "div", "wcont"); b.style.animationDelay = (.2 + j * .28) + "s";
+      addEl(b, "span", "we", e); addEl(b, "b", "", trn(MAPS[k].name).replace(/^\S+\s/, ""));
+      b.onclick = () => { sfx.click(); openMap({ cont: k }); };
+      setTimeout(() => tone([523 + j * 110], "triangle", 0, .14, .1), 200 + j * 280);
+    });
+    if (!isFull()) addEl(card, "p", "", LX("Cada continente tiene un nivel gratis para probar.", "Every continent has a free level to try.", "Chaque continent a un niveau gratuit à essayer.", "Jeder Kontinent hat ein Gratis-Level zum Ausprobieren."));
+    const r = addEl(card, "div", "bigrow");
+    const a = mkBtn("🗺️ " + LX("¡Vamos!", "Let's go!", "C'est parti !", "Los geht's!"), "", () => { sfx.click(); openMap({ cont: "sa" }); }); a.classList.add("yes"); r.appendChild(a);
+    if (!isFull()) r.appendChild(mkBtn("👨‍👩‍👧 " + LX("Todo el mundo", "The whole world", "Le monde entier", "Die ganze Welt"), "", () => { sfx.click(); parentGate(() => openParents("full")); }));
+  });
+  speak(title, { raw: true });
+}
+// ---------- 🎯 one small mission a day in free play
+const MISSIONS = [
+  { k: "toot", n: 5, em: "📢", tx: () => LX("Haz pitar a los trenes 5 veces: toca un tren.", "Make the trains toot 5 times: tap a train.", "Fais klaxonner les trains 5 fois : touche un train.", "Lass die Züge 5-mal hupen: Tippe einen Zug an.") },
+  { k: "build", n: 12, em: "🛤️", tx: () => LX("Pon 12 piezas nuevas en el tablero.", "Put 12 new pieces on the board.", "Pose 12 nouvelles pièces sur le plateau.", "Leg 12 neue Teile auf das Spielfeld.") },
+  { k: "trains", n: 3, em: "🚂", tx: () => LX("Pon 3 trenes en las vías a la vez.", "Put 3 trains on the tracks at once.", "Mets 3 trains sur les voies en même temps.", "Stell 3 Züge gleichzeitig auf die Gleise.") },
+  { k: "pax", n: 4, em: "🧍", tx: () => LX("Lleva 4 pasajeros de una estación a otra. Hacen falta 2 estaciones.", "Carry 4 passengers from one station to another. You need 2 stations.", "Transporte 4 voyageurs d'une gare à l'autre. Il faut 2 gares.", "Bring 4 Fahrgäste von einem Bahnhof zum anderen. Du brauchst 2 Bahnhöfe.") },
+  { k: "box", n: 3, em: "📦", tx: () => LX("Lleva 3 cajas con el tren de mercancías. Hacen falta 2 estaciones.", "Carry 3 boxes with the freight train. You need 2 stations.", "Transporte 3 caisses avec le train de marchandises. Il faut 2 gares.", "Bring 3 Kisten mit dem Güterzug. Du brauchst 2 Bahnhöfe.") },
+];
+function daily() {
+  let D = sget(KEY + "-daily");
+  if (!D || D.d !== today()) { D = { d: today(), i: D && D.i != null ? (D.i + 1) % MISSIONS.length : 0, p: 0, done: false, count: (D && D.count) || 0 }; sset(KEY + "-daily", D); }
+  return D;
+}
+function dailyProg(k, amount) {
+  if (lvl || tut) return;
+  const D = daily(), M = MISSIONS[D.i];
+  if (D.done || M.k !== k) return;
+  D.p = k === "trains" ? Math.max(D.p, amount || 0) : D.p + (amount || 1);
+  if (D.p >= M.n) { D.p = M.n; D.done = true; D.count++; sset(KEY + "-daily", D); renderDaily(); dailyDone(D); return; }
+  sset(KEY + "-daily", D); renderDaily();
+  const c = $("daily"); if (c) { c.classList.remove("bump"); void c.offsetWidth; c.classList.add("bump"); }
+}
+function dailyDone(D) {
+  sfx.fanfare && sfx.fanfare(); toast("🎯");
+  const cx = (innerWidth / 2 - view.x) / view.z, cy = (innerHeight / 3 - view.y) / view.z;
+  burst(cx, cy, ["🎉", "⭐", "🪙", "✨"], 14); pay(10, cx, cy);
+  speak(LX("¡Misión del día conseguida! Diez monedas y una pegatina nueva.", "Today's mission is done! Ten coins and a new sticker.", "Mission du jour réussie ! Dix pièces et un nouvel autocollant.", "Tagesmission geschafft! Zehn Münzen und ein neuer Sticker."), { raw: true });
+  setTimeout(() => earnSticker("m" + ((D.count - 1) % 7)), 1400);
+  happyMoment();
+}
+function renderDaily() {
+  let c = $("daily");
+  if (!c) { c = document.createElement("button"); c.id = "daily"; c.onclick = () => { unlockAudio(); sfx.click(); openDaily(); }; document.body.appendChild(c); }
+  const show = !lvl && !tut && $("home").hidden && $("advmap").hidden && (!$("duel") || $("duel").hidden);
+  c.hidden = !show; if (!show) return;
+  const D = daily(), M = MISSIONS[D.i];
+  c.classList.toggle("done", D.done);
+  c.innerHTML = `<span class="de">🎯</span><span class="dm">${M.em}</span><b>${D.done ? "✅" : D.p + "/" + M.n}</b>`;
+  c.style.top = ($("top").getBoundingClientRect().bottom + 10) + "px";
+}
+function openDaily() {
+  const D = daily(), M = MISSIONS[D.i];
+  openModal(card => {
+    card.classList.add("welcome");
+    addEl(card, "div", "wbub", M.em);
+    h2(card, "🎯 " + LX("Misión del día", "Today's mission", "Mission du jour", "Tagesmission"));
+    const p = addEl(card, "p", "dmtx", M.tx()); void p;
+    const bar = addEl(card, "div", "pbar dmbar"); addEl(bar, "i").style.width = Math.round(100 * D.p / M.n) + "%";
+    addEl(card, "p", "dmrw", D.done ? "✅ " + LX("¡Conseguida! Vuelve mañana para otra misión.", "Done! Come back tomorrow for another mission.", "Réussie ! Reviens demain pour une autre mission.", "Geschafft! Komm morgen für eine neue Mission wieder.")
+      : LX("Premio: 10 🪙 y una pegatina.", "Prize: 10 🪙 and a sticker.", "Prix : 10 🪙 et un autocollant.", "Preis: 10 🪙 und ein Sticker."));
+    const r = addEl(card, "div", "bigrow");
+    const a = mkBtn("👍 " + LX("¡Vale!", "OK!", "D'accord !", "Okay!"), "", () => { sfx.click(); closeModal(); }); a.classList.add("yes"); r.appendChild(a);
+    speak(D.done ? LX("¡Misión conseguida! Vuelve mañana.", "Mission done! Come back tomorrow.", "Mission réussie ! Reviens demain.", "Mission geschafft! Komm morgen wieder.") : M.tx(), { raw: true });
+  });
+}
+// ---------- 📒 stickers
+const STK_DAILY = ["🍎", "🧸", "🎈", "🍦", "🎁", "🐟", "🌻"];
+function STK() {
+  const won = n => LX(`Gana una estrella en ${n}.`, `Win a star in ${n}.`, `Gagne une étoile : ${n}.`, `Gewinne einen Stern: ${n}.`);
+  const cont = k => trn(MAPS[k].name).replace(/^\S+\s/, "");
+  return [
+    ...Object.keys(KINDS).map(k => ({ id: "t_" + k, train: k, name: () => trn(KINDS[k].t), hint: LX("Pon este tren en las vías y haz que ande.", "Put this train on the tracks and make it run.", "Pose ce train sur les voies et fais-le rouler.", "Stell diesen Zug auf die Gleise und lass ihn fahren.") })),
+    { id: "c_village", em: "🏡", name: () => trn("Tu pueblo"), hint: won(trn("Tu pueblo")) },
+    ...[["eu", "🗼"], ["sa", "🦙"], ["as", "🐼"], ["na", "🗽"], ["af", "🦒"]].map(([k, e]) => ({ id: "c_" + k, em: e, name: () => cont(k), hint: won(cont(k)) })),
+    ...[["push", "💪"], ["tug", "🪢"], ["race", "⛰️"]].map(([ev, e]) => ({ id: "d_" + ev, em: e, name: () => L3(DUEL_EV[ev].nm), hint: LX("Gana este desafío de trenes.", "Win this train challenge.", "Gagne ce défi de trains.", "Gewinne diesen Zug-Wettkampf.") })),
+    { id: "s_tut", em: "🎓", name: () => trn("Aprender a jugar"), hint: LX("Termina el tutorial Aprender a jugar.", "Finish the Learn to play tutorial.", "Termine le tutoriel Apprendre à jouer.", "Mach die Anleitung Spielen lernen fertig.") },
+    { id: "s_3star", em: "🌟", name: () => LX("Tres estrellas", "Three stars", "Trois étoiles", "Drei Sterne"), hint: LX("Gana un nivel con tres estrellas.", "Win a level with three stars.", "Gagne un niveau avec trois étoiles.", "Gewinne ein Level mit drei Sternen.") },
+    { id: "s_photo", em: "📸", name: () => LX("Foto", "Photo", "Photo", "Foto"), hint: LX("Haz una foto de tu circuito con el botón 📸.", "Take a photo of your railway with the 📸 button.", "Prends une photo de ton circuit avec le bouton 📸.", "Mach mit dem Knopf 📸 ein Foto von deiner Strecke.") },
+    ...STK_DAILY.map((e, j) => ({ id: "m" + j, em: e, name: () => LX(`Misión ${j + 1}`, `Mission ${j + 1}`, `Mission ${j + 1}`, `Mission ${j + 1}`), hint: LX("Consigue las misiones del día 🎯 en el juego libre.", "Complete the daily missions 🎯 in free play.", "Réussis les missions du jour 🎯 dans le jeu libre.", "Schaff die Tagesmissionen 🎯 im freien Spiel.") })),
+  ];
+}
+const stickers = () => new Set(sget(KEY + "-stk") || []);
+let stkQ = [], stkBusy = false;
+function earnSticker(id) {
+  const s = stickers(); if (s.has(id) || !STK().some(x => x.id === id)) return;
+  s.add(id); sset(KEY + "-stk", [...s]); stkQ.push(id); stkNext(); markStkHome();
+}
+function stkIcon(S) {
+  const d = document.createElement("div"); d.className = "stk";
+  if (S.train) { const K = KINDS[S.train]; d.appendChild(trainIcon(S.train, 1, K.c1[0], K.c2[0])); } else d.textContent = S.em;
+  return d;
+}
+function stkNext() {
+  if (stkBusy || !stkQ.length) return;
+  stkBusy = true;
+  const S = STK().find(x => x.id === stkQ.shift());
+  const box = document.createElement("div"); box.className = "stkpop";
+  box.appendChild(stkIcon(S)); const t = addEl(box, "div", ""); addEl(t, "small", "", LX("¡Pegatina nueva!", "New sticker!", "Nouvel autocollant !", "Neuer Sticker!")); addEl(t, "b", "", S.name());
+  box.onclick = () => { sfx.click(); openStickers(); };
+  document.body.appendChild(box); tone([784, 988, 1319], "triangle", .06, .18, .1);
+  setTimeout(() => { box.classList.add("out"); setTimeout(() => { box.remove(); stkBusy = false; stkNext(); }, 400); }, 2800);
+}
+function markStkHome() { const e = document.querySelector("#goStk .stkn"); if (e) e.textContent = stickers().size + "/" + STK().length; }
+function openStickers() {
+  const have = stickers(), all = STK();
+  openModal(card => {
+    card.classList.add("stkbook");
+    h2(card, "📒 " + LX("Mis pegatinas", "My stickers", "Mes autocollants", "Meine Sticker") + "  " + all.filter(s => have.has(s.id)).length + "/" + all.length);
+    const g = addEl(card, "div", "stkgrid");
+    all.forEach(S => {
+      const on = have.has(S.id), c = addEl(g, "div", "stkslot" + (on ? " on" : ""));
+      c.appendChild(stkIcon(S)); addEl(c, "span", "", on ? S.name() : "?");
+      c.onclick = () => { sfx.click(); speak(on ? S.name() : S.hint, { raw: true }); if (!on) { c.classList.remove("wob"); void c.offsetWidth; c.classList.add("wob"); } };
+    });
+  });
+}
+$("goStk").onclick = () => { unlockAudio(); sfx.click(); openStickers(); };
+// ---------- 📸 a picture of the railway, shared by a grown-up
+async function snapRailway() {
+  const ps = [...pieces.values()];
+  let x0, y0, x1, y1;
+  if (ps.length) {
+    x0 = y0 = 1e9; x1 = y1 = -1e9;
+    ps.forEach(p => (p.els || []).forEach(e => { try { const b = e.getBBox(); if (!b.width && !b.height) return; x0 = Math.min(x0, b.x); y0 = Math.min(y0, b.y); x1 = Math.max(x1, b.x + b.width); y1 = Math.max(y1, b.y + b.height); } catch (er) {} }));
+    if (x0 > x1) { x0 = 0; y0 = 0; x1 = COLS * T; y1 = ROWS * T; }
+    x0 -= 120; y0 -= 160; x1 += 120; y1 += 120;
+  } else { x0 = -view.x / view.z; y0 = -view.y / view.z; x1 = x0 + innerWidth / view.z; y1 = y0 + innerHeight / view.z; }
+  const W = x1 - x0, H = y1 - y0, S = Math.min(1800 / W, 1800 / H, 1.3);
+  const skip = [L.ui, L.hints, L.tut, ...document.querySelectorAll("#world .gridov, #world .resetbtn")];
+  skip.forEach(e => e && e.setAttribute("data-nosnap", "1"));
+  const c = $("world").cloneNode(true);
+  skip.forEach(e => e && e.removeAttribute("data-nosnap"));
+  c.querySelectorAll("[data-nosnap]").forEach(e => e.remove());
+  c.querySelector("#cam").removeAttribute("transform");
+  c.setAttribute("viewBox", `${x0} ${y0} ${W} ${H}`); c.setAttribute("width", Math.round(W * S)); c.setAttribute("height", Math.round(H * S)); c.setAttribute("xmlns", NS);
+  const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(c)], { type: "image/svg+xml" }));
+  try {
+    const img = new Image();
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
+    const pad = 36, foot = 78, cv = document.createElement("canvas");
+    cv.width = img.width + pad * 2; cv.height = img.height + pad + foot;
+    const g = cv.getContext("2d");
+    g.fillStyle = "#fff"; g.fillRect(0, 0, cv.width, cv.height);
+    g.save(); g.beginPath(); g.roundRect(pad, pad, img.width, img.height, 28); g.clip(); g.drawImage(img, pad, pad); g.restore();
+    g.fillStyle = "#2c3e50"; g.font = "900 38px ui-rounded, 'SF Pro Rounded', 'Arial Rounded MT Bold', sans-serif"; g.textBaseline = "middle";
+    g.fillText("🚂 Little Loco", pad, cv.height - foot / 2);
+    g.font = "700 26px ui-rounded, 'SF Pro Rounded', sans-serif"; g.fillStyle = "#8a9aaa"; g.textAlign = "right";
+    g.fillText((curName ? curName + " · " : "") + new Date().toLocaleDateString(VOICE[LANG][0]), cv.width - pad, cv.height - foot / 2);
+    return cv.toDataURL("image/png");
+  } catch (e) { return null; } finally { URL.revokeObjectURL(url); }
+}
+async function takePhoto() {
+  if (tut) return;
+  unlockAudio();
+  const f = document.createElement("div"); f.className = "flash"; document.body.appendChild(f); setTimeout(() => f.remove(), 600);
+  try { noise(.12, 3000, .4, .02, "highpass"); } catch (e) { sfx.toc(); }
+  const url = await snapRailway();
+  if (!url) { sfx.no(); toast("📸 ✖️"); return; }
+  earnSticker("s_photo");
+  openModal(card => {
+    card.classList.add("photo");
+    h2(card, "📸 " + LX("¡Qué bonito!", "Looking great!", "Trop beau !", "Sieht toll aus!"));
+    const im = addEl(card, "img", "shot"); im.src = url; im.alt = "Little Loco";
+    const r = addEl(card, "div", "bigrow");
+    const s = mkBtn("👨‍👩‍👧 " + LX("Guardar o enviar", "Save or share", "Enregistrer ou partager", "Speichern oder teilen"), "", () => { sfx.click(); parentGate(() => sharePhoto(url)); }); s.classList.add("yes"); r.appendChild(s);
+    r.appendChild(mkBtn("✖️ " + LX("Cerrar", "Close", "Fermer", "Schließen"), "", () => { sfx.click(); closeModal(); }));
+  });
+}
+async function sharePhoto(url) {
+  closeModal();
+  const N = window.__NATIVE__;
+  if (N && N.post) { N.post({ t: "photo", data: url }); return; }
+  try {
+    const blob = await (await fetch(url)).blob(), file = new File([blob], "little-loco.png", { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Little Loco" }); return; }
+  } catch (e) {}
+  const a = document.createElement("a"); a.href = url; a.download = "little-loco.png"; document.body.appendChild(a); a.click(); a.remove();
+}
+$("photoBtn").onclick = () => takePhoto();
+// ---------- ⭐ ask for a rating at happy moments (app only, behind the parental gate)
+let rateDue = false;
+function happyMoment() {
+  const N = window.__NATIVE__; if (!N || !N.post || sget(KEY + "-rated")) return;
+  const n = (sget(KEY + "-happy") || 0) + 1; sset(KEY + "-happy", n);
+  if (n === 4 || n === 15 || n === 40) rateDue = true;
+}
+function maybeAskRate() {
+  if (!rateDue) return;
+  rateDue = false;
+  setTimeout(() => {
+    if (!$("modal").hidden) { rateDue = true; return; }
+    const N = window.__NATIVE__;
+    openModal(card => {
+      card.classList.add("welcome");
+      addEl(card, "div", "agbig", "⭐");
+      h2(card, LX("¿A tus mayores les gusta Little Loco?", "Do your grown-ups like Little Loco?", "Tes parents aiment Little Loco ?", "Mögen deine Eltern Little Loco?"));
+      addEl(card, "p", "", LX("Pídeles que le pongan estrellas. ¡Nos ayuda mucho!", "Ask them to give it some stars. It helps us a lot!", "Demande-leur de lui donner des étoiles. Ça nous aide beaucoup !", "Frag sie, ob sie ein paar Sterne geben. Das hilft uns sehr!"));
+      const row = addEl(card, "div", "bigrow");
+      const a = mkBtn("👨‍👩‍👧 " + LX("Llamar a un mayor", "Get a grown-up", "Appeler un grand"), "", () => { sfx.click(); parentGate(() => { sset(KEY + "-rated", 1); closeModal(); N.post({ t: "review" }); }); }); a.classList.add("yes"); row.appendChild(a);
+      row.appendChild(mkBtn(LX("Ahora no", "Not now", "Pas maintenant", "Jetzt nicht"), "", () => { sfx.click(); closeModal(); }));
+    });
+  }, 500);
+}
+
 // secret switch for testing: 5 quick taps on the parents' page icon
 let secretTaps = [];
 function secretTap() {
@@ -5693,7 +6033,7 @@ function textOf(id) {
 //  UI
 // =====================================================================
 function setRunning(on) {
-  running = on; if (on) $("play").classList.remove("hintplay");
+  running = on; if (on) { $("play").classList.remove("hintplay"); trains.forEach(t => { if (!t.ambient) earnSticker("t_" + t.kind); }); }
   $("play").innerHTML = ic(on ? "pause" : "play"); setTimeout(updateGrid, 0);
   $("play").classList.toggle("on", on);
   $("bottom").classList.toggle("locked", on);
@@ -5889,7 +6229,8 @@ function selectTab(id) {
       const bd = document.createElement("span"); bd.className = "badge"; bd.textContent = "⚡".repeat(K.spd); it.appendChild(bd);
       const flk = fullLocked(k), locked = !flk && shopLocked(k);
       if (flk) fullBadge(it); else if (locked) lockItem(it, k);
-      it.onclick = () => { if (fullLocked(k)) { askGrownUp(); return; } if (locked) { openShop(k); sfx.click(); return; } trainKind = k; selectTool("train"); updateCarsUI(); sfx.click(); };
+      if (flk && trialFree()) { const tb = it.querySelector(".lockb"); if (tb) { tb.textContent = "🎟️"; tb.classList.add("trialb"); } }
+      it.onclick = () => { if (fullLocked(k)) { if (trialFree()) { startTrialPick(k); return; } askGrownUp(); return; } if (locked) { openShop(k); sfx.click(); return; } trainKind = k; selectTool("train"); updateCarsUI(); sfx.click(); };
       pal.appendChild(it);
     });
     pal.appendChild(Object.assign(document.createElement("div"), { className: "sep" }));
@@ -5928,7 +6269,7 @@ function selectTab(id) {
   layoutUI();
 }
 function selectTool(id) {
-  if (fullLocked(id) || (id === "train" && fullLocked(trainKind))) { askGrownUp(); id = "hand"; }
+  if (fullLocked(id) || (id === "train" && fullLocked(trainKind) && trainKind !== trialKind)) { askGrownUp(); id = "hand"; }
   const wasMon = DEFS[tool] && DEFS[tool].mon;
   tool = id; document.body.classList.toggle("toolhand", id === "hand");
   if (wasMon || (DEFS[id] && DEFS[id].mon)) setTimeout(refreshHints, 0); if (typeof updateGrid === "function") setTimeout(updateGrid, 0);
@@ -6009,7 +6350,7 @@ function sget(k) { try { const v = localStorage.getItem(k); return v ? JSON.pars
 function sset(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
 function serialize() {
   return { v: 2, pieces: [...pieces.values()].map(p => p.fx && Object.keys(p.fx).length ? [p.type, p.c, p.r, p.rot, p.state, p.h, p.fx] : [p.type, p.c, p.r, p.rot, p.state, p.h]),
-    trains: trains.map(t => { const p = pieces.get(t.start.pid); return p ? [t.kind, t.cars, p.c, p.r, p.h, t.start.ri, t.start.dir, Math.round(t.start.d || 0), t.c1, t.name] : null; }).filter(Boolean),
+    trains: trains.filter(t => !t.trial).map(t => { const p = pieces.get(t.start.pid); return p ? [t.kind, t.cars, p.c, p.r, p.h, t.start.ri, t.start.dir, Math.round(t.start.d || 0), t.c1, t.name] : null; }).filter(Boolean),
     cars: cars.map(c => { const p = pieces.get(c.start.pid); return p ? [c.kind, c.ci, p.c, p.r, c.start.ri, c.start.dir, Math.round(c.start.d || 0)] : null; }).filter(Boolean) };
 }
 function clearBoard() {
@@ -6461,6 +6802,7 @@ function startTutorial(kind) {
   clearBoard(); setFloor(0); curName = "";
   if (running) setRunning(false);
   selectTab("campo"); selectTool("hand");
+  setTimeout(renderDaily, 0);
   tut = { i: 0, t: 0, drawn: 0, stash, hiT: 0, kind: D ? kind : kind === "alto" ? "alto" : "basic", draw: !!D };
   sset(KEY + "-tut", 1);
   showTutStep();
@@ -6493,7 +6835,7 @@ function showTutStep() {
   tut.t = 0; tut.held = 0; tut.ghosts = (typeof S.ghosts === "function" ? S.ghosts() : S.ghosts) || null;
   slopeSel = null; // the ramp buttons would cover the next yellow box
   if (S.onEnter) S.onEnter();
-  box.hidden = false;
+  box.hidden = false; box.classList.remove("mini"); box.dataset.mini = (tut.i + 1) + "/" + TUT.length;
   box.querySelector(".tem").textContent = S.em;
   box.querySelector(".ttx").textContent = S.tx;
   speak(S.tx);
@@ -6505,22 +6847,29 @@ function showTutStep() {
   if (S.extra) btn(S.extra[0], "go", S.extra[1]);
   if (S.btn) btn(S.btn, "go", nextTutStep);
   if (S.end) {
-    if (tut.kind === "basic") { sset(KEY + "-tutB", 1); markTutHome(); }
+    if (tut.kind === "basic") { sset(KEY + "-tutB", 1); markTutHome(); earnSticker("s_tut"); }
     if (S.next) btn("⛰️ Subir y bajar", "go", () => startTutorial(S.next));
     btn("🗺️ ¡A la aventura!", S.next ? "" : "go", () => { endTutorial(!!tut.stash); openMap(); });
     btn("🏁 Terminar", "", () => endTutorial(false));
     if (tut.stash) btn("↩️ Volver a mi circuito", "", () => endTutorial(true));
-  } else btn("✖️ Salir del tutorial", "", () => endTutorial(!!tut.stash));
+  } else {
+    btn("➖ " + LX("Esconder", "Hide", "Masquer", "Ausblenden"), "", tutMini); // hides the card, the tutorial keeps going
+    btn(LX("Salir del tutorial", "Leave the tutorial", "Quitter le tutoriel", "Anleitung beenden"), "ghost", () => endTutorial(!!tut.stash));
+  }
   box.style.top = ($("top").offsetHeight + 16) + "px";
   drawGhosts(); clearTutHi(); tut.hiT = 0;
   if (S.view && !tut.viewed) { tut.viewed = true; setTimeout(() => tutFit(true), 50); }
   if (S.fitBox) setTimeout(() => tut && tutFit(S.fitBox), 350);
 }
+// the tutorial card can shrink to a small pill so the whole board is visible; a tap brings it back
+function tutMini(e) { if (e && e.stopPropagation) e.stopPropagation(); const b = $("tut"); b.classList.add("mini"); sfx.toc(); }
+$("tut").addEventListener("click", e => { const b = $("tut"); if (e.target.closest(".tb")) return; if (b.classList.contains("mini")) { e.stopPropagation(); b.classList.remove("mini"); sfx.toc(); } });
+$("tut").querySelector(".tem").addEventListener("click", e => { const b = $("tut"); if (!b.classList.contains("mini")) tutMini(e); });
 function nextTutStep() { sfx.bell(); tut.i++; if (tut.i >= TUT.length) endTutorial(false); else showTutStep(); }
 function endTutorial(restore) {
   if (drawAuto) { clearInterval(drawAuto); drawAuto = null; }
   const st = tut && tut.stash;
-  tut = null; $("tut").hidden = true; L.tut.innerHTML = ""; clearTutHi();
+  tut = null; $("tut").hidden = true; L.tut.innerHTML = ""; clearTutHi(); setTimeout(renderDaily, 0);
   if (restore && st) { loadData(st.data); curName = st.name; userMoved = false; fitAll(); autosave(); }
 }
 function tutTick(dt) {
@@ -7076,7 +7425,7 @@ let adv = sget(KEY + "-adv") || { s: {} };
 const lvStars = i => adv.s[LEVELS[i].id] || 0;
 // with the full version every continent can be started straight away; inside a continent levels still open one by one
 const contFirst = i => i > 0 && contOf(i) !== contOf(i - 1);
-const lvOpen = i => i === 0 || !!adv.all || lvStars(i - 1) > 0 || (contFirst(i) && isFull());
+const lvOpen = i => i === 0 || !!adv.all || lvStars(i - 1) > 0 || contFirst(i);
 const usedPieces = () => [...pieces.values()].filter(p => !p.fixed && !DEFS[p.type].deco && !DEFS[p.type].mon && !DEFS[p.type].road).length;
 
 let freeStash = null, invDirty = false;
@@ -7142,6 +7491,10 @@ function showWin() {
   const d = lvl.def, i = lvl.index;
   const coinsOk = lvl.coins.every(k => k.got), used = usedPieces(), parOk = used <= d.par;
   const stars = 1 + (coinsOk ? 1 : 0) + (parOk ? 1 : 0);
+  const firstWin = !(adv.s[d.id] > 0);
+  const villageDone = firstWin && d.zone === "pueblo" && LEVELS.filter(x => x.zone === "pueblo").every(x => x === d || adv.s[x.id] > 0);
+  setTimeout(() => { earnSticker(d.zone === "pueblo" ? "c_village" : "c_" + contOf(i)); if (stars === 3) earnSticker("s_3star"); }, 1200);
+  if (stars === 3) happyMoment();
   adv.s[d.id] = Math.max(adv.s[d.id] || 0, stars); sset(KEY + "-adv", adv);
   tone([523, 659, 784, 1047, 784, 1047, 1319], "triangle", .12, .35, .14);
   const cx = (innerWidth / 2 - view.x) / view.z, cy = (innerHeight / 2 - view.y) / view.z;
@@ -7156,7 +7509,8 @@ function showWin() {
     addEl(card, "p", "", (parOk ? LX("⭐ Usaste pocas piezas (🧱 ", "⭐ You used few pieces (🧱 ", "⭐ Tu as utilisé peu de pièces (🧱 ") + used + ")" : LX(`☆ Usa ${d.par} piezas o menos para la última estrella (usaste ${used})`, `☆ Use ${d.par} pieces or fewer for the last star (you used ${used})`, `☆ Utilise ${d.par} pièces ou moins pour la dernière étoile (tu en as utilisé ${used})`, `☆ Nimm ${d.par} Teile oder weniger für den letzten Stern (du hast ${used} genommen)`)));
     const row = addEl(card, "div", "saveRow"); row.style.justifyContent = "center"; row.style.marginTop = "14px";
     const big = (b, w) => { b.style.width = w || "auto"; b.style.padding = "0 18px"; b.style.fontSize = "22px"; return b; };
-    if (i + 1 < LEVELS.length) row.appendChild(big(mkBtn("▶️ Siguiente", "Siguiente nivel", () => openMap({ from: i, start: true }))));
+    if (villageDone) row.appendChild(big(mkBtn("▶️ Siguiente", "Siguiente nivel", openWorld)));
+    else if (i + 1 < LEVELS.length) row.appendChild(big(mkBtn("▶️ Siguiente", "Siguiente nivel", () => openMap({ from: i, start: true }))));
     else addEl(card, "p", "", "🏆 ¡Has terminado toda la aventura! Un mayor puede empezar de cero desde 👨‍👩‍👧 (en el mapa).");
     row.appendChild(big(mkBtn("🔁 Repetir", "Repetir el nivel", () => startLevel(i))));
     row.appendChild(big(mkBtn("🗺️ Mapa", "Volver al mapa", () => openMap({ from: i }))));
@@ -7198,7 +7552,7 @@ function leaveLevel() {
   lvl = null; setModeUI(); $("lvlbar").classList.remove("show");
 }
 function setModeUI() {
-  const inL = !!lvl;
+  const inL = !!lvl; setTimeout(renderDaily, 0);
   document.body.classList.toggle("lvlmode", inL);
   document.body.classList.toggle("noflo", inL && !Object.keys(lvl.inv).some(isSlope));
   ["saveBtn", "clearBtn", "tutBtn"].forEach(id => $(id).style.display = inL ? "none" : "");
@@ -7218,7 +7572,7 @@ function enterFree() {
     userMoved = false; fitAll();
   }
   if (starterFresh) { starterFresh = false; setTimeout(hintPlay, 300); }
-  selectTab("vias"); selectTool("hand");
+  selectTab("vias"); selectTool("hand"); renderDaily();
   if (!sget(KEY + "-tut") && !freeOffered) { freeOffered = true; offerTutorial(); }
 }
 let freeOffered = false;
@@ -7234,13 +7588,13 @@ function offerTutorial() {
     speak(LX("¡Hola! ¿Te enseño a jugar?", "Hi! Shall I show you how to play?", "Salut ! Je te montre comment jouer ?", "Hallo! Soll ich dir zeigen, wie man spielt?"), { raw: true });
   });
 }
-function goHome() { $("play").classList.remove("hintplay"); if (typeof closeDuel === "function" && $("duel") && !$("duel").hidden) duelStop(), $("duel").hidden = true; if (running) setRunning(false); if (tut) endTutorial(!!tut.stash); closeModal(); $("advmap").hidden = true; $("home").hidden = false; markTutHome(); }
+function goHome() { $("play").classList.remove("hintplay"); setTimeout(maybeAskRate, 600); renderDaily(); if (typeof closeDuel === "function" && $("duel") && !$("duel").hidden) duelStop(), $("duel").hidden = true; if (running) setRunning(false); if (tut) endTutorial(!!tut.stash); closeModal(); $("advmap").hidden = true; $("home").hidden = false; markTutHome(); }
 $("homeBtn").onclick = () => { unlockAudio(); sfx.click(); goHome(); };
 $("parentBtn").onclick = () => goParents();
 $("goTut").onclick = () => { unlockAudio(); sfx.whistleShort(); startTutorial("basic"); };
 $("goDraw").onclick = () => { unlockAudio(); sfx.click(); openLibrary(); };
 $("goTut2").onclick = () => { unlockAudio(); if (!isFull()) { askGrownUp(); return; } sfx.whistleShort(); startTutorial("alto"); };
-function markTutHome() { $("goTut").classList.toggle("new", !sget(KEY + "-tutB")); $("goTut2").hidden = !sget(KEY + "-tutB"); }
+function markTutHome() { $("goTut").classList.toggle("new", !sget(KEY + "-tutB")); $("goTut2").hidden = !sget(KEY + "-tutB"); markStkHome(); }
 $("goAdv").onclick = () => { unlockAudio(); sfx.click(); openMap(); };
 $("goFree").onclick = () => { unlockAudio(); sfx.whistleShort(); enterFree(); };
 $("goDuel").onclick = () => { unlockAudio(); sfx.whistleShort(); openDuel(); };
@@ -7593,6 +7947,10 @@ function openParents(focus) {
       const r = prow(ss, LX("Voces para jugar sin internet", "Voices for offline play", "Voix pour jouer hors ligne", "Stimmen zum Spielen ohne Internet"), LX("Se descargan solas en segundo plano para el idioma elegido.", "They download by themselves in the background for the chosen language.", "Elles se téléchargent toutes seules en arrière-plan pour la langue choisie.", "Sie laden sich im Hintergrund von selbst für die gewählte Sprache."));
       const pr = addEl(r, "div", ""); pr.id = "voicesprog"; pr.textContent = voiceStatusText(LANG);
     }
+    if (window.__NATIVE__ && window.__NATIVE__.post) {
+      const rr = prow(ss.parentNode.querySelector(".psec") ? ss : ss, LX("Valorar Little Loco", "Rate Little Loco", "Noter Little Loco", "Little Loco bewerten"), LX("Unas estrellas en la tienda nos ayudan a seguir mejorando el juego.", "A few stars in the store help us keep improving the game.", "Quelques étoiles dans la boutique nous aident à améliorer le jeu.", "Ein paar Sterne im Store helfen uns, das Spiel weiter zu verbessern."));
+      bt(rr, "⭐", () => { sset(KEY + "-rated", 1); window.__NATIVE__.post({ t: "review" }); });
+    }
     // play
     const sg = sec(LX("Juego", "Play", "Jeu", "Spiel"));
     tg(sg, LX("Herramientas avanzadas", "Advanced tools", "Outils avancés", "Profi-Werkzeuge"), LX("🔧 arreglar, 📐 vista de lado, pisos y mapa siempre a la vista. Apagado, salen solos cuando hacen falta.", "🔧 fix, 📐 side view, floors and map always visible. When off, they appear by themselves when needed.", "🔧 réparer, 📐 vue de côté, étages et carte toujours visibles. Désactivé, ils apparaissent quand il faut.", "🔧 Reparieren, 📐 Seitenansicht, Stockwerke und Karte immer sichtbar. Wenn aus, erscheinen sie bei Bedarf."), proMode,
@@ -7723,7 +8081,7 @@ function drawMapArt(m, MP, cont, pts, proj) {
   el("rect", { x: vx - 600, y: vy - 600, width: vw + 1200, height: vh + 1200, fill: "url(#mvig)", "pointer-events": "none" }, m);
 }
 function openMap(opts) {
-  opts = opts || {};
+  opts = opts || {}; setTimeout(renderDaily, 0);
   if (running) setRunning(false);
   closeModal(); $("home").hidden = true;
   const nextI = LEVELS.findIndex((_, i) => lvOpen(i) && !lvStars(i));
@@ -7737,12 +8095,13 @@ function openMap(opts) {
   const tabs = addEl(top, "div", "mtabs");
   Object.entries(MAPS).forEach(([k, M]) => {
     const first = LEVELS.findIndex((_, i) => contOf(i) === k), open = lvOpen(first);
-    const fl = !isFull() && k !== "eu";
+    const fl = false; // every continent can be visited: its first level is free
     const b = addEl(tabs, "button", "mtab" + (k === cont ? " on" : "") + (open && !fl ? "" : " lk"), (open && !fl ? "" : "🔒 ") + trn(M.name));
     b.onclick = () => { if (fl) { askGrownUp(); return; } if (!open) { sfx.no(); toast("🔒"); return; } sfx.click(); openMap({ cont: k }); };
     if (k === cont) setTimeout(() => b.scrollIntoView({ inline: "center", block: "nearest" }), 0);
   });
   const rs = mkBtn("👨‍👩‍👧", "Página para padres", goParents); rs.classList.add("mpar"); top.appendChild(rs);
+  setTimeout(maybeAskRate, 800);
   const m = el("svg", { viewBox: MP.vb, preserveAspectRatio: "xMidYMid meet" }, box);
   const pts = arr => arr.map(([lo, la]) => proj(lo, la).map(v => v.toFixed(1)).join(",")).join(" ");
   drawMapArt(m, MP, cont, pts, proj);
@@ -8249,7 +8608,7 @@ const I18N_DE = {"Constructor de trenes":"Eisenbahn-Baumeister","🚂 Constructo
 const deOf = s => { if (!s) return ""; const k = s.trim(); return I18N_DE[s] || (I18N_DE[k] ? s.replace(k, I18N_DE[k]) : ""); };
 const LANGS = { es: "🇪🇸", en: "🇬🇧", fr: "🇫🇷", de: "🇩🇪" };
 const I18N = new Map();
-I18N_ROWS.push(["Desafío", "Challenge", "Défi", "Wettkampf"], ["Toca una pieza o un tren para quitarlo. Mantén pulsada la goma para borrarlo todo.", "Tap a piece or a train to remove it. Hold the eraser down to clear everything.", "Touche une pièce ou un train pour l'enlever. Garde le doigt sur la gomme pour tout effacer.", "Tippe ein Teil oder einen Zug an, um es wegzunehmen. Halte den Radierer gedrückt, um alles zu löschen."]);
+I18N_ROWS.push(["Desafío", "Challenge", "Défi", "Wettkampf"], ["Pegatinas", "Stickers", "Autocollants", "Sticker"], ["Foto de mi circuito", "Photo of my railway", "Photo de mon circuit", "Foto von meiner Strecke"], ["Toca una pieza o un tren para quitarlo. Mantén pulsada la goma para borrarlo todo.", "Tap a piece or a train to remove it. Hold the eraser down to clear everything.", "Touche une pièce ou un train pour l'enlever. Garde le doigt sur la gomme pour tout effacer.", "Tippe ein Teil oder einen Zug an, um es wegzunehmen. Halte den Radierer gedrückt, um alles zu löschen."]);
 I18N_ROWS.forEach(([es, en, fr, de]) => I18N.set(es.trim(), { en, fr, de: de || I18N_DE[es.trim()] || en }));
 const LX = (es, en, fr, de) => LANG === "en" ? en : LANG === "fr" ? fr : LANG === "de" ? (de || deOf(es) || en) : es;
 const I18N_PAT = [
@@ -8794,6 +9153,7 @@ function duelResult(W) {
   const m = DUEL.m, d = $("duel");
   m.r.phase = "end";
   const human = m.mode === "ai" ? W.i === 0 : true;
+  if (human) { setTimeout(() => m.evs.forEach(ev => earnSticker("d_" + ev)), 1500); if (m.mode === "ai") happyMoment(); }
   const ov = addEl(d, "div", "dres"), card = addEl(ov, "div", "dcard");
   addEl(card, "div", "dtro", human ? "🏆" : "💪");
   const s = trainIcon(W.k, 2, W.c1, W.c2); s.classList.add("dwin"); card.appendChild(s);
