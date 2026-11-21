@@ -752,6 +752,29 @@ body.playing #photoBtn { display: inline-flex !important; }
   #drive .lever input { height: 56px; width: 28px; } #drive .lever { font-size: 12px; }
   #mini { width: 150px; height: 110px; }
 }
+
+/* driving: a compact round throttle, bottom-left, with its buttons on an arc */
+#drive.dr2 { left: calc(10px + env(safe-area-inset-left)); right: auto; bottom: calc(10px + env(safe-area-inset-bottom)); transform: none; width: 210px; height: 210px; padding: 0; gap: 0;
+  background: none; box-shadow: none; border-radius: 0; pointer-events: none; transform-origin: 0 100%; }
+body.playing #drive.dr2.on { display: block; }
+#drive.dr2 > * { pointer-events: auto; }
+#drive.dr2 .dname, #drive.dr2 .lever { display: none; }
+#drive.dr2 > .b { position: absolute; width: 46px; height: 46px; border-radius: 50%; font-size: 21px; box-shadow: 0 3px 0 #cfdbe6, 0 6px 14px rgba(30,60,90,.25); }
+#drive.dr2 [data-a="horn"] { left: 4px; top: 4px; } #drive.dr2 [data-a="turbo"] { left: 70px; top: 4px; } #drive.dr2 [data-a="jump"] { left: 126px; top: 30px; }
+#drive.dr2 [data-a="rev"] { left: 154px; top: 86px; } #drive.dr2 [data-a="close"] { left: 160px; top: 150px; width: 40px; height: 40px; font-size: 16px; }
+#drive.dr2 .turbo i { left: 8px; right: 8px; width: auto !important; bottom: 5px; height: 5px; border-radius: 3px; background: #eef4f9; }
+#drive.dr2 .turbo i::after { content: ""; position: absolute; inset: 0; width: var(--tb, 0%); background: #ff9800; border-radius: 3px; }
+#drive.dr2 .dial { position: absolute; left: 0; top: 62px; width: 148px; height: 148px; border-radius: 50%; touch-action: none; cursor: grab;
+  background: conic-gradient(from 225deg, #ffb340 0, #ff5e3a var(--p, 135deg), #e6eef5 var(--p, 135deg), #e6eef5 270deg, transparent 270deg);
+  box-shadow: 0 8px 22px rgba(30,60,90,.3); -webkit-mask: radial-gradient(circle, transparent 40px, #000 41px); mask: radial-gradient(circle, transparent 40px, #000 41px); }
+#drive.dr2 .dial { -webkit-mask: none; mask: none; }
+#drive.dr2 .dial::before { content: ""; position: absolute; inset: 18px; border-radius: 50%; background: #fff; box-shadow: inset 0 2px 6px rgba(30,60,90,.15); }
+#drive.dr2 .knob { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
+#drive.dr2 .knob::after { content: ""; position: absolute; left: -11px; top: -74px; width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 4px solid #ff5e3a; box-shadow: 0 2px 6px rgba(0,0,0,.3); box-sizing: border-box; }
+#drive.dr2 .dc { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 78px; height: 78px; border-radius: 50%; font-size: 32px; background: #fff; box-shadow: none; }
+#drive.dr2 .dial.stopped .dc { background: #e6f7e9; }
+body.playing.driving #hzPlay { bottom: calc(230px + env(safe-area-inset-bottom)) !important; }
+@media (max-height: 500px) { #drive.dr2 { transform: scale(.78); } body.playing.driving #hzPlay { bottom: calc(180px + env(safe-area-inset-bottom)) !important; } }
 </style>
 </head>
 <body>
@@ -4251,9 +4274,12 @@ function c3Cab(tr, dt, spd) {
     g.addColorStop(0, dark); g.addColorStop(.45, c3Shade(col, 1.15)); g.addColorStop(1, dark);
     c3.fillStyle = g; c3.beginPath(); c3.moveTo(W / 2 - bw / 2, H); c3.lineTo(W / 2 - bw * .16, by - H * .1); c3.quadraticCurveTo(W / 2, by - H * .14, W / 2 + bw * .16, by - H * .1); c3.lineTo(W / 2 + bw / 2, H); c3.closePath(); c3.fill();
     c3.strokeStyle = "#e3b000"; c3.lineWidth = 5; [.35, .7].forEach(k => { c3.beginPath(); const yy = by - H * .1 + (H - by + H * .1) * k, ww = bw * (.16 + .34 * k); c3.moveTo(W / 2 - ww, yy); c3.quadraticCurveTo(W / 2, yy - 14 * (1 - k) - 6, W / 2 + ww, yy); c3.stroke(); });
-    const chx = W / 2, chy = by - H * .12, cw = bw * .09;
-    c3.fillStyle = "#2b2b2b"; c3.fillRect(chx - cw / 2, chy - H * .08, cw, H * .08); c3.fillRect(chx - cw * .75, chy - H * .095, cw * 1.5, H * .025);
-    if (spd && Math.random() < dt * 9) c3Smoke.push({ x: chx, y: chy - H * .09, r: cw * .45, a: .5, vx: (Math.random() < .5 ? -1 : 1) * (40 + Math.random() * 60) });
+    // a small brass steam dome on the boiler (the chimney is further ahead, out of sight): smoke drifts up from beyond it
+    const chx = W / 2, chy = by - H * .118, dw = bw * .075, dh = H * .028;
+    const dg2 = c3.createLinearGradient(chx - dw, 0, chx + dw, 0); dg2.addColorStop(0, "#9a6a00"); dg2.addColorStop(.45, "#ffe08a"); dg2.addColorStop(1, "#9a6a00");
+    c3.fillStyle = dg2; c3.beginPath(); c3.ellipse(chx, chy, dw, dh, 0, Math.PI, 0); c3.fill();
+    c3.fillStyle = "rgba(255,255,255,.35)"; c3.beginPath(); c3.ellipse(chx - dw * .3, chy - dh * .45, dw * .25, dh * .25, 0, 0, 7); c3.fill();
+    if (spd && Math.random() < dt * 7) c3Smoke.push({ x: chx + (Math.random() - .5) * dw, y: chy - dh * 1.6, r: dw * .5, a: .42, vx: (Math.random() < .5 ? -1 : 1) * (40 + Math.random() * 60) });
   } else {
     // a sloping nose with a wiper line for diesel, electric and bullet trains
     const g = c3.createLinearGradient(0, by - H * .06, 0, H);
@@ -4270,7 +4296,7 @@ function c3Cab(tr, dt, spd) {
   const dg = c3.createLinearGradient(0, H * .9, 0, H); dg.addColorStop(0, "#6b4219"); dg.addColorStop(1, "#3b2410");
   c3.fillStyle = dg; c3.beginPath(); c3.moveTo(0, H * .92); c3.quadraticCurveTo(W / 2, H * .88, W, H * .92); c3.lineTo(W, H); c3.lineTo(0, H); c3.closePath(); c3.fill();
   // a speed gauge on the dashboard
-  const gx = W * .14, gy = H * .955, gr = Math.min(36, H * .05), v = clamp((tr.vm == null ? 1 : tr.vm) * speed * spd / 2.2, 0, 1);
+  const gx = W * .86, gy = H * .955, gr = Math.min(36, H * .05), v = clamp((tr.vm == null ? 1 : tr.vm) * speed * spd / 2.2, 0, 1);
   c3.fillStyle = "#fff8e8"; c3.beginPath(); c3.arc(gx, gy, gr, Math.PI, 0); c3.fill(); c3.strokeStyle = "#e3b000"; c3.lineWidth = 4; c3.stroke();
   c3.strokeStyle = "#d63a2f"; c3.lineWidth = 3; c3.beginPath(); c3.moveTo(gx, gy); c3.lineTo(gx - Math.cos(v * Math.PI) * gr * .85, gy - Math.sin(v * Math.PI) * gr * .85); c3.stroke();
 }
@@ -4774,18 +4800,30 @@ function drvPost(tr) {
 const isFreight = tr => tr.kind === "mercancias";
 // ---------- the panel
 const drv = document.createElement("div"); drv.id = "drive";
+drv.className = "dr2";
 drv.innerHTML = `<div class="dname"></div>
   <button class="b" data-a="horn" title="Pitar">📣</button>
-  <button class="b" data-a="stop" title="Parar / arrancar">🛑</button>
   <button class="b turbo" data-a="turbo" title="Turbo">🚀<i></i></button>
   <button class="b" data-a="jump" title="Saltar">🦘</button>
   <button class="b" data-a="rev" title="Marcha atrás">⏪</button>
-  <label class="lever" title="Palanca de velocidad"><span>🐇</span><input type="range" min="0" max="2" step="0.05" value="1"><span>🛑</span></label>
-  <button class="b" data-a="close" title="Dejar de conducir">✖️</button>`;
+  <button class="b" data-a="close" title="Dejar de conducir">✖️</button>
+  <div class="dial" title="Velocidad: gira la rueda. Toca el centro para parar o arrancar."><i class="knob"></i><button class="b dc" data-a="stop" title="Parar / arrancar">🛑</button></div>
+  <label class="lever" title="Palanca de velocidad"><input type="range" min="0" max="2" step="0.05" value="1"></label>`;
 document.body.appendChild(drv);
 const lever = drv.querySelector("input");
 lever.oninput = () => { if (!drvSel) return; drvSel.thr = +lever.value; if (drvSel.thr > 0) drvSel.prevThr = drvSel.thr; unlockAudio(); };
 drv.querySelectorAll("button").forEach(b => b.onclick = e => { e.stopPropagation(); unlockAudio(); drvAction(b.dataset.a); });
+// the round throttle: drag around the ring (bottom-left = stop, top = cruising, bottom-right = full speed)
+{ const dial = drv.querySelector(".dial"); let dragging = false, moved = false, sx = 0, sy = 0;
+  const setFrom = e => {
+    const r = dial.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    let a = Math.atan2(dx, -dy) * 180 / Math.PI; a = (a - 225 + 720) % 360; if (a > 270) a = a > 315 ? 0 : 270;
+    lever.value = (a / 270 * 2).toFixed(2); lever.oninput(); drvRefresh();
+  };
+  dial.addEventListener("pointerdown", e => { if (e.target.closest(".dc")) return; dragging = true; moved = false; sx = e.clientX; sy = e.clientY; try { dial.setPointerCapture(e.pointerId); } catch (er) {} setFrom(e); e.preventDefault(); });
+  dial.addEventListener("pointermove", e => { if (!dragging) return; if (Math.hypot(e.clientX - sx, e.clientY - sy) > 4) moved = true; setFrom(e); });
+  ["pointerup", "pointercancel"].forEach(ev => dial.addEventListener(ev, () => { if (dragging && moved) tone([520], "sine", 0, .05, .05); dragging = false; }));
+}
 function drvAction(a) {
   const tr = drvSel;
   if (a === "close") { drvSelect(null); sfx.click(); return; }
@@ -4828,8 +4866,11 @@ function drvRefresh() {
   const tr = drvSel; if (!tr) return;
   drv.querySelector('[data-a="stop"]').textContent = tr.thr > 0 ? "🛑" : "▶️";
   if (document.activeElement !== lever) lever.value = tr.thr;
+  const pp = clamp((tr.thr || 0) / 2, 0, 1), dial = drv.querySelector(".dial");
+  dial.style.setProperty("--p", (pp * 270).toFixed(1) + "deg"); dial.querySelector(".knob").style.transform = `rotate(${(225 + pp * 270).toFixed(1)}deg)`;
+  dial.classList.toggle("stopped", !(tr.thr > 0));
   const t = drv.querySelector(".turbo"), k = tr.turbo > 0 ? 1 : (tr.tm || 0);
-  t.querySelector("i").style.width = Math.round(k * 100) + "%";
+  t.querySelector("i").style.width = Math.round(k * 100) + "%"; t.style.setProperty("--tb", Math.round(k * 100) + "%");
   t.classList.toggle("ready", k >= .3 && !(tr.turbo > 0)); t.classList.toggle("on", tr.turbo > 0);
 }
 function drvTick() {
