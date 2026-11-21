@@ -775,6 +775,22 @@ body.playing #drive.dr2.on { display: block; }
 #drive.dr2 .dial.stopped .dc { background: #e6f7e9; }
 body.playing.driving #hzPlay { bottom: calc(230px + env(safe-area-inset-bottom)) !important; }
 @media (max-height: 500px) { #drive.dr2 { transform: scale(.78); } body.playing.driving #hzPlay { bottom: calc(180px + env(safe-area-inset-bottom)) !important; } }
+
+/* riding in the cab: only what's needed — play/pause, the throttle and the camera buttons */
+body.cab #top .grp:not(:first-child), body.cab #top .grp > :not(#play), body.cab #daily, body.cab #side > :not(#camBox), body.cab #lvlbar { display: none !important; }
+body.cab #top .grp:first-child { background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; padding: 0; }
+body.cab #side { top: calc(12px + env(safe-area-inset-top)); bottom: auto !important; transform: none; }
+/* a smaller throttle */
+#drive.dr2 { width: 172px; height: 172px; }
+#drive.dr2 > .b { width: 40px; height: 40px; font-size: 18px; }
+#drive.dr2 [data-a="horn"] { left: 2px; top: 2px; } #drive.dr2 [data-a="turbo"] { left: 56px; top: 2px; } #drive.dr2 [data-a="jump"] { left: 104px; top: 24px; }
+#drive.dr2 [data-a="rev"] { left: 128px; top: 72px; } #drive.dr2 [data-a="close"] { left: 134px; top: 124px; width: 34px; height: 34px; font-size: 14px; }
+#drive.dr2 .dial { top: 52px; width: 120px; height: 120px; }
+#drive.dr2 .dial::before { inset: 15px; }
+#drive.dr2 .knob::after { left: -9px; top: -60px; width: 18px; height: 18px; border-width: 3px; }
+#drive.dr2 .dc { width: 62px; height: 62px; font-size: 26px; }
+body.playing.driving #hzPlay { bottom: calc(190px + env(safe-area-inset-bottom)) !important; }
+@media (max-height: 500px) { #drive.dr2 { transform: scale(.75); } body.playing.driving #hzPlay { bottom: calc(140px + env(safe-area-inset-bottom)) !important; } }
 </style>
 </head>
 <body>
