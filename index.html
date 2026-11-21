@@ -718,6 +718,40 @@ body.playing #photoBtn { display: inline-flex !important; }
   #tut .tbtns { gap: 6px; margin-top: 6px; } #tut .tdots i { width: 7px; height: 7px; }
   .stkpop { bottom: calc(80px + env(safe-area-inset-bottom)); }
 }
+
+/* phones: one bottom row (sections + pieces), hideable; slimmer top bars */
+#toolsHide, #toolsShow { display: none; }
+@media (max-height: 500px) {
+  #bottom { flex-direction: row; align-items: center; gap: 6px; background: #fff; border-radius: 20px 20px 0 0; box-shadow: 0 -6px 18px rgba(30,60,90,.15);
+    padding: 5px 6px calc(5px + env(safe-area-inset-bottom)) calc(6px + env(safe-area-inset-left)); transition: transform .25s ease; }
+  #bottom #info { position: absolute; left: 0; bottom: 100%; margin: 0 0 0 calc(10px + env(safe-area-inset-left)); }
+  #tabs { flex: 0 1 auto; max-width: 44vw; background: none; box-shadow: none; padding: 0 6px 0 0; border-radius: 0; border-right: 2px solid #e3ebf2; gap: 4px; }
+  .tab { min-width: 40px; height: 40px; padding: 0 4px; }
+  .stab { height: 36px; padding: 0 7px; } .stab span { display: none; }
+  #subtabs { margin-left: 4px; padding-left: 6px; }
+  #palette { flex: 1 1 0; min-width: 0; background: none; padding: 0; gap: 5px; }
+  .it { flex-basis: 46px; height: 46px; } .it.wide { flex-basis: 76px; }
+  #toolsHide { display: inline-flex; flex: 0 0 36px; width: 36px; height: 36px; font-size: 18px; border-radius: 50%; background: #eef4f9; box-shadow: none; color: #5a6b7c; }
+  body.toolsoff #bottom { transform: translateY(calc(100% + 12px)); }
+  body.toolsoff #bottom #info { display: none; }
+  body.toolsoff #toolsShow { display: inline-flex; position: fixed; left: calc(10px + env(safe-area-inset-left)); bottom: calc(10px + env(safe-area-inset-bottom)); z-index: 6; width: 48px; height: 48px; font-size: 24px; border-radius: 50%; }
+  body.playing #toolsShow { display: none !important; }
+  .b { width: 40px; height: 40px; border-radius: 13px; }
+  #play { width: 48px; height: 48px; }
+  .ico { display: none; } #speed { width: 70px; }
+  #zin, #zout { display: none !important; }
+  #side { top: auto; bottom: calc(70px + env(safe-area-inset-bottom)); transform: none; }
+  body.toolsoff #side, body.playing #side { bottom: calc(14px + env(safe-area-inset-bottom)); }
+  #daily { right: auto; left: 50%; transform: translateX(-50%); top: calc(10px + env(safe-area-inset-top)) !important; }
+  #daily.bump { animation: none; }
+  #hzPlay { bottom: calc(66px + env(safe-area-inset-bottom)); }
+  body.playing #hzPlay { bottom: calc(12px + env(safe-area-inset-bottom)); }
+  body.playing.driving #hzPlay { bottom: calc(96px + env(safe-area-inset-bottom)); }
+  #drive { gap: 5px; padding: 5px 8px; border-radius: 20px; bottom: calc(6px + env(safe-area-inset-bottom)); }
+  #drive .b { width: 42px; height: 42px; font-size: 20px; } #drive .dname { display: none; }
+  #drive .lever input { height: 56px; width: 28px; } #drive .lever { font-size: 12px; }
+  #mini { width: 150px; height: 110px; }
+}
 </style>
 </head>
 <body>
@@ -786,6 +820,7 @@ body.playing #photoBtn { display: inline-flex !important; }
   </div>
 </div>
 <div id="playHint"></div>
+<button class="b" id="toolsShow" title="Mostrar las piezas">🧰</button>
 <div id="fixbar" hidden></div>
 <div id="sideview" hidden><div class="svtop"><b>📐 Vista de lado</b><span class="svmsg"></span><button class="b" id="sideClose" title="Cerrar">✖️</button></div><svg xmlns="http://www.w3.org/2000/svg"></svg></div>
 <canvas id="mini" width="400" height="292"></canvas>
@@ -793,6 +828,7 @@ body.playing #photoBtn { display: inline-flex !important; }
   <div id="info"></div>
   <div id="tabs"></div>
   <div id="palette"></div>
+  <button class="b" id="toolsHide" title="Esconder las piezas">▾</button>
 </div>
 <div id="lvlbar"></div>
 <div id="home" class="screen">
@@ -6300,6 +6336,10 @@ function updateCarsUI() {
   ic.style.height = "44px"; ic.style.width = Math.min(250, 30 + (trainCars + 1) * 32) + "px";
   s.appendChild(ic);
 }
+// phones: the piece bar can slide away to free the whole board
+function setToolsHidden(on) { document.body.classList.toggle("toolsoff", on); sfx.toc(); setTimeout(() => { try { layoutUI(); } catch (e) {} }, 260); }
+$("toolsHide").onclick = () => setToolsHidden(true);
+$("toolsShow").onclick = () => { unlockAudio(); setToolsHidden(false); };
 function layoutUI() {
   $("mini").style.bottom = (bottomH() + 10) + "px";
   const lb = $("lvlbar"), top = lb && lb.classList.contains("show") ? lb.getBoundingClientRect().bottom : $("top").getBoundingClientRect().bottom;
