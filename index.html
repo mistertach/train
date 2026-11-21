@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>Constructor de trenes</title>
+<title>Little Loco</title>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; height: 100%; overflow: hidden; background: #b98a5a; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -645,7 +645,7 @@
     </g>
   </svg>
   <button class="b hpar" id="parentBtn" title="Página para padres">👨‍👩‍👧</button>
-  <h1 class="hlogo">🚂 Constructor de trenes</h1>
+  <h1 class="hlogo">🚂 Little Loco</h1>
   <div class="hcards">
     <div class="hcard adv" id="goAdv"><div class="big">🗺️</div><b>Aventura</b></div>
     <div class="hcard free"><div class="hmain" id="goFree"><div class="big">🧱</div><b>Juego libre</b></div><button class="hlib" id="goDraw"><span class="big">📚</span><b>Biblioteca</b></button></div>
@@ -8111,7 +8111,7 @@ const trObs = new MutationObserver(list => {
   } finally { trObs.takeRecords(); trBusy = false; }
 });
 trObs.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: TR_ATTRS });
-const TITLES = { es: "Constructor de trenes", en: "Train Builder", fr: "Constructeur de trains", de: "Eisenbahn-Baumeister" };
+const TITLES = { es: "Little Loco", en: "Little Loco", fr: "Little Loco", de: "Little Loco" }; // the brand name stays the same in every language
 function setLang(l, save) {
   LANG = LANGS[l] ? l : "es"; try { loadClipIndex(LANG); } catch (e) {}
   try { const N = window.__NATIVE__; if (N && N.post) N.post({ t: "voices", lang: LANG }); } catch (e) {}
