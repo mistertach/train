@@ -551,6 +551,88 @@
 .pnum { font-weight: 900; color: #b07a1a; font-size: 15px; white-space: nowrap; }
 .psec .langpick { justify-content: flex-start; margin: 6px 0; }
 #voicesprog { font-weight: 800; font-size: 14px; color: #2f6fb0; white-space: nowrap; }
+
+/* ===== Little Loco look, shared by every screen (white surfaces, soft shadows, coloured accents) ===== */
+:root { --ll-blue: linear-gradient(165deg, #4fb6ff, #1f6fd1); --ll-pink: linear-gradient(165deg, #ff6f86, #c2185b); --ll-green: linear-gradient(165deg, #5fd36f, #25a244);
+  --ll-glass: rgba(255,255,255,.82); --ll-shadow: 0 8px 24px rgba(30,60,90,.2); --ll-ink: #2c3e50; }
+html, body { background: #bfe3f5 repeating-linear-gradient(0deg, rgba(255,255,255,.08) 0 2px, transparent 2px 28px); }
+.b { border: 0; background: #fff; border-radius: 18px; color: var(--ll-ink); box-shadow: 0 4px 0 #cfdbe6, 0 6px 14px rgba(30,60,90,.14); position: relative; }
+.b:active { transform: translateY(3px) scale(.96); box-shadow: 0 1px 0 #cfdbe6, 0 2px 6px rgba(30,60,90,.14); }
+#play { background: var(--ll-green); border: 0; border-radius: 50%; box-shadow: 0 5px 0 #17652b, 0 10px 20px rgba(30,110,50,.3); }
+#play.on { background: linear-gradient(165deg, #ffd84d, #ffa600); box-shadow: 0 5px 0 #b37400, 0 10px 20px rgba(160,110,0,.3); }
+#play.hintplay { animation: hglow 1.3s ease-in-out infinite; }
+#play.hintplay::after { content: attr(data-hint); position: absolute; left: -6px; top: calc(100% + 14px); background: #fff; color: #1f7a38; font-weight: 900; font-size: 19px; padding: 9px 16px; border-radius: 999px;
+  white-space: nowrap; box-shadow: var(--ll-shadow); pointer-events: none; animation: hbob 1.6s ease-in-out infinite; }
+#play.hintplay::before { content: ""; position: absolute; left: 28px; top: calc(100% + 6px); border: 9px solid transparent; border-bottom-color: #fff; border-top: 0; }
+.grp, #floorBox, #camBox { background: var(--ll-glass); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-radius: 26px; box-shadow: var(--ll-shadow); }
+#speed { background: linear-gradient(90deg, #7fd37f, #4fb6ff); }
+#speed::-webkit-slider-thumb { border: 4px solid #1f6fd1; } #speed::-moz-range-thumb { border: 4px solid #1f6fd1; }
+#floorShow { background: #fff4d6; border-color: #ffc94d; }
+#sideBtn.on, #camBox .b.on { background: #ffe58a; }
+#info { background: rgba(255,255,255,.97); color: var(--ll-ink); box-shadow: 0 -4px 14px rgba(30,60,90,.12); border-radius: 18px 18px 0 0; }
+#info.lock { background: #fff4d6; }
+#tabs { background: #fff; padding: 8px 10px 4px; gap: 8px; border-radius: 26px 26px 0 0; box-shadow: 0 -8px 22px rgba(30,60,90,.16); position: relative; }
+.tab { background: #eef4f9; color: #3b4a5a; border-radius: 16px; height: 54px; }
+.tab.sel { background: var(--ll-blue); color: #fff; transform: none; box-shadow: 0 3px 0 #17519b; }
+#subtabs { border-left: 2px solid #e3ebf2; }
+.stab { background: #eef4f9; color: #3b4a5a; }
+.stab.sel { background: #ffe58a; color: #3b2a18; box-shadow: 0 0 0 3px #ffc94d; }
+#palette { background: #fff; }
+.it { background: #f6f9fc; border: 4px solid #e6eef5; border-radius: 18px; box-shadow: 0 3px 0 #d5e1ec; }
+.it.sel { border-color: #ff9f1a; background: #fff4e0; box-shadow: 0 6px 0 #e08600; }
+#lvlbar { background: var(--ll-glass); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: var(--ll-shadow); }
+#lvlbar .chip { border: 0; background: #f1f6fa; }
+#tut, #fixbar, #guidebar { background: #fff; border: 4px solid #ffd34d; box-shadow: 0 12px 30px rgba(30,60,90,.28); }
+#tut .tb { border: 0; background: #eef4f9; color: var(--ll-ink); box-shadow: 0 3px 0 #cfdbe6; border-radius: 999px; }
+#tut .tb.go { background: var(--ll-green); color: #fff; box-shadow: 0 3px 0 #17652b; }
+#playHint, #menuPop, #sideview { background: rgba(255,255,255,.97); border: 0; box-shadow: var(--ll-shadow); }
+#modal { background: rgba(20,40,70,.45); }
+.card { background: #fff; border: 0; box-shadow: 0 24px 60px rgba(20,40,70,.35); }
+.proj { border: 3px solid #e6eef5; border-radius: 20px; } .proj:hover { border-color: #4fb6ff; }
+/* language dropdown */
+.langdd { position: relative; }
+#home > .langdd { position: absolute; left: calc(12px + env(safe-area-inset-left)); top: calc(10px + env(safe-area-inset-top)); z-index: 3; }
+.langcur { display: flex; align-items: center; gap: 6px; height: 46px; padding: 0 14px 0 10px; border: 0; border-radius: 999px; background: rgba(255,255,255,.88); box-shadow: 0 4px 12px rgba(30,60,90,.22);
+  cursor: pointer; font-family: inherit; color: var(--ll-ink); }
+.langcur .lf { font-size: 24px; } .langcur b { font-size: 15px; letter-spacing: .5px; } .langcur i { font-style: normal; font-size: 12px; opacity: .6; }
+.langmenu { position: absolute; top: calc(100% + 8px); left: 0; background: #fff; border-radius: 20px; padding: 6px; box-shadow: 0 14px 34px rgba(20,40,70,.3); display: flex; flex-direction: column; gap: 2px; min-width: 190px; animation: cardin .16s ease-out; }
+.langmenu[hidden] { display: none; }
+.langopt { display: flex; align-items: center; gap: 12px; border: 0; background: none; border-radius: 14px; padding: 10px 12px; font: inherit; font-size: 17px; font-weight: 800; color: var(--ll-ink); cursor: pointer; text-align: left; }
+.langopt .lf { font-size: 24px; } .langopt:hover { background: #f1f6fa; } .langopt.on { background: #e6f2ff; color: #1f6fd1; }
+/* adventure map */
+#advmap .mtop { left: calc(10px + env(safe-area-inset-left)); right: calc(10px + env(safe-area-inset-right)); background: var(--ll-glass); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border-radius: 28px; padding: 6px; box-shadow: var(--ll-shadow); gap: 8px; }
+#advmap .mtop .b { width: 52px; height: 52px; flex: 0 0 52px; }
+#advmap .mtop .title { background: #fff4d6; color: #a35f00; border-radius: 999px; padding: 0 16px; height: 44px; display: flex; align-items: center; font-size: 19px; box-shadow: none; white-space: nowrap; }
+.mtabs { display: flex; gap: 4px; background: #eef4f9; border-radius: 999px; padding: 4px; overflow-x: auto; scrollbar-width: none; min-width: 0; flex: 0 1 auto; }
+.mtabs::-webkit-scrollbar { display: none; }
+.mtab { border: 0; background: transparent; border-radius: 999px; padding: 0 16px; height: 40px; font: inherit; font-size: 16px; font-weight: 800; color: #3b4a5a; white-space: nowrap; cursor: pointer; flex: 0 0 auto; }
+.mtab.on { background: var(--ll-blue); color: #fff; box-shadow: 0 3px 0 #17519b; }
+.mtab.lk { opacity: .55; }
+#advmap .mtop .mpar { margin-left: auto; }
+@media (max-width: 700px) { #advmap .mtop .title { display: none; } }
+/* train challenge: pick screen */
+#duel.dpick { background: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 300' preserveAspectRatio='none'%3E%3Cpath d='M0 120 Q200 40 420 100 T860 80 T1300 70 T1600 100 V300 H0 Z' fill='%239fd98a'/%3E%3Cpath d='M0 190 Q300 120 620 180 T1200 160 T1600 170 V300 H0 Z' fill='%237cc36a'/%3E%3Cpath d='M0 250 Q400 220 800 240 T1600 235 V300 H0 Z' fill='%235fa64f'/%3E%3C/svg%3E") bottom / 100% 38vh no-repeat, linear-gradient(#69c3f5 0%, #a9e0fb 45%, #e4f7ff 75%); }
+#duel h1 { color: #fff; -webkit-text-stroke: clamp(5px, .6vw, 8px) #6b4219; paint-order: stroke fill; text-shadow: 0 5px 0 #6b4219, 0 10px 20px rgba(40,60,90,.3); font-weight: 900; }
+#duel .dlong { display: none; }
+.dhint.sm { background: rgba(255,255,255,.85); color: #3b4a5a; border-radius: 999px; padding: 8px 18px; font-size: 15px; box-shadow: 0 4px 12px rgba(30,60,90,.15); }
+.dchip { background: #fff; border: 0; color: var(--ll-ink); box-shadow: 0 4px 0 #cfdbe6, 0 6px 14px rgba(30,60,90,.14); border-radius: 999px; }
+.dchip:active { box-shadow: 0 1px 0 #cfdbe6; }
+.dchip.on { background: var(--ll-pink); color: #fff; box-shadow: 0 4px 0 #8e0f40, 0 6px 14px rgba(150,20,70,.25); }
+.dchip.sm { border: 0; box-shadow: 0 3px 0 #cfdbe6; } .dchip.sm.on { box-shadow: 0 3px 0 #8e0f40; }
+.dchip.ev { width: 124px; height: 104px; border-radius: 26px; padding: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; position: relative; white-space: normal; text-align: center; }
+.dchip.ev .dem { font-size: 40px; line-height: 1; } .dchip.ev b { font-size: 15px; line-height: 1.1; }
+.dchip.ev.lk { opacity: .7; } .dchip.ev .dlk { position: absolute; top: 6px; right: 8px; font-size: 16px; }
+.dcol { background: #fff; border: 0 !important; box-shadow: var(--ll-shadow); border-radius: 28px; }
+.dcol h2 { align-self: center; color: #fff; padding: 4px 22px; border-radius: 999px; font-size: 20px; }
+.dcol.p1 h2 { background: linear-gradient(165deg, #ff7a6b, #d63a2f); } .dcol.p2 h2 { background: var(--ll-blue); }
+.dtr { border: 3px solid #e6eef5; border-radius: 18px; } .dtr.on { border-color: #2fb34f; background: #e9f8ec; box-shadow: 0 0 0 3px #b5e8bf; }
+.dbar { background: #eef4f9; } .dstats .dtt { color: #7a8a9a; }
+.dgo { background: var(--ll-green); border: 0; border-radius: 999px; box-shadow: 0 6px 0 #17652b, 0 12px 24px rgba(30,110,50,.3); }
+.dgo:active { box-shadow: 0 2px 0 #17652b; }
+.dgo.alt { background: #fff; color: var(--ll-ink); border: 0; box-shadow: 0 6px 0 #cfdbe6, 0 10px 20px rgba(30,60,90,.18); }
+@media (max-width: 820px), (max-height: 560px) { .dchip.ev { width: 92px; height: 78px; border-radius: 20px; } .dchip.ev .dem { font-size: 28px; } .dchip.ev b { font-size: 12px; } }
+@media (max-height: 560px) { .dchip.ev { width: auto; height: 42px; flex-direction: row; padding: 0 14px 0 8px; gap: 6px; border-radius: 999px; } .dchip.ev .dem { font-size: 22px; } .dchip.ev b { font-size: 13px; white-space: nowrap; } .dchip.ev .dlk { position: static; font-size: 12px; } #duel h1 { font-size: 24px !important; } .dcol { padding: 6px 10px; } .dgo { font-size: 20px; padding: 6px 26px; } }
 </style>
 </head>
 <body>
@@ -5557,7 +5639,7 @@ function textOf(id) {
 //  UI
 // =====================================================================
 function setRunning(on) {
-  running = on;
+  running = on; if (on) $("play").classList.remove("hintplay");
   $("play").innerHTML = ic(on ? "pause" : "play"); setTimeout(updateGrid, 0);
   $("play").classList.toggle("on", on);
   $("bottom").classList.toggle("locked", on);
@@ -6613,9 +6695,25 @@ const PROJECTS = [
     return [["vapor", 3, "coaster"], ["tranvia", 2, "kid"]];
   } },
 ];
+// the very first free play: a small oval with one train, ready to run
+const STARTER = { name: "", build(m) {
+  paint("parque", 15, 11, 21, 14);
+  const P = (t, c, r, rot = 0) => addPiece(t, c, r, rot, 0, 0);
+  P("curva", 14, 10, 2); P("curva", 22, 10, 3); P("curva", 14, 15, 1); P("curva", 22, 15, 0);
+  P("estacion", 15, 10); P("recta", 17, 10); P("recta", 19, 10); P("corta", 21, 10);
+  m.a = { p: P("recta", 15, 15), ri: 0, dir: 1 }; P("recta", 17, 15); P("recta", 19, 15); P("corta", 21, 15);
+  [11, 12, 13, 14].forEach(r => { P("corta", 14, r, 1); P("corta", 22, r, 1); });
+  deco("arbol", [[17, 12], [20, 13], [12, 16], [25, 9]]); deco("flores", [[16, 13], [19, 12]]); deco("casa", [[12, 11]]); deco("pino", [[24, 12], [25, 14]]); deco("oveja", [[11, 14]]);
+  return [["vapor", 2, "a"]];
+} };
+let starterFresh = false;
+function hintPlay() {
+  const p = $("play"); p.dataset.hint = LX("¡Pulsa para arrancar!", "Tap to start!", "Appuie pour démarrer !", "Tippen zum Starten!"); p.classList.add("hintplay");
+  setTimeout(() => { if (p.classList.contains("hintplay") && $("modal").hidden && !tut) speak(p.dataset.hint, { raw: true }); }, 700);
+}
 function buildProjects() {
   noDraw = true;
-  PROJECTS.forEach(pr => {
+  [...PROJECTS, STARTER].forEach(pr => {
     [...pieces.values()].forEach(removePiece); cellP.forEach(a => a.length = 0);
     const marks = {};
     try {
@@ -7032,9 +7130,10 @@ function enterFree() {
     const auto = sget(KEY + "-auto");
     if (freeStash) { loadData(freeStash.data); curName = freeStash.name; }
     else if (auto && auto.data && auto.data.pieces && auto.data.pieces.length) { loadData(auto.data); curName = auto.name || ""; }
-    else { loadData(PROJECTS[0].data); curName = PROJECTS[0].name; }
+    else { loadData(STARTER.data); curName = ""; starterFresh = true; }
     userMoved = false; fitAll();
   }
+  if (starterFresh) { starterFresh = false; setTimeout(hintPlay, 300); }
   selectTab("vias"); selectTool("hand");
   if (!sget(KEY + "-tut") && !freeOffered) { freeOffered = true; offerTutorial(); }
 }
@@ -7546,17 +7645,18 @@ function openMap(opts) {
   const cont = opts.cont || contOf(target), MP = MAPS[cont], proj = MP.proj;
   const box = $("advmap"); box.hidden = false; box.innerHTML = "";
   const top = addEl(box, "div", "mtop");
-  top.appendChild(mkBtn("🏠", "Inicio", goHome));
+  const hb = mkBtn("", "Inicio", goHome); hb.innerHTML = ic("home"); top.appendChild(hb);
   const total = LEVELS.reduce((a, _, i) => a + lvStars(i), 0);
   addEl(top, "div", "title", "⭐ " + total + " / " + LEVELS.length * 3);
+  const tabs = addEl(top, "div", "mtabs");
   Object.entries(MAPS).forEach(([k, M]) => {
     const first = LEVELS.findIndex((_, i) => contOf(i) === k), open = lvOpen(first);
     const fl = !isFull() && k !== "eu";
-    const b = mkBtn((open && !fl ? "" : "🔒 ") + M.name, M.name, () => { if (fl) { askGrownUp(); return; } if (!open) { sfx.no(); toast("🔒"); return; } sfx.click(); openMap({ cont: k }); });
-    b.style.width = "auto"; b.style.padding = "0 14px"; b.style.fontSize = "18px"; if (k === cont) { b.style.background = "#ffd34d"; b.style.borderColor = "#b8860b"; }
-    top.appendChild(b);
+    const b = addEl(tabs, "button", "mtab" + (k === cont ? " on" : "") + (open && !fl ? "" : " lk"), (open && !fl ? "" : "🔒 ") + trn(M.name));
+    b.onclick = () => { if (fl) { askGrownUp(); return; } if (!open) { sfx.no(); toast("🔒"); return; } sfx.click(); openMap({ cont: k }); };
+    if (k === cont) setTimeout(() => b.scrollIntoView({ inline: "center", block: "nearest" }), 0);
   });
-  const rs = mkBtn("👨‍👩‍👧", "Página para padres", goParents); rs.style.marginLeft = "auto"; top.appendChild(rs);
+  const rs = mkBtn("👨‍👩‍👧", "Página para padres", goParents); rs.classList.add("mpar"); top.appendChild(rs);
   const m = el("svg", { viewBox: MP.vb, preserveAspectRatio: "xMidYMid meet" }, box);
   const pts = arr => arr.map(([lo, la]) => proj(lo, la).map(v => v.toFixed(1)).join(",")).join(" ");
   drawMapArt(m, MP, cont, pts, proj);
@@ -8119,10 +8219,26 @@ function setLang(l, save) {
   document.title = TITLES[LANG];
   trTree(document.body);
   document.querySelectorAll(".langpick b").forEach(b => b.classList.toggle("on", b.dataset.l === LANG));
+  document.querySelectorAll(".langdd").forEach(w => w.refresh && w.refresh());
   try { if (tool && !running) showInfo(tool); } catch (e) {}
   if (save) saveCfg();
 }
-function langPicker(parent, after) {
+const LANG_NAMES = { es: "Español", en: "English", fr: "Français", de: "Deutsch" };
+function langPicker(parent, after, compact) {
+  if (compact) { // one small button with the current language; tap it for the list
+    const w = document.createElement("div"); w.className = "langdd";
+    const cur = document.createElement("button"); cur.className = "langcur"; cur.title = "Language";
+    const menu = document.createElement("div"); menu.className = "langmenu"; menu.hidden = true;
+    w.refresh = () => { cur.innerHTML = `<span class="lf">${LANGS[LANG]}</span><b>${LANG.toUpperCase()}</b><i>▾</i>`; menu.querySelectorAll(".langopt").forEach(o => o.classList.toggle("on", o.dataset.l === LANG)); };
+    Object.entries(LANGS).forEach(([l, f]) => {
+      const o = document.createElement("button"); o.className = "langopt"; o.dataset.l = l; o.innerHTML = `<span class="lf">${f}</span><span>${LANG_NAMES[l]}</span>`;
+      o.onclick = e => { e.stopPropagation(); menu.hidden = true; sfx.click && sfx.click(); setLang(l, true); if (after) after(); };
+      menu.appendChild(o);
+    });
+    cur.onclick = e => { e.stopPropagation(); sfx.click && sfx.click(); menu.hidden = !menu.hidden; };
+    document.addEventListener("pointerdown", e => { if (!w.contains(e.target)) menu.hidden = true; });
+    w.appendChild(cur); w.appendChild(menu); w.refresh(); parent.appendChild(w); return w;
+  }
   const d = document.createElement("div"); d.className = "langpick";
   Object.entries(LANGS).forEach(([l, f]) => {
     const b = document.createElement("b"); b.textContent = f; b.dataset.l = l; if (l === LANG) b.className = "on";
@@ -8212,10 +8328,11 @@ function duelPickScreen() {
   const evs = addEl(d, "div", "dmodes");
   Object.keys(DUEL_EV).forEach(ev => {
     const lk = !isFull() && ev !== "push";
-    const b = addEl(evs, "div", "dchip ev" + (P.ev === ev ? " on" : ""), (lk ? "🔒 " : "") + evName(ev));
+    const b = addEl(evs, "div", "dchip ev" + (P.ev === ev ? " on" : "") + (lk ? " lk" : ""));
+    addEl(b, "span", "dem", DUEL_EV[ev].em); addEl(b, "b", "", L3(DUEL_EV[ev].nm)); if (lk) addEl(b, "span", "dlk", "🔒");
     b.onclick = () => { if (lk) { askGrownUp(); return; } sfx.click(); P.ev = ev; duelPickScreen(); };
   });
-  addEl(d, "div", "dhint", P.ev === "race"
+  addEl(d, "div", "dhint dlong", P.ev === "race"
     ? LX("Dos trenes suben una montaña. Acelera, salta las vacas y las rocas, y no te quedes sin vapor. ¡El primero en la cima gana la ronda!",
       "Two trains race up a mountain. Speed up, jump the cows and rocks, and don't run out of steam. First to the top wins the round!",
       "Deux trains montent une montagne. Accélère, saute les vaches et les rochers, et garde de la vapeur. Le premier au sommet gagne la manche !")
@@ -8964,14 +9081,14 @@ document.addEventListener("keyup", e => {
 // =====================================================================
 //  START
 // =====================================================================
-{ const cfg = sget(KEY + "-cfg"); const nl = (navigator.language || "es").slice(0, 2); LANG = cfg && cfg.lang || (LANGS[nl] ? nl : "es"); if (cfg) { hzOn = cfg.hz !== false; hzRnd = !!cfg.rnd; voiceOn = cfg.voice !== false; if (cfg.sfx === false) { sfxOn = false; $("mute").classList.add("off"); } proMode = !!cfg.pro; } }
+{ const cfg = sget(KEY + "-cfg"); const nl = (navigator.language || "es").slice(0, 2); LANG = cfg && cfg.lang || "en"; void nl; if (cfg) { hzOn = cfg.hz !== false; hzRnd = !!cfg.rnd; voiceOn = cfg.voice !== false; if (cfg.sfx === false) { sfxOn = false; $("mute").classList.add("off"); } proMode = !!cfg.pro; } }
 applyIcons(); if (!proMode) { miniOn = false; $("mini").classList.add("hide"); $("miniBtn").classList.add("off"); }
-langPicker($("home")); setLang(LANG); buildTabs(); buildProjects(); markTutHome();
+langPicker($("home"), null, true); setLang(LANG); buildTabs(); buildProjects(); markTutHome();
 if (!sget(KEY + "-tut")) setTimeout(() => { if (!$("home").hidden && $("modal").hidden) offerTutorial(); }, 900); selectTab("vias"); selectTool("hand"); sizeMini(); layoutUI(); setFloor(0);
 (function start() {
   const auto = sget(KEY + "-auto");
   if (auto && auto.data && auto.data.pieces && auto.data.pieces.length) { loadData(auto.data); curName = auto.name || ""; }
-  else { loadData(PROJECTS[0].data); curName = PROJECTS[0].name; }
+  else { loadData(STARTER.data); curName = ""; starterFresh = true; }
 })();
 fitAll();
 requestAnimationFrame(frame);
