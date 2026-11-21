@@ -6920,6 +6920,19 @@ const BORDERS_AS = [[[68.5, 23.6], [71, 27.5], [74.5, 32], [77, 35.5]], [[77, 35
 const COUNTRY_AS = [["CHINA", 104, 33], ["INDIA", 78.5, 21.5], ["MONGOLIA", 103, 46.5], ["JAPÓN", 136.5, 38.6], ["COREA", 128.2, 36.4], ["TAILANDIA", 101.2, 16.4], ["VIETNAM", 106.2, 14.6],
   ["MYANMAR", 96.2, 21.6], ["PAKISTÁN", 67.5, 29.5], ["NEPAL", 84.2, 29.4], ["MALASIA", 112.5, 2.6], ["INDONESIA", 109, -4.7], ["FILIPINAS", 125.2, 15.8], ["OCÉANO ÍNDICO", 82, 2], ["OCÉANO PACÍFICO", 137, 22], ["MAR DE CHINA", 114, 14]];
 
+// North and Central America: simplified coastlines (lon, lat)
+const LAND_NA = [
+  [[-132, 56], [-130.5, 54.5], [-128.8, 52.5], [-127.5, 50.8], [-124.7, 48.4], [-124, 46.3], [-124.2, 43], [-124.3, 40.5], [-123.5, 38.5], [-122.5, 37.7], [-121.9, 36.6], [-120.6, 34.6], [-118.4, 34], [-117.2, 32.7], [-116.2, 30.4], [-114.2, 27.6], [-112.2, 25], [-110.1, 22.9], [-109.9, 24.2], [-111.4, 26], [-112.8, 28.3], [-114.6, 31.6], [-113.6, 31.3], [-112.2, 29.2], [-110.5, 27.3], [-109.4, 25.7], [-108.4, 25.2], [-106.4, 23.2], [-105.4, 20.6], [-104.5, 19.1], [-102.2, 17.9], [-99.9, 16.8], [-96.5, 15.7], [-94.7, 16.2], [-93, 15.6], [-92.2, 14.6], [-90.5, 13.9], [-88.2, 13.2], [-87.4, 12.9], [-86.1, 11.8], [-85.7, 10], [-84.7, 9.6], [-83.6, 8.5], [-82.2, 8.3], [-80.5, 7.4], [-79.5, 8.9], [-78, 7.3], [-77.2, 8.5], [-78.5, 9.4], [-79.6, 9.6], [-81.2, 8.9], [-82.6, 9.6], [-83.4, 10.8], [-83.7, 12.5], [-83.4, 14.9], [-84.9, 15.9], [-86.6, 15.8], [-88.2, 15.7], [-88.3, 17.3], [-87.8, 18.5], [-86.8, 21.3], [-88.2, 21.5], [-90.3, 21], [-90.6, 19.8], [-91.5, 18.5], [-94.3, 18.2], [-95.9, 18.8], [-97.2, 20.6], [-97.7, 22.3], [-97.2, 25.8], [-97.4, 27.6], [-96.3, 28.6], [-94.8, 29.4], [-93.3, 29.8], [-91.2, 29.2], [-89.4, 29], [-89.6, 30.2], [-88, 30.4], [-86.3, 30.4], [-84.3, 30], [-83, 29], [-82.6, 27.5], [-81.8, 26.1], [-81.1, 25.1], [-80.2, 25.8], [-80.6, 28.1], [-81.4, 30.4], [-81.1, 31.9], [-79.2, 33.3], [-77.9, 33.9], [-76.5, 34.7], [-75.5, 35.3], [-76, 36.9], [-75.9, 37.9], [-75, 38.8], [-74, 40.6], [-72, 41], [-70.6, 41.6], [-70, 41.8], [-70.6, 42.6], [-70.2, 43.7], [-67.5, 44.6], [-66.1, 44.6], [-63.5, 44.6], [-61, 45.3], [-60, 46], [-61.6, 46.2], [-64.6, 46.6], [-65, 47.9], [-64.3, 48.6], [-66.5, 49.2], [-70.4, 47.4], [-68.5, 49.3], [-66, 50.2], [-62, 50.2], [-59, 50.9], [-57, 51.5], [-56, 52.2], [-58, 54.5], [-60, 55.6], [-61.5, 56]],
+  [[-128.4, 50.8], [-125.6, 50.4], [-123.3, 48.4], [-124.7, 48.6], [-125.9, 49.4]],
+  [[-84.9, 21.9], [-83, 22.9], [-81.2, 23.1], [-79.1, 22.4], [-77.2, 21.2], [-75.6, 20.7], [-74.1, 20.2], [-75.7, 19.9], [-77.7, 19.9], [-78.6, 21.6], [-80.9, 22], [-82.5, 22.1]],
+  [[-74.4, 18.6], [-72.8, 19.9], [-71.2, 19.8], [-68.3, 18.6], [-68.7, 18.2], [-71.4, 17.6], [-74.3, 18.2]],
+  [[-78.3, 18.4], [-76.3, 18.2], [-76.8, 17.9], [-77.9, 18]],
+  [[-67.2, 18.5], [-65.6, 18.4], [-65.8, 18], [-67.1, 18]],
+];
+const BORDERS_NA = [[[-123.3, 49], [-95.2, 49], [-89.5, 48], [-84.6, 46.5], [-82.5, 45], [-82.5, 42.5], [-79, 43], [-76.5, 44.2], [-74.7, 45], [-71.5, 45], [-70, 46.7], [-69.2, 47.4], [-67.8, 47.1], [-67.8, 45.7], [-67, 44.9]],
+  [[-117.1, 32.5], [-111, 31.3], [-108.2, 31.3], [-106.5, 31.8], [-104.5, 29.6], [-103, 29], [-101.4, 29.8], [-99.5, 27.5], [-97.2, 25.9]], [[-92.2, 14.6], [-92.2, 16], [-91.4, 16.1], [-91.4, 17.3], [-89.2, 17.8], [-88.3, 17.3]],
+  [[-85.7, 11.1], [-83.7, 11]], [[-82.9, 8.1], [-82.6, 9.5]], [[-89.2, 14.4], [-87.4, 12.9]], [[-89.1, 15.9], [-88.2, 15.7]]];
+const COUNTRY_NA = [["ESTADOS UNIDOS", -98, 38.5], ["CANADÁ", -100, 52.6], ["MÉXICO", -102.5, 24.5], ["CUBA", -79.4, 23.9], ["OCÉANO PACÍFICO", -121, 24], ["OCÉANO ATLÁNTICO", -66.5, 33], ["GOLFO DE MÉXICO", -90.5, 25.4], ["MAR CARIBE", -77.5, 14.6]];
 const MAPS = {
   eu: { name: "🇪🇺 Europa", proj: MAPP, land: LAND, borders: BORDERS, country: COUNTRY, vb: "-70 30 1090 1020", sand: LAND.length - 1, relief: {
     mountains: [[6.6, 45.9, 1.1], [8.4, 46.4, 1.2], [10.2, 46.6, 1.1], [12.2, 47, 1], [-0.8, 42.8, .9], [1.2, 42.6, .9], [-3.3, 37.1, .8], [-5.2, 43.05, .7], [2.9, 45.2, .7], [-4.6, 57, .7], [-4.1, 40.4, .7], [12.6, 43.4, .7], [14.6, 41.6, .7]],
@@ -6938,6 +6951,13 @@ const MAPS = {
     rivers: [[[78, 30], [80.3, 26.4], [83, 25.3], [85.1, 25.6], [87.3, 25.2], [88.6, 23.8], [89, 22.2]], [[91, 33], [97, 32], [101.8, 29.5], [104.5, 29.4], [106.5, 29.6], [108.5, 30.6], [111.3, 30.7], [114.3, 30.6], [117, 30.5], [119, 32], [121.3, 31.6]], [[96, 35], [101.7, 36], [105, 37.5], [106.4, 40.2], [110, 40.6], [111, 38], [110.6, 35], [113.6, 34.9], [116.5, 36.6], [118.9, 37.8]], [[99, 29], [99.5, 24], [101, 21], [102.5, 18], [104.8, 16], [105.9, 14], [105.5, 11.6], [106.4, 9.6]], [[79, 34], [75, 35.5], [72, 33.8], [71.2, 30.3], [69, 27], [68, 24.5]], [[97.5, 26], [96.1, 22], [95.2, 19], [95.3, 16.2]]],
     deserts: [[104, 42.8, 42], [95, 40, 32], [71.6, 27, 26], [83, 38.8, 40]],
     boats: [[88, 12], [115, 10], [129, 27], [145, 36], [69, 15], [95, -2]] } },
+  na: { name: "🌎 Norteamérica", proj: (lon, lat) => [(lon + 129) * 13.4, (57 - lat) * 17.5], land: LAND_NA, borders: BORDERS_NA, country: COUNTRY_NA, vb: "0 0 960 900", sand: -1, banner: [340, 858], relief: {
+    mountains: [[-115, 48, 1.1], [-112, 45, 1.1], [-108.5, 42, 1.1], [-106, 39, 1.2], [-106, 36, 1], [-111.5, 40.5, .9], [-119.5, 37.5, .9], [-121.5, 46.5, .8], [-80, 38, .7], [-77.5, 40.6, .6], [-84, 35.5, .7], [-105, 25.5, .8], [-99, 19.6, .8], [-90.6, 14.8, .6], [-117.5, 52, 1]],
+    forests: [[-123, 45, 1], [-85.5, 47.3, 1], [-72, 44, .9], [-82, 34, .8], [-94.5, 47.5, .9], [-110, 51, .8], [-75, 47.8, .9], [-90, 17, .8], [-84.2, 10.4, .7], [-121, 50.5, .8], [-88, 33, .7]],
+    deserts: [[-115.5, 35.2, 28], [-111.5, 32, 26], [-105, 28.8, 30], [-117, 40, 26]],
+    rivers: [[[-95, 47.3], [-93.2, 45], [-91, 43], [-90.2, 38.6], [-89.2, 36.9], [-90.6, 33], [-91.2, 30.5], [-89.4, 29.2]], [[-112, 47.5], [-104, 48], [-100.7, 46.8], [-98, 43], [-95.9, 41.3], [-94.6, 39.1], [-90.2, 38.8]], [[-106.5, 37.5], [-106.7, 34], [-106.5, 31.8], [-104.5, 29.6], [-101.4, 29.8], [-99.5, 27.5], [-97.2, 25.9]], [[-106, 40], [-109.5, 38.5], [-111.5, 36.8], [-113.5, 36.1], [-114.6, 34.8], [-114.7, 32.7]], [[-76.5, 44.2], [-73.6, 45.5], [-71.2, 46.8], [-69, 48.2]], [[-80, 40.4], [-84.5, 39.1], [-86, 38], [-88.5, 37.1], [-89.1, 37]]],
+    lakes: [[[-92, 46.7], [-89.5, 48], [-86.5, 48.7], [-84.6, 46.5], [-87, 46.5]], [[-87.8, 42], [-87.5, 44.5], [-86.5, 45.8], [-85.5, 44.8], [-86.3, 42.2]], [[-84.7, 45.9], [-81.5, 45.9], [-80, 44.5], [-82.4, 43], [-83.5, 44]], [[-83.5, 41.7], [-79, 42.9], [-79.2, 42.5], [-82.8, 41.5]], [[-79.8, 43.3], [-76.2, 44.1], [-76.4, 43.4], [-79, 43.2]]],
+    boats: [[-125, 30], [-70, 36], [-90, 24.5], [-75, 15.5], [-112, 21.5], [-62, 42]] } },
 };
 const ZONE_CONT = { sudamerica: "sa", asia: "as", namerica: "na", africa: "af" };
 const contOf = i => ZONE_CONT[LEVELS[i].zone] || "eu";
@@ -6997,6 +7017,63 @@ LEVELS.push(
     build() { area("agua", 12, 18, 20, 22); lvStart(10, 16, 0, "bala", 1); lvGoal(15, 20, 1, 4); lvCoin(14, 16, 4);
       deco("montanaG", [[18, 12]]); deco("torii", [[11, 13]]); deco("cerezo", [[12, 12], [16, 13], [20, 15], [10, 19]]); deco("velero", [[18, 21]]); },
     sol: [[12, 16, 1, 0, "S S UL UL UL UL S R S S S"]] },
+);
+
+
+const roadV = (c, r0, r1, skip) => { for (let r = r0; r <= r1; r++) if (!(skip || []).includes(r)) addPiece("calle", c, r, 1, 0, 0); };
+const roadH = (r, c0, c1, skip) => { for (let c = c0; c <= c1; c++) if (!(skip || []).includes(c)) addPiece("calle", c, r, 0, 0, 0); };
+LEVELS.push(
+  { id: "mexico", zone: "namerica", name: "Ciudad de México", emoji: "🌮", pos: [-99.1, 19.4], par: 13, inv: { corta: 12, paso: 3, recta: 4 },
+    intro: "Norteamérica: ¡calles y coches! Donde la vía cruza una calle pon un paso a nivel: así pasan el tren y los coches.", view: [8, 8, 28, 20],
+    build() { roadV(17, 5, 25, [14]); roadV(21, 5, 25, [14]); lvStart(10, 14); lvGoal(25, 14); lvCoin(19, 14);
+      deco("casa", [[13, 11], [15, 17], [23, 11], [24, 17]]); deco("cactus", [[12, 17], [19, 10], [26, 18]]); deco("bus", [[19, 18]]); deco("taxi", [[15, 10]]); },
+    sol: [[12, 14, 1, 0, "S S S S S P S S S P S S S"]] },
+  { id: "panama", zone: "namerica", name: "Canal de Panamá", emoji: "🚢", pos: [-79.6, 9.1], par: 11, inv: { corta: 10, rampa: 3, paso: 2, recta: 4 },
+    intro: "Por el canal pasan barcos enormes: crúzalo por arriba con un puente y luego pon un paso a nivel en la calle.", view: [8, 7, 28, 20],
+    build() { area("agua", 16, 3, 17, 25); roadV(22, 5, 25, [14]); lvStart(10, 14); lvGoal(25, 14); lvCoin(16, 14, 1);
+      deco("barco", [[16, 9], [17, 19]]); deco("palmera", [[13, 11], [12, 17], [20, 11], [24, 18]]); deco("loro", [[19, 17]]); },
+    sol: [[12, 14, 1, 0, "S U S S S D S S P S S"]] },
+  { id: "habana", zone: "namerica", name: "La Habana", emoji: "🚗", pos: [-82.4, 23.1], par: 14, inv: { corta: 12, paso: 3, curva: 4, recta: 4 },
+    intro: "En La Habana hay dos calles en el camino. Gira hacia la 🏁 y pon un paso a nivel en cada cruce.", view: [8, 6, 26, 21],
+    build() { roadV(15, 5, 24, [11, 16]); roadH(11, 6, 30, [15, 19]); addPiece("calleX", 15, 11, 0, 0, 0); lvStart(10, 16); lvGoal(19, 9, 3); lvCoin(19, 13);
+      deco("casa", [[12, 13], [17, 13], [21, 13], [12, 19], [17, 18], [22, 17]]); deco("palmera", [[13, 9], [22, 9], [10, 19]]); deco("taxi", [[16, 20]]); },
+    sol: [[12, 16, 1, 0, "S S S P S S S L S S S S P S"]] },
+  { id: "orleans", zone: "namerica", name: "Nueva Orleans", emoji: "🎺", pos: [-90.1, 29.95], par: 12, inv: { corta: 6, calleVia: 8, calleViaC: 3, curva: 2 },
+    intro: "En Nueva Orleans el tranvía va por la calle. Usa las vías de tranvía (la calle con raíles, en la pestaña Calles).", view: [8, 7, 25, 18],
+    build() { lvStart(10, 14, 0, "tranvia"); lvGoal(20, 10); lvCoin(17, 12);
+      deco("casa", [[14, 13], [15, 13], [14, 15], [15, 15], [16, 15], [18, 13], [18, 12], [16, 11], [16, 12], [18, 11]]); deco("arbol", [[12, 11], [12, 17], [20, 13], [22, 12]]); deco("fuente", [[20, 16]]); },
+    sol: [[12, 14, 1, 0, "S S CV CV CV CVL CV CV CV CVR S S"]] },
+  { id: "canon", zone: "namerica", name: "Gran Cañón", emoji: "🏜️", pos: [-112.1, 36.1], par: 7, inv: { corta: 8, rampa: 3, recta: 4 },
+    intro: "¡Qué profundo! La 🏁 está en la otra orilla, en el piso 2. Sube dos pisos y cruza el cañón por un puente altísimo.", view: [8, 8, 25, 20],
+    build() { area("agua", 17, 3, 19, 25); lvStart(10, 14); lvGoal(21, 14, 0, 2); lvCoin(18, 14, 2);
+      deco("montana", [[15, 11], [16, 12], [15, 16], [16, 17], [20, 11], [21, 12], [20, 16], [21, 17], [16, 9], [20, 19]]); deco("cactus", [[12, 11], [12, 17], [23, 11], [24, 17], [13, 19]]); },
+    sol: [[12, 14, 1, 0, "U U S S S S S"]] },
+  { id: "sanfran", zone: "namerica", name: "San Francisco", emoji: "🌉", pos: [-122.4, 37.8], par: 14, inv: { corta: 12, rampa: 3, calleVia: 4, recta: 6 },
+    intro: "Cruza la bahía por un puente muy largo y entra en la ciudad por una calle de tranvía.", view: [8, 7, 31, 20],
+    build() { area("agua", 15, 4, 23, 24); lvStart(10, 14, 0, "tranvia"); lvGoal(28, 14); lvCoin(19, 14, 1);
+      deco("velero", [[17, 10], [21, 18], [16, 20]]); deco("barco", [[20, 8]]); deco("casa", [[26, 11], [27, 11], [26, 17], [27, 17]]); deco("rascacielos", [[29, 11]]); deco("arbol", [[12, 11], [12, 17]]); },
+    sol: [[12, 14, 1, 0, "U S S S S S S S S S S D CV CV"]] },
+  { id: "rocosas", zone: "namerica", name: "Montañas Rocosas", emoji: "🍁", pos: [-116, 51.2], par: 25, inv: { corta: 25, rampa: 3, recta: 8, cruce: 2 },
+    intro: "¡Dos trenes! El de pasajeros va de lado a lado y el de mercancías hacia arriba. Que uno pase por encima del otro para que no choquen.", view: [7, 4, 29, 24],
+    build() { lvStart(10, 14, 0, "pasajeros", 1); lvGoal(26, 14); lvStart(18, 22, 3, "mercancias", 1); lvGoal(18, 7, 3); lvCoin(14, 14); lvCoin(18, 14, 1);
+      deco("montanaG", [[9, 6], [24, 18], [9, 18]]); deco("montana", [[22, 9], [24, 10], [13, 10], [22, 20]]); deco("pino", [[15, 11], [21, 11], [15, 17], [21, 17], [12, 20]]); },
+    sol: [[12, 14, 1, 0, "S*14"], [18, 20, 0, 0, "S S U S S S D S S S S"]] },
+  { id: "chicago", zone: "namerica", name: "Chicago", emoji: "🌬️", pos: [-87.6, 41.9], par: 17, inv: { corta: 14, rampa: 3, curva: 4, recta: 4 },
+    intro: "El tren «L» de Chicago va elevado por encima de las calles. Rodea la manzana por arriba hasta la 🏁 del piso 1.", view: [8, 9, 26, 21],
+    build() { roadH(16, 5, 30); roadV(20, 5, 25, [16]); addPiece("calleX", 20, 16, 0, 0, 0); lvStart(10, 18); lvGoal(22, 16, 1, 1); lvCoin(19, 13, 1);
+      deco("rascacielos", [[18, 14], [19, 14], [18, 17], [21, 14], [21, 17], [24, 13], [14, 14]]); deco("ciudad", [[24, 19], [13, 20]]); deco("bus", [[12, 16]]); },
+    sol: [[12, 18, 1, 0, "S U S S L S S S S R S S S S R S S"]] },
+  { id: "niagara", zone: "namerica", name: "Cataratas del Niágara", emoji: "💦", pos: [-79.1, 43.1], par: 9, inv: { corta: 10, rampa: 3, recta: 4, curva: 2 },
+    intro: "Junto a las cataratas, el río baja con mucha fuerza. Crúzalo por un puente.", view: [9, 6, 27, 23],
+    build() { area("agua", 4, 13, 32, 15); lvStart(18, 22, 3); lvGoal(18, 9, 3); lvCoin(18, 14, 1);
+      deco("cascada", [[9, 12], [10, 12], [11, 12], [12, 12], [13, 12], [14, 12], [15, 12], [21, 12], [22, 12], [23, 12], [24, 12], [25, 12], [26, 12]]); deco("pino", [[14, 18], [22, 19], [13, 8], [23, 7]]); deco("velero", [[11, 14]]); },
+    sol: [[18, 20, 0, 0, "S S S U S S S D S"]] },
+  { id: "nuevayork", zone: "namerica", name: "Nueva York", emoji: "🗽", pos: [-74, 40.7], par: 12, inv: { corta: 12, rampa: 3, recta: 4 },
+    intro: "Arriba la ciudad está llena de rascacielos. ¡Ve por debajo con el metro! Baja con una rampa al piso menos uno y sube al otro lado.", view: [8, 7, 28, 20],
+    build() { lvStart(10, 14, 0, "metro"); lvGoal(26, 14); lvCoin(18, 14, -1);
+      wall(["rascacielos", "ciudad", "tienda"], [[15, 13], [16, 13], [17, 13], [18, 13], [19, 13], [20, 13], [21, 13], [22, 13], [15, 14], [16, 14], [17, 14], [18, 14], [19, 14], [20, 14], [21, 14], [22, 14], [15, 15], [16, 15], [17, 15], [18, 15], [19, 15], [20, 15], [21, 15], [22, 15]]);
+      deco("estatuaG", [[24, 9]]); deco("taxi", [[13, 17], [24, 17]]); deco("arbol", [[12, 11], [26, 18]]); },
+    sol: [[12, 14, 1, 0, "S D S S S S S S S S U S"]] },
 );
 
 // =====================================================================
@@ -7137,6 +7214,7 @@ function drawMapArt(m, MP, cont, pts, proj) {
   land.forEach((p, i) => { el("polygon", { points: p, fill: i === MP.sand ? "#f3d98b" : "url(#mland)", stroke: "#5f9e4f", "stroke-width": 3.5, "stroke-linejoin": "round" }, m); if (i !== MP.sand) el("polygon", { points: p, fill: "url(#mtex)" }, m); });
   const R = MP.relief || {};
   (R.deserts || []).forEach(([lo, la, s]) => { const [x, y] = proj(lo, la); el("ellipse", { cx: x, cy: y, rx: s * 1.4, ry: s * .8, fill: "#ecd79e", opacity: .85 }, m); for (let k = 0; k < 6; k++) el("circle", { cx: x + Math.cos(k * 2.1) * s * .8, cy: y + Math.sin(k * 2.1) * s * .4, r: 2, fill: "#c9a85a", opacity: .7 }, m); });
+  (R.lakes || []).forEach(l => el("polygon", { points: pts(l), fill: "#6fbfe9", stroke: "#4f9fd6", "stroke-width": 3, "stroke-linejoin": "round" }, m));
   (R.rivers || []).forEach(r => { const d = smoothPath(r.map(([lo, la]) => proj(lo, la))); el("path", { d, fill: "none", stroke: "#4f9fd6", "stroke-width": 6, "stroke-linecap": "round", "stroke-linejoin": "round" }, m); el("path", { d, fill: "none", stroke: "#9fd6f5", "stroke-width": 2.5, "stroke-linecap": "round" }, m); });
   MP.borders.forEach(b => { el("polyline", { points: pts(b), fill: "none", stroke: "rgba(70,110,55,.45)", "stroke-width": 4 }, m); el("polyline", { points: pts(b), fill: "none", stroke: "#f4fbe9", "stroke-width": 2, "stroke-dasharray": "7 6" }, m); });
   (R.forests || []).forEach(([lo, la, s]) => { const [x, y] = proj(lo, la), k = s || 1; [[-12, 4], [0, -6], [12, 5], [-3, 10]].forEach(([dx, dy]) => { el("rect", { x: x + dx * k - 1.5, y: y + dy * k + 4, width: 3, height: 7, fill: "#7a5230" }, m); el("circle", { cx: x + dx * k, cy: y + dy * k, r: 8 * k, fill: "#3f8f3a", stroke: "#2f6b2a", "stroke-width": 1.5 }, m); el("circle", { cx: x + dx * k - 2.5, cy: y + dy * k - 2.5, r: 3 * k, fill: "#6fbf5c" }, m); }); });
@@ -7157,7 +7235,7 @@ function drawMapArt(m, MP, cont, pts, proj) {
   el("circle", { r: 46, fill: "rgba(255,248,232,.85)", stroke: "#7a4e22", "stroke-width": 3 }, cg); el("circle", { r: 36, fill: "none", stroke: "#a8743d", "stroke-width": 1.5, "stroke-dasharray": "3 4" }, cg);
   [[0, -1, "#d63a2f"], [1, 0, "#7a4e22"], [0, 1, "#7a4e22"], [-1, 0, "#7a4e22"]].forEach(([dx, dy, c]) => el("path", { d: `M${dx * 34} ${dy * 34}L${dy * 7} ${-dx * 7}L${-dy * 7} ${dx * 7}Z`, fill: c }, cg));
   el("text", { y: -38, "font-size": 14, "font-weight": 900, fill: "#d63a2f", "text-anchor": "middle" }, cg).textContent = "N";
-  const tName = trn(MP.name), tw = Math.max(220, tName.length * 17 + 30), bx = vx + vw - tw / 2 - 30, by = vy + vh - 50, bg = el("g", { transform: `translate(${bx} ${by})` }, m);
+  const tName = trn(MP.name), tw = Math.max(220, tName.length * 17 + 30), bx = MP.banner ? MP.banner[0] : vx + vw - tw / 2 - 30, by = MP.banner ? MP.banner[1] : vy + vh - 50, bg = el("g", { transform: `translate(${bx} ${by})` }, m);
   el("path", { d: `M${-tw / 2 - 24} -6l18 -16v44l-18 -16z M${tw / 2 + 24} -6l-18 -16v44l18 -16z`, fill: "#a8743d" }, bg);
   el("rect", { x: -tw / 2, y: -24, width: tw, height: 46, rx: 8, fill: "#fff3d6", stroke: "#7a4e22", "stroke-width": 3 }, bg);
   el("text", { y: 1, "font-size": 26, "font-weight": 900, "font-family": "Georgia, 'Times New Roman', serif", fill: "#6b4219", "text-anchor": "middle", "dominant-baseline": "middle", "letter-spacing": 2 }, bg).textContent = tName;
@@ -7256,6 +7334,33 @@ const I18N_ROWS = [
 ["🚂 Constructor de trenes", "🚂 Train Builder", "🚂 Constructeur de trains"],
 ["Aventura", "Adventure", "Aventure"],
 ["Juego libre", "Free play", "Jeu libre"],
+["🌎 Norteamérica", "🌎 North America", "🌎 Amérique du Nord"],
+["Ciudad de México", "Mexico City", "Mexico"],
+["Canal de Panamá", "Panama Canal", "Canal de Panama"],
+["La Habana", "Havana", "La Havane"],
+["Nueva Orleans", "New Orleans", "La Nouvelle-Orléans"],
+["Gran Cañón", "Grand Canyon", "Grand Canyon"],
+["San Francisco", "San Francisco", "San Francisco"],
+["Chicago", "Chicago", "Chicago"],
+["Nueva York", "New York", "New York"],
+["Cataratas del Niágara", "Niagara Falls", "Chutes du Niagara"],
+["Montañas Rocosas", "Rocky Mountains", "Montagnes Rocheuses"],
+["ESTADOS UNIDOS", "UNITED STATES", "ÉTATS-UNIS"],
+["CANADÁ", "CANADA", "CANADA"],
+["MÉXICO", "MEXICO", "MEXIQUE"],
+["CUBA", "CUBA", "CUBA"],
+["GOLFO DE MÉXICO", "GULF OF MEXICO", "GOLFE DU MEXIQUE"],
+["MAR CARIBE", "CARIBBEAN SEA", "MER DES CARAÏBES"],
+["Norteamérica: ¡calles y coches! Donde la vía cruza una calle pon un paso a nivel: así pasan el tren y los coches.", "North America: streets and cars! Where the track crosses a street, put a level crossing: then both the train and the cars can pass.", "L'Amérique du Nord : des rues et des voitures ! Là où la voie croise une rue, mets un passage à niveau : le train et les voitures peuvent passer."],
+["Por el canal pasan barcos enormes: crúzalo por arriba con un puente y luego pon un paso a nivel en la calle.", "Huge ships sail through the canal: cross it on a bridge and then put a level crossing on the street.", "D'énormes bateaux passent par le canal : traverse-le sur un pont, puis mets un passage à niveau sur la rue."],
+["En La Habana hay dos calles en el camino. Gira hacia la 🏁 y pon un paso a nivel en cada cruce.", "In Havana there are two streets in the way. Turn towards the 🏁 and put a level crossing at each one.", "À La Havane, il y a deux rues sur le chemin. Tourne vers le 🏁 et mets un passage à niveau à chaque croisement."],
+["En Nueva Orleans el tranvía va por la calle. Usa las vías de tranvía (la calle con raíles, en la pestaña Calles).", "In New Orleans the tram runs along the street. Use the tram tracks (the street with rails, in the Streets tab).", "À La Nouvelle-Orléans, le tramway roule dans la rue. Utilise les voies de tramway (la rue avec des rails, dans l'onglet Rues)."],
+["¡Qué profundo! La 🏁 está en la otra orilla, en el piso 2. Sube dos pisos y cruza el cañón por un puente altísimo.", "So deep! The 🏁 is on the other side, on floor 2. Climb two floors and cross the canyon on a very high bridge.", "Que c'est profond ! Le 🏁 est de l'autre côté, à l'étage 2. Monte de deux étages et traverse le canyon sur un pont très haut."],
+["Cruza la bahía por un puente muy largo y entra en la ciudad por una calle de tranvía.", "Cross the bay on a very long bridge and enter the city along a tram street.", "Traverse la baie sur un très long pont et entre dans la ville par une rue de tramway."],
+["El tren «L» de Chicago va elevado por encima de las calles. Rodea la manzana por arriba hasta la 🏁 del piso 1.", "Chicago's \"L\" train runs high above the streets. Go round the block up there to the 🏁 on floor 1.", "Le train « L » de Chicago roule au-dessus des rues. Fais le tour du pâté de maisons par en haut jusqu'au 🏁 de l'étage 1."],
+["Arriba la ciudad está llena de rascacielos. ¡Ve por debajo con el metro! Baja con una rampa al piso menos uno y sube al otro lado.", "Up top the city is full of skyscrapers. Go underneath with the subway! Ramp down to floor minus one and come up on the other side.", "En haut, la ville est pleine de gratte-ciel. Passe dessous avec le métro ! Descends avec une rampe à l'étage moins un et remonte de l'autre côté."],
+["Junto a las cataratas, el río baja con mucha fuerza. Crúzalo por un puente.", "Next to the falls the river rushes by. Cross it on a bridge.", "À côté des chutes, la rivière est très forte. Traverse-la sur un pont."],
+["¡Dos trenes! El de pasajeros va de lado a lado y el de mercancías hacia arriba. Que uno pase por encima del otro para que no choquen.", "Two trains! The passenger train goes across and the freight train goes up. Make one pass over the other so they don't crash.", "Deux trains ! Le train de voyageurs va de gauche à droite et le train de marchandises vers le haut. Fais passer l'un au-dessus de l'autre pour qu'ils ne se heurtent pas."],
 ["🌏 Asia", "🌏 Asia", "🌏 Asie"],
 ["Bombay", "Mumbai", "Bombay"],
 ["Kerala", "Kerala", "Kerala"],
