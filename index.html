@@ -6447,7 +6447,7 @@ function lvGoal(c, r, rot = 0, h = 0) { const p = lvFix("estacion", c, r, rot, h
 function lvCoin(c, r, z = 0) { lvl.coins.push({ c, r, z, got: false }); }
 function lvFreePiece(type, c, r, rot = 0) { lvlFree = true; const p = addPiece(type, c, r, rot, 0, 0); lvlFree = false; return p; }
 function lvRival(kind, cars, c, r, h = 0, dir = 1) { const p = pieceAtLevel(c, r, h); const t = addTrain(kind, cars, p.id, 0, dir, null); t.ambient = true; return t; }
-function lvCow(c, r, axis, phase) { lvl.cows.push({ c, r, axis, phase, t: 0, moo: 0 }); }
+function lvCow(c, r, axis, phase, em) { lvl.cows.push({ c, r, axis, phase, t: 0, moo: 0, em }); }
 function cowPos(k) {
   const s = Math.sin(2 * Math.PI * k.t / 9 + k.phase), off = 85 * Math.sign(s) * Math.pow(Math.abs(s), 2.4);
   const x = (k.c + .5) * T + (k.axis === "h" ? off : 0), y = (k.r + .5) * T + (k.axis === "v" ? off : 0);
@@ -6458,7 +6458,7 @@ function cowTick(dt) {
   lvl.cows.forEach(k => {
     k.t += dt; k.moo -= dt;
     const p = cowPos(k);
-    if (!k.el) { k.el = el("text", { "font-size": 62, "text-anchor": "middle", "dominant-baseline": "central" }, L.ui); k.el.textContent = "🐄"; lvl.marks.push(k.el); }
+    if (!k.el) { k.el = el("text", { "font-size": 62, "text-anchor": "middle", "dominant-baseline": "central" }, L.ui); k.el.textContent = k.em || "🐄"; lvl.marks.push(k.el); }
     const flip = (k.axis === "h" ? p.dir : 1) < 0;
     k.el.setAttribute("transform", `translate(${p.x.toFixed(1)} ${(p.y - 10).toFixed(1)})${flip ? " scale(-1 1)" : ""}`);
   });
@@ -6933,6 +6933,16 @@ const BORDERS_NA = [[[-123.3, 49], [-95.2, 49], [-89.5, 48], [-84.6, 46.5], [-82
   [[-117.1, 32.5], [-111, 31.3], [-108.2, 31.3], [-106.5, 31.8], [-104.5, 29.6], [-103, 29], [-101.4, 29.8], [-99.5, 27.5], [-97.2, 25.9]], [[-92.2, 14.6], [-92.2, 16], [-91.4, 16.1], [-91.4, 17.3], [-89.2, 17.8], [-88.3, 17.3]],
   [[-85.7, 11.1], [-83.7, 11]], [[-82.9, 8.1], [-82.6, 9.5]], [[-89.2, 14.4], [-87.4, 12.9]], [[-89.1, 15.9], [-88.2, 15.7]]];
 const COUNTRY_NA = [["ESTADOS UNIDOS", -98, 38.5], ["CANADÁ", -100, 52.6], ["MÉXICO", -102.5, 24.5], ["CUBA", -79.4, 23.9], ["OCÉANO PACÍFICO", -121, 24], ["OCÉANO ATLÁNTICO", -66.5, 33], ["GOLFO DE MÉXICO", -90.5, 25.4], ["MAR CARIBE", -77.5, 14.6]];
+// Africa: simplified coastlines (lon, lat)
+const LAND_AF = [
+  [[-6, 35.8], [-2, 35.1], [1, 36.5], [3, 36.8], [8.6, 36.9], [10.2, 37.2], [11, 36.8], [10.4, 35.6], [11.1, 35.2], [10.1, 34.2], [11.5, 33.1], [15.2, 32.3], [19.9, 30.9], [20.1, 32.1], [22, 32.9], [25, 31.6], [29, 30.9], [31.5, 31.5], [32.3, 31.3], [34.2, 31.3], [34.9, 29.5], [32.6, 29.9], [33.6, 27.2], [35.5, 24], [37.2, 21], [38.6, 18], [39.7, 15.6], [41.4, 13.9], [43.3, 12.5], [44.5, 10.4], [47.6, 11.2], [51.2, 11.8], [51.1, 10.4], [49.6, 7.2], [47.9, 4.5], [45.3, 1.9], [42.5, -.6], [40.2, -2.8], [39.3, -5.5], [39.3, -8], [40.4, -10.5], [40.6, -14.6], [39.5, -16.9], [36.9, -17.8], [35.3, -20.5], [35.5, -23.9], [33, -25.9], [32.9, -27.6], [32.3, -28.9], [31, -29.9], [28.9, -32.6], [26.5, -33.8], [23.6, -34], [20, -34.8], [18.4, -34.1], [18.1, -32.8], [17.2, -29.1], [15.2, -27], [14.4, -22.9], [12.2, -18.5], [11.8, -16.7], [12.6, -13.3], [13.6, -11], [13.2, -8.8], [12.2, -5.8], [11.8, -3.9], [9.6, -1.7], [9.3, .6], [9.6, 2.9], [9.7, 4], [8.5, 4.6], [6.2, 4.3], [4.5, 6.3], [2.5, 6.3], [1.2, 6.1], [-1.9, 4.8], [-4, 5.2], [-7.5, 4.4], [-9.5, 5.4], [-11.4, 6.9], [-13.2, 8.6], [-14.6, 10.4], [-16.6, 12.2], [-17.1, 14.6], [-16.5, 16.2], [-16, 18.4], [-16.4, 19.7], [-17, 21.1], [-16.4, 23.5], [-14.8, 25.7], [-13.2, 27.6], [-11.5, 28.2], [-9.8, 29.8], [-9.6, 31.6], [-8.5, 33.3], [-6.8, 34]],
+  [[49.3, -12], [50.4, -15.5], [49.9, -17.3], [48, -22.5], [47.1, -24.9], [45.2, -25.5], [44, -24], [43.3, -21.5], [44.4, -18.8], [44.2, -16.3], [46.3, -15.7], [47.8, -13.6]],
+  [[34.9, 29.5], [36.6, 26.2], [38.9, 22.7], [40.8, 19.3], [42.6, 16.4], [43.3, 12.7], [45.2, 13], [48.9, 14.1], [52, 15.4], [52, 31], [35.5, 31.2]],
+];
+const BORDERS_AF = [[[-1.8, 35], [-1.7, 32], [-8.7, 27.6]], [[9.5, 30.2], [10, 25], [12, 23.5]], [[25, 31.6], [25, 22]], [[25, 22], [37, 22]], [[-17, 21.3], [-13, 21.3], [-13, 23.5], [-8.7, 27.6]],
+  [[12.2, -5.8], [16, -5], [19, -8], [22, -11], [24, -11], [28, -8], [30, -4], [29.5, 1], [31, 2.5], [27, 5], [23, 4.5], [18.6, 3.5], [16.2, 2.1], [14, -4.4]], [[37.6, -3.5], [39.2, -4.7]], [[17, -28.5], [20, -24.7], [25, -25.5], [31.2, -22.3], [32, -26.8]], [[33, 3.5], [35, 5], [38, 4], [41.9, 4]]];
+const COUNTRY_AF = [["MARRUECOS", -6.5, 31], ["ARGELIA", 2.5, 28.5], ["LIBIA", 17.5, 27], ["EGIPTO", 29.5, 26.5], ["NIGERIA", 8, 9.6], ["CONGO", 23, -2.5], ["KENIA", 38, .6], ["TANZANIA", 34.8, -6.5], ["SUDÁFRICA", 24, -30.2], ["ETIOPÍA", 39.6, 8.6], ["SÁHARA", 10, 21],
+  ["OCÉANO ATLÁNTICO", -9, -12], ["OCÉANO ÍNDICO", 46, -31], ["MAR MEDITERRÁNEO", 18, 35.4]];
 const MAPS = {
   eu: { name: "🇪🇺 Europa", proj: MAPP, land: LAND, borders: BORDERS, country: COUNTRY, vb: "-70 30 1090 1020", sand: LAND.length - 1, relief: {
     mountains: [[6.6, 45.9, 1.1], [8.4, 46.4, 1.2], [10.2, 46.6, 1.1], [12.2, 47, 1], [-0.8, 42.8, .9], [1.2, 42.6, .9], [-3.3, 37.1, .8], [-5.2, 43.05, .7], [2.9, 45.2, .7], [-4.6, 57, .7], [-4.1, 40.4, .7], [12.6, 43.4, .7], [14.6, 41.6, .7]],
@@ -6958,6 +6968,13 @@ const MAPS = {
     rivers: [[[-95, 47.3], [-93.2, 45], [-91, 43], [-90.2, 38.6], [-89.2, 36.9], [-90.6, 33], [-91.2, 30.5], [-89.4, 29.2]], [[-112, 47.5], [-104, 48], [-100.7, 46.8], [-98, 43], [-95.9, 41.3], [-94.6, 39.1], [-90.2, 38.8]], [[-106.5, 37.5], [-106.7, 34], [-106.5, 31.8], [-104.5, 29.6], [-101.4, 29.8], [-99.5, 27.5], [-97.2, 25.9]], [[-106, 40], [-109.5, 38.5], [-111.5, 36.8], [-113.5, 36.1], [-114.6, 34.8], [-114.7, 32.7]], [[-76.5, 44.2], [-73.6, 45.5], [-71.2, 46.8], [-69, 48.2]], [[-80, 40.4], [-84.5, 39.1], [-86, 38], [-88.5, 37.1], [-89.1, 37]]],
     lakes: [[[-92, 46.7], [-89.5, 48], [-86.5, 48.7], [-84.6, 46.5], [-87, 46.5]], [[-87.8, 42], [-87.5, 44.5], [-86.5, 45.8], [-85.5, 44.8], [-86.3, 42.2]], [[-84.7, 45.9], [-81.5, 45.9], [-80, 44.5], [-82.4, 43], [-83.5, 44]], [[-83.5, 41.7], [-79, 42.9], [-79.2, 42.5], [-82.8, 41.5]], [[-79.8, 43.3], [-76.2, 44.1], [-76.4, 43.4], [-79, 43.2]]],
     boats: [[-125, 30], [-70, 36], [-90, 24.5], [-75, 15.5], [-112, 21.5], [-62, 42]] } },
+  af: { name: "🌍 África", proj: (lon, lat) => [(lon + 19) * 13, (38.5 - lat) * 12.4], land: LAND_AF, borders: BORDERS_AF, country: COUNTRY_AF, vb: "0 0 940 940", sand: -1, banner: [140, 760], relief: {
+    mountains: [[-6, 31.5, .9], [-2, 33.2, .8], [38.5, 10, .9], [39.6, 12.6, .8], [37.4, -3.1, 1], [29.5, -29, .8], [29.9, .4, .7], [18, 21, .7], [5.5, 23.3, .7], [9.2, 4.6, .6]],
+    forests: [[18, 0, 1.1], [22, -1, 1.1], [25.5, 1.5, 1], [15, -2, 1], [20, 3, 1], [24, -4.5, 1], [11.5, 1, .9], [-8, 7.5, .8], [-4, 7, .8], [6.5, 7, .8], [48.6, -17, .7], [36.8, -1.2, .6]],
+    deserts: [[0, 25, 50], [12, 24.5, 50], [24, 24, 50], [-8, 22, 40], [30.5, 21, 34], [22, -23, 40], [15, -24, 24]],
+    rivers: [[[33, .4], [32.4, 3.6], [31.6, 9.5], [32.5, 15.6], [33.9, 18.5], [31.5, 21.8], [32.9, 24.1], [31.2, 27.2], [31.2, 30.1], [31, 31.5]], [[-10.5, 10.8], [-7.5, 12.6], [-4, 14.5], [-3, 16.3], [0, 15.7], [3.5, 11.9], [6.3, 8.4], [6.7, 5.4]], [[25.5, -11], [26, -5], [25.2, .5], [22, 1.5], [18, .7], [16.4, -2], [15.3, -4.3], [12.3, -6]], [[22.5, -12.8], [23, -16], [25.9, -17.9], [28.7, -16.5], [30.5, -15.6], [33.5, -16.5], [35.5, -18.5]], [[29, -29.8], [24, -29.5], [20, -28.4], [16.5, -28.6]]],
+    lakes: [[[31.8, -.4], [33.9, .1], [34.2, -1.2], [33.2, -2.6], [31.7, -1.7]], [[29.2, -3.3], [30, -4], [30.7, -7.5], [31.1, -8.6], [30.3, -8.3], [29.6, -6.2]], [[34.2, -9.6], [34.9, -11.6], [35.3, -14.3], [34.5, -13.5]]],
+    boats: [[-15, 0], [44, -29], [3, 1.5], [26, 34.5], [43, -10], [-6, -24]] } },
 };
 const ZONE_CONT = { sudamerica: "sa", asia: "as", namerica: "na", africa: "af" };
 const contOf = i => ZONE_CONT[LEVELS[i].zone] || "eu";
@@ -7074,6 +7091,67 @@ LEVELS.push(
       wall(["rascacielos", "ciudad", "tienda"], [[15, 13], [16, 13], [17, 13], [18, 13], [19, 13], [20, 13], [21, 13], [22, 13], [15, 14], [16, 14], [17, 14], [18, 14], [19, 14], [20, 14], [21, 14], [22, 14], [15, 15], [16, 15], [17, 15], [18, 15], [19, 15], [20, 15], [21, 15], [22, 15]]);
       deco("estatuaG", [[24, 9]]); deco("taxi", [[13, 17], [24, 17]]); deco("arbol", [[12, 11], [26, 18]]); },
     sol: [[12, 14, 1, 0, "S D S S S S S S S S U S"]] },
+);
+
+
+LEVELS.push(
+  { id: "marrakech", zone: "africa", name: "Marrakech", emoji: "🕌", pos: [-8, 31.6], par: 5, inv: { corta: 8, curva: 2 },
+    intro: "África: ¡desvíos! Si el desvío va recto, el tren llega a un tope. Toca el desvío con ✋ para que gire, termina la vía y llega a la 🏁.", view: [8, 11, 23, 19],
+    build() { paint("arena", 4, 8, 26, 22); lvStart(10, 16);
+      lvFix("corta", 12, 16); lvFix("desvioI", 13, 16); lvFix("corta", 14, 16); lvFix("corta", 15, 16); lvFix("tope", 16, 16); lvFix("curva", 13, 15, 2);
+      lvGoal(19, 15); lvCoin(16, 15);
+      deco("palmera", [[11, 13], [17, 18], [21, 13]]); deco("tienda", [[15, 12]]); deco("fuente", [[18, 12]]); },
+    sol: [[14, 15, 1, 0, "S S S S S"]], solSwitch: [[13, 16, 1]] },
+  { id: "sahara", zone: "africa", name: "Desierto del Sáhara", emoji: "🐪", pos: [2, 25], par: 9, inv: { corta: 8, curvaL: 3, curva: 2 },
+    intro: "En el desierto las curvas son grandes y suaves. Usa las curvas largas (en Vías) para rodear las dunas.", view: [8, 8, 23, 21],
+    build() { paint("arena", 4, 4, 28, 24); lvStart(10, 18); lvGoal(19, 12); lvCoin(15, 15); lvCoin(18, 12);
+      deco("cactus", [[13, 15], [12, 12], [17, 16], [21, 17]]); deco("palmera", [[20, 9], [22, 14]]); area("agua", 21, 9, 22, 10); deco("montana", [[13, 20], [17, 20]]); },
+    sol: [[12, 18, 1, 0, "S S LL S S S RR S S"]] },
+  { id: "cairo", zone: "africa", name: "El Cairo", emoji: "🏛️", pos: [31.2, 30], par: 8, inv: { corta: 8, rampa: 3, recta: 4 },
+    intro: "Cruza el río Nilo por un puente para llegar hasta las pirámides.", view: [8, 7, 26, 20],
+    build() { paint("arena", 4, 4, 32, 24); area("agua", 17, 3, 18, 25); lvStart(10, 14); lvGoal(22, 14); lvCoin(17, 14, 1);
+      addPiece("obelisco", 13, 11, 0, 0, 0); deco("montanaG", [[22, 9], [24, 11]]); deco("palmera", [[16, 11], [16, 17], [19, 11], [19, 17]]); deco("barco", [[17, 19]]); },
+    sol: [[12, 14, 1, 0, "S S U S S S D S"]] },
+  { id: "lagos", zone: "africa", name: "Lagos", emoji: "🚦", pos: [3.4, 6.5], par: 3, inv: { corta: 5, curva: 2 },
+    intro: "Una estación con dos desvíos. Toca los dos con ✋ para que el tren gire en los dos y termina la vía hasta la 🏁.", view: [8, 9, 22, 17],
+    build() { lvStart(10, 14);
+      lvFix("corta", 12, 14); lvFix("desvioI", 13, 14); lvFix("corta", 14, 14); lvFix("corta", 15, 14); lvFix("tope", 16, 14); lvFix("curva", 13, 13, 2);
+      lvFix("corta", 14, 13); lvFix("desvioI", 15, 13); lvFix("corta", 16, 13); lvFix("corta", 17, 13); lvFix("tope", 18, 13); lvFix("curva", 15, 12, 2);
+      lvGoal(19, 12); lvCoin(17, 12);
+      deco("rascacielos", [[12, 10], [21, 10]]); deco("ciudad", [[18, 15]]); deco("bus", [[12, 16]]); deco("palmera", [[20, 14]]); },
+    sol: [[16, 12, 1, 0, "S S S"]], solSwitch: [[13, 14, 1], [15, 13, 1]] },
+  { id: "congo", zone: "africa", name: "Selva del Congo", emoji: "🌳", pos: [15.3, -2.5], par: 26, inv: { corta: 24, rampa: 3, recta: 8 },
+    intro: "Dos trenes en la selva. El de mercancías cruza el río y pasa por encima del de pasajeros. ¡Que no choquen!", view: [7, 3, 29, 24],
+    build() { area("agua", 4, 9, 32, 10); lvStart(10, 14, 0, "pasajeros", 1); lvGoal(26, 14); lvStart(18, 22, 3, "mercancias", 1); lvGoal(18, 6, 3); lvCoin(14, 14); lvCoin(18, 10, 1);
+      deco("arbol", [[12, 11], [14, 17], [22, 12], [24, 17], [12, 20], [22, 20], [10, 6], [25, 6]]); deco("palmera", [[15, 12], [21, 16]]); deco("loro", [[13, 7]]); deco("elefante", [[23, 7]]); },
+    sol: [[12, 14, 1, 0, "S*14"], [18, 20, 0, 0, "S S U S S S S S S S S D"]] },
+  { id: "serengeti", zone: "africa", name: "Serengeti", emoji: "🦒", pos: [32.4, -3.6], par: 14, inv: { corta: 16, recta: 6, curva: 4 },
+    intro: "En la sabana las cebras, las jirafas y los elefantes cruzan la vía. El tren espera a que pasen: ¡paciencia!", view: [8, 9, 28, 19],
+    build() { paint("campo", 4, 6, 32, 22); lvStart(10, 14); lvGoal(26, 14); lvCoin(19, 14); lvCow(15, 14, "v", 0, "🦓"); lvCow(19, 14, "v", 1.4, "🦒"); lvCow(23, 14, "v", 2.6, "🐘");
+      deco("arbol", [[12, 11], [17, 11], [21, 17], [25, 11], [13, 17]]); deco("elefante", [[16, 17]]); },
+    sol: [[12, 14, 1, 0, "S*14"]] },
+  { id: "kilimanjaro", zone: "africa", name: "Kilimanjaro", emoji: "🏔️", pos: [37.4, -3.1], par: 9, inv: { corta: 10, subeI: 4, subeD: 4, curva: 4 },
+    intro: "La 🏁 está en el piso 3, en la montaña más alta de África. Esta espiral gira hacia la derecha.", view: [8, 9, 24, 20],
+    build() { lvStart(10, 15); lvGoal(17, 15, 0, 3); lvCoin(15, 15, 3);
+      deco("montanaG", [[18, 11], [19, 17]]); deco("montana", [[11, 11], [16, 12], [22, 14]]); deco("elefante", [[11, 18]]); deco("arbol", [[15, 18], [21, 11]]); },
+    sol: [[12, 15, 1, 0, "S S UR UR UR R S S S"]] },
+  { id: "madagascar", zone: "africa", name: "Madagascar", emoji: "🍃", pos: [46.8, -19], par: 11, inv: { corta: 12, rampa: 3, recta: 4 },
+    intro: "Cruza el mar hasta la isla por un puente y después atraviesa la montaña por el túnel.", view: [8, 8, 27, 20],
+    build() { area("agua", 14, 3, 17, 25); addPiece("monte", 21, 14, 0, 0, 0); lvStart(10, 14); lvGoal(25, 14); lvCoin(16, 14, 1); lvCoin(22, 14, 0);
+      deco("montana", [[21, 13], [22, 13], [23, 13], [21, 15], [22, 15], [23, 15]]); deco("palmera", [[12, 11], [19, 17], [25, 11], [24, 17]]); deco("velero", [[15, 9], [16, 20]]); },
+    sol: [[12, 14, 1, 0, "U S S S S D S S S S S"]] },
+  { id: "victoria", zone: "africa", name: "Cataratas Victoria", emoji: "🌈", pos: [25.9, -17.9], par: 7, inv: { corta: 6, rampa: 5, recta: 4 },
+    intro: "Un desfiladero muy hondo junto a las cataratas. Sube dos pisos, cruza por lo alto y vuelve a bajar.", view: [8, 7, 26, 21],
+    build() { area("agua", 17, 3, 18, 25); lvStart(10, 14); lvGoal(23, 14); lvCoin(17, 14, 2);
+      deco("cascada", [[16, 8], [16, 9], [16, 10], [16, 18], [16, 19], [16, 20]]); deco("arbol", [[12, 11], [13, 17], [21, 11], [22, 17]]); deco("elefante", [[24, 18]]); },
+    sol: [[12, 14, 1, 0, "U U S S S D D"]] },
+  { id: "ciudadcabo", zone: "africa", name: "Ciudad del Cabo", emoji: "🐧", pos: [18.4, -33.9], par: 10, inv: { corta: 10, rampa: 3, curva: 2, recta: 4 },
+    intro: "¡El gran final de África! Cambia el desvío con ✋, atraviesa la Montaña de la Mesa por el túnel y cruza la bahía hasta la 🏁.", view: [8, 10, 28, 20],
+    build() { area("agua", 22, 3, 23, 25); addPiece("monte", 17, 15, 0, 0, 0); lvStart(10, 16);
+      lvFix("corta", 12, 16); lvFix("desvioI", 13, 16); lvFix("corta", 14, 16); lvFix("corta", 15, 16); lvFix("tope", 16, 16); lvFix("curva", 13, 15, 2);
+      lvGoal(26, 15); lvCoin(18, 15, 0); lvCoin(22, 15, 1);
+      deco("montana", [[17, 14], [18, 14], [19, 14], [17, 16], [18, 16], [19, 16]]); deco("pinguino", [[21, 18], [24, 18], [21, 12]]); addPiece("faro", 25, 11, 0, 0, 0); deco("palmera", [[12, 12]]); },
+    sol: [[14, 15, 1, 0, "S S S S S S U S S D"]], solSwitch: [[13, 16, 1]] },
 );
 
 // =====================================================================
@@ -7334,6 +7412,39 @@ const I18N_ROWS = [
 ["🚂 Constructor de trenes", "🚂 Train Builder", "🚂 Constructeur de trains"],
 ["Aventura", "Adventure", "Aventure"],
 ["Juego libre", "Free play", "Jeu libre"],
+["🌍 África", "🌍 Africa", "🌍 Afrique"],
+["Marrakech", "Marrakesh", "Marrakech"],
+["Desierto del Sáhara", "Sahara Desert", "Désert du Sahara"],
+["El Cairo", "Cairo", "Le Caire"],
+["Lagos", "Lagos", "Lagos"],
+["Selva del Congo", "Congo Rainforest", "Forêt du Congo"],
+["Serengeti", "Serengeti", "Serengeti"],
+["Kilimanjaro", "Kilimanjaro", "Kilimandjaro"],
+["Madagascar", "Madagascar", "Madagascar"],
+["Cataratas Victoria", "Victoria Falls", "Chutes Victoria"],
+["Ciudad del Cabo", "Cape Town", "Le Cap"],
+["MARRUECOS", "MOROCCO", "MAROC"],
+["ARGELIA", "ALGERIA", "ALGÉRIE"],
+["LIBIA", "LIBYA", "LIBYE"],
+["EGIPTO", "EGYPT", "ÉGYPTE"],
+["NIGERIA", "NIGERIA", "NIGERIA"],
+["CONGO", "CONGO", "CONGO"],
+["KENIA", "KENYA", "KENYA"],
+["TANZANIA", "TANZANIA", "TANZANIE"],
+["SUDÁFRICA", "SOUTH AFRICA", "AFRIQUE DU SUD"],
+["ETIOPÍA", "ETHIOPIA", "ÉTHIOPIE"],
+["SÁHARA", "SAHARA", "SAHARA"],
+["MAR MEDITERRÁNEO", "MEDITERRANEAN SEA", "MER MÉDITERRANÉE"],
+["África: ¡desvíos! Si el desvío va recto, el tren llega a un tope. Toca el desvío con ✋ para que gire, termina la vía y llega a la 🏁.", "Africa: switches! If the switch goes straight, the train hits a buffer stop. Tap the switch with ✋ so it turns, finish the track and reach the 🏁.", "L'Afrique : les aiguillages ! Si l'aiguillage va tout droit, le train arrive à un butoir. Touche l'aiguillage avec ✋ pour qu'il tourne, termine la voie et arrive au 🏁."],
+["En el desierto las curvas son grandes y suaves. Usa las curvas largas (en Vías) para rodear las dunas.", "In the desert the curves are big and gentle. Use the long curves (in Track) to go round the dunes.", "Dans le désert, les courbes sont grandes et douces. Utilise les longues courbes (dans Voies) pour contourner les dunes."],
+["Cruza el río Nilo por un puente para llegar hasta las pirámides.", "Cross the river Nile on a bridge to reach the pyramids.", "Traverse le Nil sur un pont pour arriver aux pyramides."],
+["Una estación con dos desvíos. Toca los dos con ✋ para que el tren gire en los dos y termina la vía hasta la 🏁.", "A station with two switches. Tap both with ✋ so the train turns at each one, and finish the track to the 🏁.", "Une gare avec deux aiguillages. Touche-les tous les deux avec ✋ pour que le train tourne à chacun, puis termine la voie jusqu'au 🏁."],
+["Dos trenes en la selva. El de mercancías cruza el río y pasa por encima del de pasajeros. ¡Que no choquen!", "Two trains in the jungle. The freight train crosses the river and passes over the passenger train. Don't let them crash!", "Deux trains dans la jungle. Le train de marchandises traverse la rivière et passe au-dessus du train de voyageurs. Qu'ils ne se heurtent pas !"],
+["En la sabana las cebras, las jirafas y los elefantes cruzan la vía. El tren espera a que pasen: ¡paciencia!", "On the savanna, zebras, giraffes and elephants cross the track. The train waits for them to pass: be patient!", "Dans la savane, les zèbres, les girafes et les éléphants traversent la voie. Le train attend qu'ils passent : patience !"],
+["La 🏁 está en el piso 3, en la montaña más alta de África. Esta espiral gira hacia la derecha.", "The 🏁 is on floor 3, on Africa's highest mountain. This spiral turns right.", "Le 🏁 est à l'étage 3, sur la plus haute montagne d'Afrique. Cette spirale tourne vers la droite."],
+["Cruza el mar hasta la isla por un puente y después atraviesa la montaña por el túnel.", "Cross the sea to the island on a bridge, then go through the mountain tunnel.", "Traverse la mer jusqu'à l'île sur un pont, puis passe par le tunnel de la montagne."],
+["Un desfiladero muy hondo junto a las cataratas. Sube dos pisos, cruza por lo alto y vuelve a bajar.", "A very deep gorge by the falls. Climb two floors, cross up high and come back down.", "Une gorge très profonde près des chutes. Monte de deux étages, traverse en hauteur et redescends."],
+["¡El gran final de África! Cambia el desvío con ✋, atraviesa la Montaña de la Mesa por el túnel y cruza la bahía hasta la 🏁.", "Africa's grand finale! Change the switch with ✋, go through Table Mountain's tunnel and cross the bay to the 🏁.", "Le grand final de l'Afrique ! Change l'aiguillage avec ✋, passe par le tunnel de la montagne de la Table et traverse la baie jusqu'au 🏁."],
 ["🌎 Norteamérica", "🌎 North America", "🌎 Amérique du Nord"],
 ["Ciudad de México", "Mexico City", "Mexico"],
 ["Canal de Panamá", "Panama Canal", "Canal de Panama"],
