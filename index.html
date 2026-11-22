@@ -868,6 +868,25 @@ body.cab.boardable #cabBoard { display: flex; }
 .stcol { width: 30px; height: 30px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); padding: 0; cursor: pointer; }
 .stcol.on { box-shadow: 0 0 0 3px #3b2a18; }
 #drive .dname .odo { display: block; font-size: 12px; font-weight: 800; color: #6b5a40; margin-top: 2px; }
+.card.writer { max-width: 760px; }
+.wshow { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: flex-end; min-height: 92px; padding: 10px; margin: 4px 0 12px; background: #eaf6e4; border-radius: 18px; box-shadow: inset 0 2px 6px rgba(0,0,0,.08); }
+.wshow .wtile svg { height: 76px; width: auto; display: block; }
+.wshow .wsp { width: 26px; }
+.wshow .wph { color: #6b8a5a; font-weight: 800; font-size: 20px; align-self: center; }
+.wkeys { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+.wkey { height: 52px; border-radius: 14px; border: 0; background: #fff8e8; box-shadow: 0 4px 0 #d9c39a; font-size: 26px; font-weight: 900; color: #3b2a18; cursor: pointer; }
+.wkey:active { transform: translateY(3px); box-shadow: 0 1px 0 #d9c39a; }
+.wkey.wfn { background: #ffe9b8; }
+.wrow { display: flex; gap: 10px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+.wrow .b { width: auto !important; padding: 0 20px; height: 56px; font-size: 20px; font-weight: 900; border-radius: 999px; }
+.wjoin { background: #fff; } .wjoin.on { background: #d8f3d0; box-shadow: 0 0 0 3px #3a9d3a inset; }
+.wgo { background: linear-gradient(165deg, #6fd36f, #2e9d4f) !important; color: #fff; box-shadow: 0 5px 0 #1f6e35 !important; }
+.wgo.off { opacity: .45; }
+.wnote { text-align: center; color: #7a5a2a; font-size: 14px; margin-top: 10px; }
+.ltrw { font-size: 34px; }
+#bottom #palette.onerow { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; overscroll-behavior-x: contain; }
+#bottom #palette.onerow > * { flex-shrink: 0; }
+@media (max-height: 500px) { .wkey { height: 40px; font-size: 20px; } .wshow { min-height: 60px; } .wshow .wtile svg { height: 50px; } }
 </style>
 </head>
 <body>
@@ -7346,6 +7365,7 @@ function handleTap0(wx, wy) {
     return;
   }
   if (tool.startsWith("hz_")) { hzToolTap(wx, wy); return; }
+  if (tool.startsWith("ltr_")) { if (fullLocked(tool)) { askGrownUp(); return; } placeLetterAt(tool.slice(4), Math.floor(wx / T), Math.floor((wy + floor * E) / T)); return; }
   if (tool === "erase") {
     if (car && !lvl) { removeCar(car); sfx.toc(); autosave(); return; }
     if (tr) { if (lvl) { hornOf(tr); return; } removeTrain(tr); sfx.toc(); autosave(); return; }
@@ -10486,7 +10506,8 @@ let fullSet = null;
 function fullItems() {
   if (fullSet) return fullSet;
   fullSet = new Set(["rampa", "rampaC", "subeI", "subeD", "subeBaja", "dobleC", "paso", ...FULL_TRAINS]);
-  TABS.filter(t => ["calles", "ciudad", "monumentos"].includes(t.id)).forEach(t => t.items.forEach(i => fullSet.add(i)));
+  TABS.filter(t => ["calles", "ciudad", "monumentos", "letras"].includes(t.id)).forEach(t => t.items.forEach(i => fullSet.add(i)));
+  fullSet.delete("ltr_write"); // writing a word is open to all: the free version builds the first letter
   return fullSet;
 }
 const isFull = () => !!(window.__NATIVE__ && window.__NATIVE__.full) || sget(fullKey()) === true;
@@ -10943,6 +10964,218 @@ function spit() {
   ["pointerup", "pointerleave", "pointercancel"].forEach(ev => btn.addEventListener(ev, () => clearTimeout(holdT)));
   btn.onclick = e => { e.stopPropagation(); if (held) return; if (box.classList.contains("open")) { box.classList.remove("open"); return; } spit(); };
   const pk = document.createElement("button"); pk.className = "b spitMore"; pk.textContent = "▾"; pk.title = "Elegir qué lanza"; pk.onclick = e => { e.stopPropagation(); box.classList.toggle("open"); sfx.click(); }; box.appendChild(pk);
+}
+
+
+// =====================================================================
+//  🔤 LETTERS: words written in real track, so trains can run on a child's name.
+//  Each letter is a set of strokes on a 5-squares-tall grid; every square gets the piece that
+//  joins its sides (straight, curve, switch with a 🧠, crossing, or a buffer stop at a loose end).
+// =====================================================================
+const GLYPHS = {
+  A: [[[0, 4], [0, 0], [2, 0], [2, 4]], [[0, 2], [2, 2]]],
+  B: [[[0, 4], [0, 0], [1, 0], [1, 2]], [[0, 2], [2, 2], [2, 4], [0, 4]]],
+  C: [[[2, 0], [0, 0], [0, 4], [2, 4]]],
+  D: [[[0, 0], [1, 0], [1, 1], [2, 1], [2, 3], [1, 3], [1, 4], [0, 4], [0, 0]]],
+  E: [[[2, 0], [0, 0], [0, 4], [2, 4]], [[0, 2], [1, 2]]],
+  F: [[[2, 0], [0, 0], [0, 4]], [[0, 2], [1, 2]]],
+  G: [[[2, 0], [0, 0], [0, 4], [2, 4], [2, 2], [1, 2]]],
+  H: [[[0, 0], [0, 4]], [[2, 0], [2, 4]], [[0, 2], [2, 2]]],
+  I: [[[0, 0], [0, 4]]],
+  J: [[[2, 0], [2, 4], [0, 4], [0, 3]]],
+  K: [[[0, 0], [0, 4]], [[0, 2], [1, 2], [1, 1], [2, 1], [2, 0]], [[1, 2], [1, 3], [2, 3], [2, 4]]],
+  L: [[[0, 0], [0, 4], [2, 4]]],
+  M: [[[0, 4], [0, 0], [4, 0], [4, 4]], [[2, 0], [2, 2]]],
+  N: [[[0, 4], [0, 0], [1, 0], [1, 2], [2, 2], [2, 4], [3, 4], [3, 0]]],
+  O: [[[0, 0], [2, 0], [2, 4], [0, 4], [0, 0]]],
+  P: [[[0, 4], [0, 0], [2, 0], [2, 2], [0, 2]]],
+  Q: [[[0, 0], [2, 0], [2, 3], [0, 3], [0, 0]], [[1, 3], [1, 4], [2, 4]]],
+  R: [[[0, 4], [0, 0], [2, 0], [2, 2], [0, 2]], [[1, 2], [1, 3], [2, 3], [2, 4]]],
+  S: [[[2, 0], [0, 0], [0, 2], [2, 2], [2, 4], [0, 4]]],
+  T: [[[0, 0], [2, 0]], [[1, 0], [1, 4]]],
+  U: [[[0, 0], [0, 4], [2, 4], [2, 0]]],
+  V: [[[0, 0], [0, 3], [1, 3], [1, 4]], [[2, 0], [2, 3], [1, 3]]],
+  W: [[[0, 0], [0, 4], [4, 4], [4, 0]], [[2, 4], [2, 2]]],
+  X: [[[0, 0], [0, 1], [1, 1], [1, 3], [2, 3], [2, 4]], [[2, 0], [2, 2], [0, 2], [0, 4]]],
+  Y: [[[0, 0], [0, 2], [1, 2], [1, 4]], [[2, 0], [2, 2], [1, 2]]],
+  Z: [[[0, 0], [2, 0], [2, 1], [1, 1], [1, 3], [0, 3], [0, 4], [2, 4]]],
+  0: [[[0, 0], [2, 0], [2, 4], [0, 4], [0, 0]], [[1, 0], [1, 1]]],
+  1: [[[0, 0], [1, 0], [1, 4]], [[0, 4], [2, 4]]],
+  2: [[[0, 0], [2, 0], [2, 2], [0, 2], [0, 4], [2, 4]]],
+  3: [[[0, 0], [2, 0], [2, 4], [0, 4]], [[0, 2], [2, 2]]],
+  4: [[[0, 0], [0, 2], [2, 2]], [[2, 0], [2, 4]]],
+  5: [[[2, 0], [0, 0], [0, 2], [1, 2], [2, 3], [2, 4], [0, 4]]],
+  6: [[[2, 0], [0, 0], [0, 4], [2, 4], [2, 2], [0, 2]]],
+  7: [[[0, 0], [2, 0], [2, 4]]],
+  8: [[[0, 0], [2, 0], [2, 4], [0, 4], [0, 0]], [[0, 2], [2, 2]]],
+  9: [[[2, 4], [2, 0], [0, 0], [0, 2], [2, 2]]],
+};
+// "5" gets a square step instead of a diagonal (track only runs along the grid)
+GLYPHS[5] = [[[2, 0], [0, 0], [0, 2], [2, 2], [2, 4], [0, 4]], [[2, 0], [2, 1]]];
+const LTR_KEYS = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"];
+const ltrNorm = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/[^A-Z0-9 ]/g, "");
+const glyphW = ch => { let w = 0; (GLYPHS[ch] || []).forEach(l => l.forEach(([x]) => { w = Math.max(w, x + 1); })); return w; };
+// which sides of each square a letter's strokes join: { "x,y": Set of edges (0 N, 1 E, 2 S, 3 W) }
+function glyphCells(ch) {
+  const cells = new Map(), add = (x, y, e) => { const k = x + "," + y; if (!cells.has(k)) cells.set(k, new Set()); if (e != null) cells.get(k).add(e); };
+  (GLYPHS[ch] || []).forEach(line => {
+    for (let i = 0; i < line.length - 1; i++) {
+      let [x, y] = line[i]; const [x1, y1] = line[i + 1], dx = Math.sign(x1 - x), dy = Math.sign(y1 - y), e = dx > 0 ? 1 : dx < 0 ? 3 : dy > 0 ? 2 : 0;
+      while (x !== x1 || y !== y1) { add(x, y, e); x += dx; y += dy; add(x, y, opp(e)); }
+    }
+  });
+  return cells;
+}
+// the piece (and turn) whose ends are exactly these sides
+const LTR_TYPES = ["tope", "corta", "curva", "desvioI", "desvioD", "cruce"];
+function pieceForEdges(es) {
+  const want = [...es].sort().join();
+  for (const t of LTR_TYPES) for (let r = 0; r < 4; r++) {
+    const got = DEFS[t].ports.map(pt => (pt[2] + r) % 4).sort().join();
+    if (got === want) return [t, r];
+  }
+  return null;
+}
+// lay out a word: lines of up to `max` letters; returns cells per absolute square, plus where trains go
+function wordPlan(word, joined) {
+  const chars = [...ltrNorm(word)].filter(ch => ch === " " || GLYPHS[ch]);
+  const lines = [[]];
+  let lw = 0;
+  chars.forEach(ch => { const w = ch === " " ? 2 : glyphW(ch); if (lw + w > COLS - 4 && lines[lines.length - 1].length) { lines.push([]); lw = 0; } if (ch === " " && !lines[lines.length - 1].length) return; lines[lines.length - 1].push(ch); lw += w + 1; });
+  const LH = joined ? 8 : 6, plan = { cells: new Map(), w: 0, h: 0, starts: [] };
+  const put = (x, y, e) => { const k = x + "," + y; if (!plan.cells.has(k)) plan.cells.set(k, new Set()); plan.cells.get(k).add(e); };
+  lines.forEach((ln, li) => {
+    let x0 = 0; const y0 = li * LH, links = [];
+    ln.forEach(ch => {
+      if (ch === " ") { x0 += 2; return; }
+      const gc = glyphCells(ch), w = glyphW(ch);
+      gc.forEach((es, k) => { const [x, y] = k.split(",").map(Number); es.forEach(e => put(x0 + x, y0 + y, e)); });
+      let best = null; // where this letter joins the line underneath: a bottom square with few ends
+      if (joined) gc.forEach((es, k) => { const [x, y] = k.split(",").map(Number); if (y !== 4 || es.has(2)) return; const sc = es.size * 10 + Math.abs(x - (w - 1) / 2); if (!best || sc < best.sc) best = { x: x0 + x, sc }; });
+      if (best) links.push(best.x);
+      else { // a train for a letter on its own: on a straight square if it has one
+        let st = null; gc.forEach((es, k) => { const [x, y] = k.split(",").map(Number); if (!st || (es.size === 2 && (es.has(0) && es.has(2) || es.has(1) && es.has(3)))) st = [x0 + x, y0 + y]; });
+        if (st && !joined) plan.starts.push(st);
+      }
+      x0 += w + 1;
+    });
+    if (joined && links.length) {
+      links.forEach(x => { put(x, y0 + 4, 2); put(x, y0 + 5, 0); put(x, y0 + 5, 2); put(x, y0 + 6, 0); });
+      const a = Math.min(...links), b = Math.max(...links);
+      for (let x = a; x < b; x++) { put(x, y0 + 6, 1); put(x + 1, y0 + 6, 3); }
+      let sx = null; for (let x = Math.round((a + b) / 2), k = 0; k <= b - a && sx == null; k++) for (const xx of [x - k, x + k]) if (xx > a && xx < b && !links.includes(xx)) { sx = xx; break; }
+      plan.starts.push(sx != null ? [sx, y0 + 6] : [a, y0 + 5]); // the train starts on a plain straight of the joining line
+    }
+    plan.w = Math.max(plan.w, x0 - 1);
+  });
+  plan.h = lines.length * LH - (joined ? 1 : 1);
+  return plan;
+}
+// a free rectangle for the word, as close as possible to the middle of the screen
+function findRoom(w, h) {
+  const free = (c, r) => inB(c, r) && !piecesIn(c, r).some(q => !DEFS[q.type].gtile);
+  const cx = ((innerWidth / 2 - view.x) / view.z) / T, cy = ((innerHeight / 2 - view.y) / view.z) / T;
+  let best = null;
+  for (let r = 1; r + h < ROWS; r++) for (let c = 1; c + w < COLS; c++) {
+    const d = Math.hypot(c + w / 2 - cx, r + h / 2 - cy); if (best && d >= best.d) continue;
+    let ok = true;
+    for (let y = -1; y <= h && ok; y++) for (let x = -1; x <= w && ok; x++) if (!free(c + x, r + y)) ok = false;
+    if (ok) best = { c, r, d };
+  }
+  return best;
+}
+// build a planned word at (c0, r0); returns the new pieces
+function buildPlan(plan, c0, r0) {
+  const made = [];
+  plan.cells.forEach((es, k) => {
+    const [x, y] = k.split(",").map(Number), pr = pieceForEdges(es); if (!pr) return;
+    const p = addPiece(pr[0], c0 + x, r0 + y, pr[1], 0, 0); if (!p) return;
+    if (DEFS[pr[0]].sw) { p.fx = Object.assign({}, p.fx, { smart: 1 }); redrawPiece(p); }
+    made.push(p);
+  });
+  return made;
+}
+function popIn(ps, letterOf) { // pieces appear letter by letter, with a little "toc"
+  const seen = new Map();
+  ps.forEach(p => {
+    const i = letterOf(p), g = p.els && p.els[0]; if (!seen.has(i)) { seen.set(i, 1); setTimeout(() => sfx.toc(), 120 + i * 160); }
+    if (g && g.animate) try { g.style.transformOrigin = `${(p.c + .5) * T}px ${(p.r + .5) * T}px`; g.animate([{ transform: "scale(.2)", opacity: 0 }, { transform: "scale(1.12)", opacity: 1, offset: .7 }, { transform: "scale(1)", opacity: 1 }], { duration: 380, delay: 80 + i * 160, fill: "backwards" }); } catch (e) {}
+  });
+}
+function writeWord(word, joined) {
+  let w = ltrNorm(word).trim(); if (!w) return false;
+  let taste = false;
+  if (!isFull()) { taste = w.length > 1; w = w.replace(/ /g, "")[0]; joined = false; } // free version: the first letter, as a taste
+  const plan = wordPlan(w, joined), room = findRoom(plan.w, plan.h);
+  if (!room) { sfx.no(); toast("🚫 " + LX("No hay sitio: borra algo o usa la goma", "No room: clear some space first", "Pas de place : fais un peu de place", "Kein Platz: räum erst etwas weg")); return false; }
+  if (running) setRunning(false);
+  let ps = [];
+  withUndo(() => {
+    ps = buildPlan(plan, room.c, room.r);
+    plan.starts.forEach(([x, y]) => {
+      const p = piecesIn(room.c + x, room.r + y).find(q => q.geo.routes.length); if (!p) return;
+      addTrain(trainKind && !fullLocked(trainKind) ? trainKind : "vapor", 1, p.id, 0, 1, Math.min(20, p.geo.routes[0].len / 2));
+    });
+    autosave();
+  });
+  popIn(ps, p => Math.floor((p.c - room.c) / 4) + Math.floor((p.r - room.r) / 8) * 11);
+  // show the whole word
+  const z = clamp(Math.min(innerWidth * .82 / ((plan.w + 2) * T), innerHeight * .62 / ((plan.h + 2) * T)), minZ(), 1.2);
+  view.z = z; view.x = innerWidth / 2 - (room.c + plan.w / 2) * T * z; view.y = innerHeight * .46 - (room.r + plan.h / 2) * T * z; userMoved = true; applyView();
+  sset(KEY + "-word", word);
+  setTimeout(() => {
+    speak(LX("¡Mira! Tu nombre hecho de vías. Pulsa el botón verde y el tren lo recorre.", "Look! Your name made of track. Press the green button and the train will ride along it.", "Regarde ! Ton nom en rails. Appuie sur le bouton vert et le train va le parcourir.", "Schau! Dein Name aus Schienen. Drück den grünen Knopf, dann fährt der Zug darauf."));
+    try { hintPlay(); } catch (e) {}
+    if (taste) setTimeout(() => toast("🔒 " + LX("La palabra entera, con la versión completa", "The whole word comes with the full version", "Le mot entier avec la version complète", "Das ganze Wort gibt es mit der Vollversion")), 2200);
+  }, 300 + ps.length * 6);
+  return true;
+}
+// a single letter dropped where you tap (its top-left a little up and left of your finger)
+function placeLetterAt(ch, c, r) {
+  const plan = wordPlan(ch, false), c0 = c - Math.floor(plan.w / 2), r0 = r - 2;
+  for (let y = 0; y < plan.h; y++) for (let x = 0; x < plan.w; x++) if (plan.cells.has(x + "," + y) && (!inB(c0 + x, r0 + y) || piecesIn(c0 + x, r0 + y).some(q => !DEFS[q.type].gtile))) { sfx.no(); toast("🚫"); return; }
+  const ps = buildPlan(plan, c0, r0);
+  popIn(ps, () => 0); autosave();
+}
+// the little picture of a letter in the palette
+function letterIcon(ch) {
+  const w = glyphW(ch), s = el("svg", { xmlns: NS, viewBox: `-0.9 -0.9 ${w + .8} 5.8` });
+  el("rect", { x: -.9, y: -.9, width: w + .8, height: 5.8, rx: .7, fill: "#fff3dc" }, s);
+  (GLYPHS[ch] || []).forEach(l => {
+    const d = l.map(([x, y], i) => (i ? "L" : "M") + x + " " + y).join("");
+    el("path", { d, stroke: "#7d4f22", "stroke-width": .78, fill: "none", "stroke-linecap": "round", "stroke-linejoin": "round" }, s);
+    el("path", { d, stroke: "#d9a566", "stroke-width": .55, fill: "none", "stroke-linecap": "round", "stroke-linejoin": "round" }, s);
+  });
+  return s;
+}
+// ✏️ the big keyboard: type a word, it is built in track
+function openWriter() {
+  if (running) setRunning(false);
+  let word = (sget(KEY + "-word") || "").slice(0, 16), joined = sget(KEY + "-wordJoin") !== false;
+  openModal(card => {
+    card.classList.add("writer");
+    h2(card, LX("✏️ Escribe tu nombre", "✏️ Write your name", "✏️ Écris ton prénom", "✏️ Schreib deinen Namen"));
+    const show = addEl(card, "div", "wshow");
+    const draw = () => {
+      show.innerHTML = "";
+      const chars = [...ltrNorm(word)];
+      if (!chars.length) addEl(show, "span", "wph", LX("Toca las letras…", "Tap the letters…", "Touche les lettres…", "Tippe die Buchstaben…"));
+      chars.forEach(ch => { if (ch === " ") { addEl(show, "span", "wsp"); return; } const t = addEl(show, "span", "wtile"); t.appendChild(letterIcon(ch)); });
+      go.classList.toggle("off", !chars.some(c => c !== " "));
+    };
+    const keys = addEl(card, "div", "wkeys");
+    [...LTR_KEYS, "␣", "⌫"].forEach(k => {
+      const b = addEl(keys, "button", "wkey" + (k === "⌫" || k === "␣" ? " wfn" : ""), k);
+      b.onclick = e => { e.stopPropagation(); unlockAudio(); if (k === "⌫") word = word.slice(0, -1); else if (word.length < 16) word += k === "␣" ? " " : k; tone([520 + LTR_KEYS.indexOf(k) * 9], "triangle", 0, .07, .08); draw(); };
+    });
+    const row = addEl(card, "div", "wrow");
+    const jb = addEl(row, "button", "b wjoin" + (joined ? " on" : ""), (joined ? "🔗 " : "⛓️‍💥 ") + LX("Letras unidas", "Joined letters", "Lettres reliées", "Verbundene Buchstaben"));
+    jb.onclick = e => { e.stopPropagation(); joined = !joined; sset(KEY + "-wordJoin", joined); jb.classList.toggle("on", joined); jb.textContent = (joined ? "🔗 " : "⛓️‍💥 ") + LX("Letras unidas", "Joined letters", "Lettres reliées", "Verbundene Buchstaben"); sfx.click(); };
+    const go = addEl(row, "button", "b wgo", "✅ " + LX("¡Constrúyelo!", "Build it!", "Construis !", "Bauen!"));
+    go.onclick = e => { e.stopPropagation(); if (!ltrNorm(word).trim()) { sfx.no(); return; } closeModal(); setTimeout(() => writeWord(word, joined), 120); };
+    if (!isFull()) addEl(card, "p", "wnote", "🔒 " + LX("Versión gratis: se construye la primera letra. Con la versión completa, la palabra entera.", "Free version: the first letter is built. The full version builds the whole word.", "Version gratuite : la première lettre est construite. La version complète construit tout le mot.", "Gratisversion: Der erste Buchstabe wird gebaut. Die Vollversion baut das ganze Wort."));
+    draw();
+  });
 }
 
 // secret switch for testing: 5 quick taps on the parents' page icon
@@ -11455,6 +11688,7 @@ const TABS = [
   { id: "cruces", grp: "vias", ic: "🔀", nm: "Desvíos", items: ["desvioI", "desvioY", "dobleC", "subeBaja", "cruce", "hz_listo", "hz_senal"] },
   { id: "subir", grp: "vias", ic: "⛰️", nm: "Rampas", items: ["rampa", "rampaC", "subeI"] },
   { id: "especial", grp: "vias", ic: "🚉", nm: "Estación", items: ["estacion", "tunel", "tunelL", "tope", "paso"] },
+  { id: "letras", grp: "vias", ic: "🔤", nm: "Letras", items: ["ltr_write", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"].map(c => c.length === 1 ? "ltr_" + c : c) },
   { id: "campo", grp: "decor", ic: "🌳", nm: "Campo", items: CAMPO.map(d => bigOf(d[0])) },
   { id: "calles", grp: "calles", ic: "🚗", nm: "Calles", items: ["lapizCalle", "calle", "calleC", "calleT", "calleX", "paso", "calleVia", "calleViaC", "car_coche", "car_taxi", "car_bus", "car_policia", "car_bomberos", "car_tuktuk"] },
   { id: "suelos", grp: "decor", ic: "🎨", nm: "Suelos", items: ["plaza", "arena", "parque", "nieve", "campo", "gris", "rosa", "naranja", "azul", "amarillo", "marron", "rojo", "agua"] },
@@ -11463,11 +11697,14 @@ const TABS = [
   { id: "trenes", grp: "trenes", ic: "🚂", nm: "Trenes", items: [] },
 ];
 function nameOf(id) {
+  if (id === "ltr_write") return LX("Escribe tu nombre", "Write your name", "Écris ton prénom", "Schreib deinen Namen");
+  if (id.startsWith("ltr_")) return LX("Letra ", "Letter ", "Lettre ", "Buchstabe ") + id.slice(4);
   if (id === "train") return KINDS[trainKind].t;
   if (id.startsWith("car_")) return CARS[id.slice(4)].t;
   return INFO[id] ? INFO[id][1] : DECO_NAME[id] || id;
 }
 function textOf(id) {
+  if (id.startsWith("ltr_")) return LX("Toca el tablero para poner esta letra hecha de vías. Las puntas sueltas llevan topes y los cruces de la letra, desvíos con 🧠: el tren la recorre entera.", "Tap the board to place this letter made of track. Loose ends get buffer stops and the joins get 🧠 switches, so the train rides all of it.", "Touche le plateau pour poser cette lettre en rails. Les bouts libres ont des butoirs et les jonctions des aiguillages 🧠 : le train la parcourt en entier.", "Tippe aufs Spielfeld, um diesen Buchstaben aus Schienen zu legen. Lose Enden bekommen Prellböcke und Verzweigungen 🧠-Weichen, so fährt der Zug ihn ganz ab.");
   if (isSlope(id)) return trn(slopeMode === "down" ? "Ahora BAJA ⬇️ desde el piso en el que estás." : "Ahora SUBE ⬆️ desde el piso en el que estás.") + " " + trn(INFO[id][2]);
   if (id === "train") return trn(KINDS[trainKind].desc) + " " + trn("Toca una vía para ponerlo y tócalo para darle la vuelta. ➖ ➕ cambian los vagones.");
   if (id.startsWith("car_")) return "Toca una calle para ponerlo. Anda cuando pulsas ▶️, elige camino en los cruces y espera en el paso a nivel. Tócalo para darle la vuelta.";
@@ -11554,6 +11791,8 @@ function vehicleIcon(kind) {
 function iconFor(id) {
   if (id === "train") { const K = KINDS[trainKind]; return trainIcon(trainKind, 2, K.c1[0], K.c2[0]); }
   if (id.startsWith("car_")) return vehicleIcon(id.slice(4));
+  if (id === "ltr_write") { const sp = document.createElement("span"); sp.className = "ltrw"; sp.textContent = "✏️"; return sp; }
+  if (id.startsWith("ltr_")) return letterIcon(id.slice(4));
   if (PAL_IC[id]) return iconNode(PAL_IC[id]);
   if (INFO[id] && INFO[id][0]) { const sp = document.createElement("span"); sp.textContent = INFO[id][0]; return sp; }
   if (DEFS[id] && !DEFS[id].deco) return pieceIcon(id);
@@ -11639,7 +11878,7 @@ $("palette").addEventListener("pointermove", e => { if (holdT && Math.hypot(e.cl
 $("palette").addEventListener("click", e => { if (holdDone) { holdDone = false; e.stopPropagation(); e.preventDefault(); } }, true);
 $("palette").addEventListener("contextmenu", e => { if (e.target.closest('.it[data-id="erase"]')) e.preventDefault(); });
 function levelPalette() {
-  const pal = $("palette"); pal.innerHTML = "";
+  const pal = $("palette"); pal.innerHTML = ""; pal.classList.remove("onerow");
   pal.appendChild(makeItem("hand", () => selectTool("hand")));
   pal.appendChild(makeItem("erase", () => selectTool("erase")));
   pal.appendChild(Object.assign(document.createElement("div"), { className: "sep" }));
@@ -11666,7 +11905,7 @@ function selectTab(id) {
   document.querySelectorAll(".tab").forEach(e => e.classList.toggle("sel", e.dataset.grp === grpOf(id)));
   $("tabs").style.setProperty("--gc", GCOL[grpOf(id)] || "#1f6fd1");
   renderSubtabs(); try { buildFullBadges(); } catch (e) {}
-  const pal = $("palette"); pal.innerHTML = "";
+  const pal = $("palette"); pal.innerHTML = ""; pal.classList.toggle("onerow", id === "letras");
   pal.appendChild(makeItem("hand", () => selectTool("hand")));
   pal.appendChild(makeItem("erase", () => selectTool("erase")));
   (grpOf(id) === "calles" ? ["lapiz", "lapizCalle"] : ["lapiz"]).forEach(pid => { // the track pencil is always there; the street one in the Streets tab
@@ -11700,7 +11939,7 @@ function selectTab(id) {
     selectTool("train");
     updateCarsUI();
   } else {
-    tab.items.filter(allowedItem).filter(it => it !== "lapiz" && it !== "lapizCalle").forEach(it => { const fl = fullLocked(it), lk = !fl && shopLocked(it), d = makeItem(it, () => fullLocked(it) ? askGrownUp() : shopLocked(it) ? openShop(it) : selectTool(it)); if (fl) fullBadge(d); else if (lk) lockItem(d, it); pal.appendChild(d); });
+    tab.items.filter(allowedItem).filter(it => it !== "lapiz" && it !== "lapizCalle").forEach(it => { const fl = fullLocked(it), lk = !fl && shopLocked(it), d = makeItem(it, () => it === "ltr_write" ? openWriter() : fullLocked(it) ? askGrownUp() : shopLocked(it) ? openShop(it) : selectTool(it)); if (fl) fullBadge(d); else if (lk) lockItem(d, it); pal.appendChild(d); });
     if (id === "subir" && proMode && tab.items.some(allowedItem)) {
       pal.appendChild(Object.assign(document.createElement("div"), { className: "sep" }));
       const sw = document.createElement("div"); sw.className = "dirsw"; sw.title = "¿La pieza sube o baja?";
@@ -14065,6 +14304,7 @@ const deOf = s => { if (!s) return ""; const k = s.trim(); return I18N_DE[s] || 
 const LANGS = { es: "🇪🇸", en: "🇬🇧", fr: "🇫🇷", de: "🇩🇪" };
 const I18N = new Map();
 I18N_ROWS.push(["Desafío", "Challenge", "Défi", "Wettkampf"], ["Pegatinas", "Stickers", "Autocollants", "Sticker"], ["Foto de mi circuito", "Photo of my railway", "Photo de mon circuit", "Foto von meiner Strecke"], ["Toca una pieza o un tren para quitarlo. Mantén pulsada la goma para borrarlo todo.", "Tap a piece or a train to remove it. Hold the eraser down to clear everything.", "Touche une pièce ou un train pour l'enlever. Garde le doigt sur la gomme pour tout effacer.", "Tippe ein Teil oder einen Zug an, um es wegzunehmen. Halte den Radierer gedrückt, um alles zu löschen."]);
+I18N_ROWS.push(["Letras", "Letters", "Lettres", "Buchstaben"]);
 I18N_ROWS.push(["Desvío de dos curvas", "Double-curve switch", "Aiguillage à deux courbes", "Doppelkurven-Weiche"],
   ["Dos curvas en una casilla: si el tren viene del oeste sale por el norte, y si viene del este sale por el sur. Tócalo con ✋ para darle la vuelta (oeste→sur, este→norte), o ponle un 🧠 para que cambie solo.",
    "Two curves in one square: a train coming from the west leaves to the north, and one from the east leaves to the south. Tap it with ✋ to swap them (west→south, east→north), or give it a 🧠 so it changes by itself.",
