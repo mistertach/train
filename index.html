@@ -860,6 +860,14 @@ body.playing.following #spitBox { display: flex; }
 #spitBox .spitPick .b { width: 46px; height: 46px; font-size: 24px; border-radius: 50%; }
 #spitBox .spitPick .b.on { box-shadow: 0 0 0 3px #ffb340; }
 @media (max-height: 500px) { #spitBox { right: calc(60px + env(safe-area-inset-right)); } #spitBtn { width: 52px; height: 52px; font-size: 26px; } #spitBox .spitPick .b { width: 38px; height: 38px; font-size: 20px; } }
+#cabBoard { width: auto !important; min-width: 140px; white-space: nowrap; flex-direction: row; justify-content: center; }
+#cabBoard { display: none; position: fixed; left: 50%; bottom: calc(16% + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 6; height: 76px; padding: 0 26px; font-size: 36px; font-weight: 900; border-radius: 999px; background: linear-gradient(165deg, #ffe58a, #ffb340); box-shadow: 0 5px 0 #c78500, 0 8px 18px rgba(120,80,0,.3); animation: hglow 1.4s ease-in-out infinite; align-items: center; gap: 8px; color: #3b2a18; }
+body.cab.boardable #cabBoard { display: flex; }
+@media (max-height: 500px) { #cabBoard { height: 60px; font-size: 28px; bottom: 18%; } }
+.stcols { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 6px 0; }
+.stcol { width: 30px; height: 30px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); padding: 0; cursor: pointer; }
+.stcol.on { box-shadow: 0 0 0 3px #3b2a18; }
+#drive .dname .odo { display: block; font-size: 12px; font-weight: 800; color: #6b5a40; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -922,6 +930,7 @@ body.playing.following #spitBox { display: flex; }
     <div id="floorShow">0<small>PISO</small></div>
     <button class="b" id="fDown" title="Bajar un piso">⬇️</button>
   </div>
+  <button class="b" id="cabBoard" title="¡Que suban!">🧍</button>
   <div id="spitBox"><div class="spitPick"></div><button class="b" id="spitBtn" title="¡Lanza cosas!">🫧</button></div>
   <div id="camBox">
     <button class="b" id="camFollow" title="Seguir al tren">🎥</button>
@@ -5264,6 +5273,8 @@ const DEFS = {
   desvioI: { sw: true, cells: P1, ports: [[0, 0, 3], [0, 0, 1], [0, 0, 0]], routes: [{ a: 0, b: 1, g: WE }, { a: 0, b: 2, g: CWN }] },
   desvioD: { sw: true, cells: P1, ports: [[0, 0, 3], [0, 0, 1], [0, 0, 2]], routes: [{ a: 0, b: 1, g: WE }, { a: 0, b: 2, g: CWS }] },
   desvioY: { sw: true, cells: P1, ports: [[0, 0, 3], [0, 0, 0], [0, 0, 2]], routes: [{ a: 0, b: 1, g: CWN }, { a: 0, b: 2, g: CWS }] },
+  // up-or-down switch: from the single end a train climbs one floor or goes down one, as the lever says (🧠 can choose)
+  subeBaja: { sw: true, span: 3, cells: P2, ports: [[0, 0, 3, 1], [1, 0, 1, 2], [1, 0, 1, 0]], routes: [{ a: 0, b: 1, g: LONG, z0: 1, z1: 2 }, { a: 0, b: 2, g: LONG, z0: 1, z1: 0 }] },
   cruce:   { cells: P1, ports: [[0, 0, 3], [0, 0, 1], [0, 0, 0], [0, 0, 2]], routes: [{ a: 0, b: 1, g: WE }, { a: 2, b: 3, g: NSg }] },
   rampa:   { span: 2, cells: P2, ports: [[0, 0, 3, 0], [1, 0, 1, 1]], routes: [{ a: 0, b: 1, g: LONG, z0: 0, z1: 1 }] },
   subeI:   { span: 2, cells: P1, ports: [[0, 0, 3, 0], [0, 0, 0, 1]], routes: [{ a: 0, b: 1, g: CWN, z0: 0, z1: 1 }] },
@@ -5590,8 +5601,8 @@ function drawPiece(p, lay) {
   const routes = p.geo.routes, act = d.sw ? routes[p.state % routes.length] : null;
   const elevated = routes.some(R => Math.max(R.za, R.zb) > 0);
   if (routes.some(R => Math.min(R.za, R.zb) < 0)) { // underground: a dark tube around the track
-    routes.forEach(R => el("path", { d: R.d0, stroke: "rgba(40,28,18,.55)", "stroke-width": 76, fill: "none" }, g));
-    const R = routes[0];
+    routes.filter(R => Math.min(R.za, R.zb) < 0).forEach(R => el("path", { d: R.d0, stroke: "rgba(40,28,18,.55)", "stroke-width": 76, fill: "none" }, g));
+    const R = routes.find(R => Math.min(R.za, R.zb) < 0);
     if (Math.max(R.za, R.zb) >= 0 && R.za !== R.zb) { // the subway entrance
       const dEnd = R.za > R.zb ? 0 : R.len, [mx, my] = ppAt(R, dEnd), [nx, ny] = ppAt(R, dEnd === 0 ? 30 : R.len - 30);
       const a = Math.atan2(ny - my, nx - mx) * 180 / Math.PI, og = lay("over");
@@ -5627,11 +5638,20 @@ function drawPiece(p, lay) {
   if (p.type === "estacion") {
     el("rect", { x: -46, y: -50, width: 192, height: 24, rx: 5, fill: "#ddd2c2", stroke: "#9c8b74", "stroke-width": 3 }, lg);
     el("line", { x1: -44, y1: -29, x2: 144, y2: -29, stroke: "#f5c518", "stroke-width": 4 }, lg);
-    el("rect", { x: 14, y: -62, width: 72, height: 30, rx: 4, fill: "#d9483b", stroke: "#7a2a1f", "stroke-width": 3 }, lg);
-    el("line", { x1: 16, y1: -47, x2: 84, y2: -47, stroke: "#7a2a1f", "stroke-width": 3 }, lg);
+    const rc = stRoof(), rd = c3Shade(rc, .55);
+    if (stHas("stFuente")) { el("ellipse", { cx: 50, cy: -86, rx: 22, ry: 11, fill: "#9fd3f2", stroke: "#8c8377", "stroke-width": 4 }, lg); el("path", { d: "M50 -88 q-10 -16 -14 0 M50 -88 q10 -16 14 0 M50 -88 v-14", stroke: "#fff", "stroke-width": 3, fill: "none" }, lg); }
+    if (stHas("stReloj")) { el("rect", { x: 38, y: -96, width: 24, height: 38, rx: 3, fill: "#f0e2c0", stroke: rd, "stroke-width": 3 }, lg); el("path", { d: "M34 -96 L50 -110 L66 -96 Z", fill: rc, stroke: rd, "stroke-width": 2 }, lg); el("circle", { cx: 50, cy: -82, r: 8, fill: "#fff", stroke: "#333", "stroke-width": 2 }, lg); el("path", { d: "M50 -82 V-87 M50 -82 H54", stroke: "#333", "stroke-width": 2 }, lg); }
+    el("rect", { x: 14, y: -62, width: 72, height: 30, rx: 4, fill: rc, stroke: rd, "stroke-width": 3 }, lg);
+    if (stHas("stOro")) el("path", { d: "M24 -56 l4 -4 l4 4 l-4 4 Z M70 -42 l3 -3 l3 3 l-3 3 Z", fill: "#fff8c8" }, lg);
+    el("line", { x1: 16, y1: -47, x2: 84, y2: -47, stroke: rd, "stroke-width": 3 }, lg);
     el("circle", { cx: 50, cy: -47, r: 9, fill: "#fff", stroke: "#333", "stroke-width": 2 }, lg);
     el("path", { d: "M50 -47 V-53 M50 -47 H55", stroke: "#333", "stroke-width": 2 }, lg);
+    if (stHas("stBanderas")) for (let x = 16; x < 84; x += 9) el("path", { d: `M${x} -33 l4.5 8 l4.5 -8 Z`, fill: ["#e74c3c", "#f6c23e", "#3a8de0", "#34b366"][(x / 9 | 0) % 4] }, lg);
     [-30, 120].forEach(x => el("circle", { cx: x, cy: -40, r: 7, fill: "#3a9d3a" }, lg));
+    if (stHas("stFlores")) for (let x = -40; x <= 140; x += 22) { if (x > 8 && x < 92) continue; el("rect", { x: x - 7, y: -49, width: 14, height: 5, rx: 2, fill: "#8a5a2b" }, lg); [-4, 0, 4].forEach((o, k) => el("circle", { cx: x + o, cy: -51, r: 2.6, fill: ["#ff6fb5", "#ffd23f", "#c56cf0"][(k + x) % 3 < 0 ? 0 : (k + x / 22 | 0) % 3] }, lg)); }
+    if (stHas("stBancos")) [[-22, -42], [100, -42]].forEach(([x, y]) => { el("rect", { x, y, width: 18, height: 5, rx: 2, fill: "#a86f3c", stroke: "#6b4219", "stroke-width": 1.5 }, lg); el("rect", { x, y: y - 4, width: 18, height: 3, rx: 1.5, fill: "#8a5a2b" }, lg); });
+    if (stHas("stFarolas")) [-40, 140].forEach(x => { el("line", { x1: x, y1: -30, x2: x, y2: -70, stroke: "#2b2b2b", "stroke-width": 3 }, lg); el("circle", { cx: x, cy: -72, r: 6, fill: night ? "#ffe9a8" : "#fff6c8", stroke: "#2b2b2b", "stroke-width": 2 }, lg); });
+    if (stHas("stPerro")) { const t = el("text", { x: 122, y: -30, "font-size": 20, "text-anchor": "middle" }, lg); t.textContent = "🐕"; }
   }
   if (p.type === "tope") el("rect", { x: -6, y: -27, width: 44, height: 54, rx: 6, fill: woodColor(p), stroke: "#7d4f22", "stroke-width": 3 }, lg);
   drawRails(g, routes, p, act);
@@ -6650,6 +6670,7 @@ function updateTrain(tr, dt) {
   if (dist <= 0) return;
   const pid0 = tr.head.pid;
   tr.atStart = false; tr.acc += dist;
+  if (!tr.ambient && !tr.trial) { const k0 = Math.floor((tr.odo || 0) / 10000); tr.odo = (tr.odo || 0) + dist; if (Math.floor(tr.odo / 10000) > k0) odoMilestone(tr); }
   while (dist > 0) {
     const st = Math.min(4, dist); dist -= st;
     const ev = advance(tr.head, st);
@@ -7462,7 +7483,7 @@ function placePiece(type, c, r, f, opts) {
   let best = null, bs = -1e9;
   const tg = tutGhostFor(type, c, r) || (MIRROR[type] && tutGhostFor(MIRROR[type], c, r)), cands = [];
   if (tg) cands.push({ t: tg.type, rot: tg.rot, h: tg.h, ac: tg.c, ar: tg.r, ci: 0 });
-  else (isSlope(type) ? [f, f - 1] : [f]).forEach(h => [type, MIRROR[type]].filter(Boolean).forEach(t => {
+  else (isSlope(type) ? [f, f - 1] : type === "subeBaja" ? [f - 1, f] : [f]).forEach(h => [type, MIRROR[type]].filter(Boolean).forEach(t => {
     for (let rot = 0; rot < 4; rot++) DEFS[t].cells.forEach(([lx, ly], ci) => { const [ox, oy] = rotP(lx, ly, rot); cands.push({ t, rot, h, ac: c - ox, ar: r - oy, ci }); });
   }));
   const type0 = type;
@@ -7475,7 +7496,7 @@ function placePiece(type, c, r, f, opts) {
     if (conf.length > 3 || conf.some(q => (DEFS[q.type].mon && !d.mon) || q.fixed) || !canTake(type, conf)) return;
     if (!withUnlinked(conf, () => fits(type, k.ac, k.ar, k.rot, k.h))) return;
     const sc = withUnlinked(conf, () => rotScore(type, k.ac, k.ar, k.rot, k.h)) - 6 * conf.length
-      + (k.rot === (lastRot[type] || 0) ? .5 : 0) + (k.h === f ? .3 : 0) + (k.ci === (d.mon ? d.center : 0) ? .2 : 0)
+      + (k.rot === (lastRot[type] || 0) ? .5 : 0) + (k.h === (type === "subeBaja" ? f - 1 : f) ? .3 : 0) + (k.ci === (d.mon ? d.center : 0) ? .2 : 0)
       + (isSlope(type) ? ((slopeMode === "down") === (k.h === f - 1) ? 6 : 0) : 0); // ⬆️ Sube / ⬇️ Baja decide, once it is joined
     if (sc > bs) { bs = sc; best = Object.assign({ conf }, k); }
   });
@@ -8291,7 +8312,7 @@ let camMode = "free", camIdx = 0, camAng = null;
 const camTrains = () => { const m = trains.filter(t => !t.ambient); return m.length ? m : trains; };
 function setCam(m) {
   camMode = m; camAng = null; if (typeof c3Ang !== "undefined") { c3Ang = null; C3.zs = null; }
-  document.body.classList.toggle("cab", m === "cab");
+  document.body.classList.toggle("cab", m === "cab"); document.body.classList.remove("boardable");
   $("camFollow").classList.toggle("on", m === "follow"); $("camCab").classList.toggle("on", m === "cab");
   document.body.classList.toggle("following", m === "follow"); try { $("spitBox").classList.remove("open"); } catch (e) {}
   if (m === "free") applyView();
@@ -8305,6 +8326,7 @@ $("camCab").onclick = () => { setCam(camMode === "cab" ? "free" : "cab"); sfx.cl
 function camTick(dt) {
   if (camMode === "free") return;
   const list = camTrains(), tr = list[camIdx % Math.max(1, list.length)];
+  cabBoardTick(tr);
   if (!tr) { setCam("free"); return; }
   const n = tr.gs.length, P = tr.wreck || carPoses(tr), q = P[tr.flip ? n - 1 : 0], x = q.x, y = q.y - q.z * E;
   const k = 1 - Math.exp(-dt * 4);
@@ -8669,6 +8691,10 @@ function c3Cab(tr, dt, spd, gl) {
   const gx = W * .86, gy = H * .955, gr = Math.min(36, H * .05), v = clamp((tr.vm == null ? 1 : tr.vm) * speed * spd / 2.2, 0, 1);
   c3.fillStyle = "#fff8e8"; c3.beginPath(); c3.arc(gx, gy, gr, Math.PI, 0); c3.fill(); c3.strokeStyle = "#e3b000"; c3.lineWidth = 4; c3.stroke();
   c3.strokeStyle = "#d63a2f"; c3.lineWidth = 3; c3.beginPath(); c3.moveTo(gx, gy); c3.lineTo(gx - Math.cos(v * Math.PI) * gr * .85, gy - Math.sin(v * Math.PI) * gr * .85); c3.stroke();
+  { const k = odoKm(tr), txt = (k < 10 ? k.toFixed(1) : String(Math.round(k))) + " km", fs = Math.max(13, Math.min(20, H * .028)); // odometer
+    c3.font = `800 ${fs}px system-ui, sans-serif`; const tw = c3.measureText(txt).width, ox = gx, oy = gy - gr - fs * 1.1;
+    c3.fillStyle = "#1d1d1d"; c3.beginPath(); c3.roundRect ? c3.roundRect(ox - tw / 2 - 10, oy - fs * .8, tw + 20, fs * 1.5, 6) : c3.rect(ox - tw / 2 - 10, oy - fs * .8, tw + 20, fs * 1.5); c3.fill();
+    c3.strokeStyle = "#e3b000"; c3.lineWidth = 2; c3.stroke(); c3.fillStyle = "#ffe9a8"; c3.textAlign = "center"; c3.textBaseline = "middle"; c3.fillText(txt, ox, oy); }
 }
 
 // =====================================================================
@@ -8805,7 +8831,7 @@ function g3Samples(R, step) {
   return out;
 }
 // ---------- building the world from the board
-function g3Sig() { let s = pieces.size + ":"; pieces.forEach(p => { s += p.id + p.type + p.c + "," + p.r + "," + p.rot + "," + p.h + ";"; }); return s; }
+function g3Sig() { let s = pieces.size + ":" + JSON.stringify(stStyle()) + [...ownedSet()].join() + ":"; pieces.forEach(p => { s += p.id + p.type + p.c + "," + p.r + "," + p.rot + "," + p.h + ";"; }); return s; }
 const g3IsTun = p => p.type === "tunel" || p.type === "tunelL";
 function g3Build() {
   if (G3.world) { G3.S.remove(G3.world); G3.world.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
@@ -8960,12 +8986,23 @@ function g3Station(p, R, S, bag, tall, VC, VCf) {
   bag.add(VC, g3Sweep(plat.slice(1, -1), [[-24, 14.2], [-19, 14.2]], false, "#f5c518"));
   const mx = (a0.x + b0.x) / 2 + a0.nx * (off + 12) * side, my = (a0.y + b0.y) / 2 + a0.ny * (off + 12) * side, ang = Math.atan2(b0.y - a0.y, b0.x - a0.x), z = a0.z;
   [-.38, 0, .38].forEach(k => tall.add(VCf, g3Col(g3Put(new THREE.CylinderGeometry(2.4, 2.4, 52, 8).translate(0, 26, 0), mx + (b0.x - a0.x) * k, my + (b0.y - a0.y) * k, z + 14, ang), "#6b4219")));
-  const roof = new THREE.CylinderGeometry(40, 40, R.len - 20, 3, 1).rotateZ(Math.PI / 2).rotateX(Math.PI / 6).scale(1, .32, 1.05);
-  tall.add(VCf, g3Col(g3Put(roof, mx, my, z + 70, ang), "#c0392b", .05));
+  const roof = new THREE.CylinderGeometry(40, 40, R.len - 20, 3, 1).rotateZ(Math.PI / 2).rotateX(Math.PI / 6).scale(1, .32, 1.05), rc = stRoof();
+  tall.add(stHas("stOro") ? (G3.goldMat || (G3.goldMat = new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 120, specular: 0xfff2b0, emissive: 0x3a2a00 }))) : VCf, g3Col(g3Put(roof, mx, my, z + 70, ang), rc, .05));
   // a little station building behind the platform, with a clock
   const bx = mx + a0.nx * 44 * side, by = my + a0.ny * 44 * side;
   tall.add(VCf, g3Col(g3Put(g3Box(R.len * .45, 44, 34), bx, by, z, ang), "#f0e2c0", .04));
-  tall.add(VCf, g3Col(g3Put(new THREE.CylinderGeometry(28, 28, R.len * .5, 3, 1).rotateZ(Math.PI / 2).rotateX(Math.PI / 6).scale(1, .5, 1), bx, by, z + 50, ang), "#8e3b2f"));
+  tall.add(VCf, g3Col(g3Put(new THREE.CylinderGeometry(28, 28, R.len * .5, 3, 1).rotateZ(Math.PI / 2).rotateX(Math.PI / 6).scale(1, .5, 1), bx, by, z + 50, ang), c3Shade(rc, .7)));
+  // 🎨 the station makeover bought in the shop
+  const nx = a0.nx * side, ny = a0.ny * side, tx = (b0.x - a0.x) / R.len, ty = (b0.y - a0.y) / R.len, cx0 = (a0.x + b0.x) / 2, cy0 = (a0.y + b0.y) / 2;
+  const at = (k, o) => [cx0 + tx * R.len * k + nx * o, cy0 + ty * R.len * k + ny * o];
+  const zp = z + 14;
+  if (stHas("stFlores")) for (let k = -.42; k <= .42; k += .12) { const [x, y] = at(k, 78); bag.add(VC, g3Col(g3Put(g3Box(14, 5, 6), x, y, zp, ang), "#8a5a2b")); for (let f = -1; f <= 1; f++) { const [fx, fy] = at(k + f * .022, 78); bag.add(VCf, g3Col(g3Put(new THREE.IcosahedronGeometry(2.6, 0), fx, fy, zp + 7, 0), ["#ff6fb5", "#ffd23f", "#c56cf0", "#ff5a4f"][(Math.round(k * 50) + f + 4) % 4])); } }
+  if (stHas("stFarolas")) [-.47, .47].forEach(k => { const [x, y] = at(k, 40); tall.add(VCf, g3Col(g3Put(new THREE.CylinderGeometry(1.6, 2.2, 56, 8).translate(0, 28, 0), x, y, zp, 0), "#2b2b2b")); bag.add(G3.lampMat || (G3.lampMat = new THREE.MeshBasicMaterial({ color: 0xffe2a0 })), g3Put(new THREE.SphereGeometry(4.5, 10, 8), x, y, zp + 60, 0)); G3.lamps.push(g3V(x, y, zp + 60)); });
+  if (stHas("stBancos")) [-.25, .25].forEach(k => { const [x, y] = at(k, 70); tall.add(VCf, g3Col(g3Put(g3Box(22, 2.5, 8).translate(0, 6, 0), x, y, zp, ang), "#a86f3c")); tall.add(VCf, g3Col(g3Put(g3Box(22, 8, 2).translate(0, 8.5, 4), x, y, zp, ang), "#8a5a2b")); [-9, 9].forEach(o => { const [lx, ly] = at(k + o / R.len, 70); bag.add(VC, g3Col(g3Put(g3Box(2, 6, 7), lx, ly, zp, ang), "#2b2b2b")); }); });
+  if (stHas("stBanderas")) for (let k = -.4; k <= .4; k += .06) { const [x, y] = at(k, 34); bag.add(VCf, g3Col(g3Put(new THREE.ConeGeometry(4, 9, 3).rotateX(Math.PI), x, y, z + 58, ang), ["#e74c3c", "#f6c23e", "#3a8de0", "#34b366"][Math.round(k * 50 + 40) % 4])); }
+  if (stHas("stReloj")) { tall.add(VCf, g3Col(g3Put(g3Box(18, 36, 18), bx, by, z + 54, ang), "#f0e2c0")); tall.add(VCf, g3Col(g3Put(new THREE.ConeGeometry(15, 22, 4).rotateY(Math.PI / 4).translate(0, 11, 0), bx, by, z + 90, ang), rc)); [1, -1].forEach(s => bag.add(VC, g3Col(g3Put(new THREE.CylinderGeometry(6.5, 6.5, 1.2, 16).rotateX(Math.PI / 2), bx - nx * 9.3 * s, by - ny * 9.3 * s, z + 72, ang), "#ffffff"))); }
+  if (stHas("stFuente")) { const [x, y] = at(0, 168); tall.add(VCf, g3Col(g3Put(new THREE.CylinderGeometry(22, 24, 8, 16).translate(0, 4, 0), x, y, z, 0), "#a89c8e")); bag.add(g3Water(), g3Put(new THREE.CylinderGeometry(19, 19, 1, 16).translate(0, 8, 0), x, y, z, 0)); tall.add(VCf, g3Col(g3Put(new THREE.CylinderGeometry(3, 4, 22, 10).translate(0, 11, 0), x, y, z, 0), "#a89c8e")); bag.add(VCf, g3Col(g3Put(new THREE.SphereGeometry(7, 10, 8, 0, 6.283, 0, Math.PI / 2), x, y, z + 22, 0), "#cfeeff")); }
+  if (stHas("stPerro")) { const [x, y] = at(.36, 62); tall.add(VCf, g3Col(g3Put(g3Box(14, 7, 6).translate(0, 5, 0), x, y, zp, ang), "#c98a50")); tall.add(VCf, g3Col(g3Put(g3Box(7, 7, 6).translate(9, 11, 0), x, y, zp, ang), "#c98a50")); tall.add(VCf, g3Col(g3Put(g3Box(3, 4, 6.4).translate(10, 15, 0), x, y, zp, ang), "#7a4a24")); [-5, 5].forEach(o => bag.add(VC, g3Col(g3Put(g3Box(2, 5, 2).translate(o, 0, 2), x, y, zp, ang), "#c98a50"))); }
   tall.add(VCf, g3Col(g3Put(new THREE.CylinderGeometry(7, 7, 2, 16).rotateX(Math.PI / 2), bx - a0.nx * 17.5 * side, by - a0.ny * 17.5 * side, z + 34, ang), "#ffffff"));
   [-.3, .3].forEach(k => bag.add(VC, g3Col(g3Put(g3Box(9, 14, 2), bx + (b0.x - a0.x) * k * .45 - a0.nx * 17.3 * side, by + (b0.y - a0.y) * k * .45 - a0.ny * 17.3 * side, z + 14, ang), "#6d93b8")));
   bag.add(VC, g3Col(g3Put(g3Box(10, 22, 2), bx - a0.nx * 17.3 * side, by - a0.ny * 17.3 * side, z, ang), "#6b4219"));
@@ -9222,6 +9259,29 @@ function g3CarSync() {
     g.visible = true; g.position.set(q.x, 0, q.y); g.rotation.set(0, -Math.atan2(q.ty, q.tx), 0);
   });
 }
+// people and boxes waiting on the platforms
+function g3Waiting() {
+  G3.people = G3.people || []; let n = 0;
+  const get = kind => {
+    let m = G3.people[n];
+    if (!m || m.userData.kind !== kind) {
+      if (m) G3.dyn.remove(m);
+      m = new THREE.Group(); m.userData.kind = kind;
+      if (kind === "box") { const b = new THREE.Mesh(new THREE.BoxGeometry(12, 12, 12).translate(0, 6, 0), g3Mat("#c8a26a")); b.castShadow = true; m.add(b); const s = new THREE.Mesh(new THREE.BoxGeometry(12.4, 2, 12.4).translate(0, 6, 0), g3Mat("#8a6a3a")); m.add(s); }
+      else { const col = ["#e74c3c", "#3a8de0", "#34b366", "#9b59b6", "#ff8c1a", "#f6c23e"][n % 6]; const body = new THREE.Mesh(new THREE.CylinderGeometry(4.5, 6, 16, 10).translate(0, 12, 0), g3Mat(col)); body.castShadow = true; m.add(body); [-2.5, 2.5].forEach(o => m.add(new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 6, 6).translate(o, 3, 0), g3Mat("#2b3a55")))); const head = new THREE.Mesh(new THREE.SphereGeometry(4.8, 12, 10).translate(0, 25, 0), g3Mat(["#f2c9a0", "#c98a5e", "#8d5a3b", "#f6d7b8"][n % 4])); head.castShadow = true; m.add(head); }
+      G3.people[n] = m; G3.dyn.add(m);
+    }
+    n++; m.visible = true; return m;
+  };
+  pieces.forEach(p => {
+    if (p.type !== "estacion" || !(p.pax || p.box)) return;
+    const R = p.geo.routes[0], [x, y] = pointAt(R, R.len / 2), [ax, ay] = pointAt(R, R.len / 2 - 3), [bx, by] = pointAt(R, R.len / 2 + 3);
+    let tx = bx - ax, ty = by - ay; const l = Math.hypot(tx, ty) || 1; tx /= l; ty /= l; const nx = -ty, ny = tx, z = g3Z(p.h) + 14;
+    for (let i = 0; i < (p.pax || 0); i++) { const m = get("pax"), u = (i - ((p.pax || 0) - 1) / 2) * 20; m.position.set(x + nx * 56 + tx * u, z, y + ny * 56 + ty * u); m.rotation.y = Math.atan2(-nx, -ny) + Math.sin(G3.t * 2 + i) * .3; m.position.y += Math.abs(Math.sin(G3.t * 5 + i * 1.3)) * (p.boardTr ? 3 : .6); }
+    for (let i = 0; i < (p.box || 0); i++) { const m = get("box"), u = (i - ((p.box || 0) - 1) / 2) * 16; m.position.set(x + nx * 72 + tx * u, z, y + ny * 72 + ty * u); m.rotation.y = Math.atan2(tx, ty); }
+  });
+  for (let i = n; i < G3.people.length; i++) G3.people[i].visible = false;
+}
 // the front of the engine you are driving, seen from the cab
 function g3MyFront(tr) {
   const K = KINDS[tr.kind], col = /^#[0-9a-f]{6}$/i.test(tr.c1 || "") ? tr.c1 : "#d63a2f", steam = K.loco === "steam" || K.loco === "dragonH", key = tr.kind + col;
@@ -9325,7 +9385,7 @@ function render3GL(dt) {
   G3.trains.forEach(r => { r.seen = false; });
   trains.forEach(t2 => { if (t2.trail && t2.trail.length > 1) g3TrainSync(t2, t2 === tr); });
   G3.trains.forEach((r, id) => { if (!r.seen) { G3.dyn.remove(r.g); G3.trains.delete(id); } });
-  g3CarSync();
+  g3CarSync(); g3Waiting();
   // smoke from the chimney ahead
   if (fr.userData.chim && spd && Math.random() < dt * (steam ? 9 : 4)) { g3Tmp.copy(fr.userData.chim); fr.localToWorld(g3Tmp); g3Puff(g3Tmp, !steam); }
   G3.smoke.forEach(s => { if (!s.visible) return; const u = s.userData; u.life += dt; s.position.addScaledVector(u.v, dt); s.position.x -= hx * 60 * dt * spd; s.position.z -= hy * 60 * dt * spd; u.v.y *= Math.pow(.5, dt); s.scale.setScalar(3 + u.life * 9); const dc = s.position.distanceTo(G3.cam.position); s.material.opacity = Math.max(0, .7 - u.life * .55) * clamp((dc - 30) / 70, 0, 1); if (u.life > 1.3) s.visible = false; });
@@ -9916,8 +9976,19 @@ function drvSelect(tr) {
   }
   drvRefresh();
 }
+// 🛤️ how far each train has travelled
+const odoKm = tr => (tr.odo || 0) / 10000;
+const odoTxt = tr => { const k = odoKm(tr); return "🛤️ " + (k < 10 ? k.toFixed(1) : Math.round(k)) + " km"; };
+function odoMilestone(tr) {
+  const k = Math.round(odoKm(tr));
+  if (!(k <= 5 || k % 5 === 0)) return;
+  if (tr !== drvSel && !(camMode !== "free" && camTrains()[camIdx % Math.max(1, camTrains().length)] === tr)) return;
+  toast(`🎉 ${tr.name || ""} ${k} km!`); tone([784, 988, 1175, 1568], "triangle", .08, .2, .08);
+  if (k === 1 || k % 10 === 0) speak(LX(`¡${tr.name || "El tren"} ya ha recorrido ${k} kilómetros!`, `${tr.name || "The train"} has travelled ${k} kilometres!`, `${tr.name || "Le train"} a déjà roulé ${k} kilomètres !`, `${tr.name || "Der Zug"} ist schon ${k} Kilometer gefahren!`));
+}
 function drvRefresh() {
   const tr = drvSel; if (!tr) return;
+  { const nm = drv.querySelector(".dname"); let o = nm.querySelector(".odo"); if (!o) o = addEl(nm, "span", "odo"); const t = odoTxt(tr); if (o.textContent !== t) o.textContent = t; }
   drv.querySelector('[data-a="stop"]').textContent = tr.thr > 0 ? "🛑" : "▶️";
   if (document.activeElement !== lever) lever.value = tr.thr;
   const pp = clamp((tr.thr || 0) / 2, 0, 1), dial = drv.querySelector(".dial");
@@ -10000,6 +10071,27 @@ function boardingTick() {
     if (p.tapEl) { const b = Math.abs(Math.sin(performance.now() / 180)) * 14, y0 = +p.tapEl.getAttribute("y"); p.tapEl.setAttribute("transform", `translate(0 ${(-b).toFixed(1)})`); void y0; }
   });
 }
+// one passenger (or box) gets on the waiting train
+function boardOne(p, gx, gy) {
+  const tr = p.boardTr; if (!tr) return;
+  const key = p.tapFr ? "box" : "pax", q = carPoses(tr)[1] || carPoses(tr)[0];
+  if (gx == null) { const s = stationSpot(p), side = p.tapFr ? -1 : 1; gx = s.x + s.nx * 58 * side; gy = s.y + s.ny * 58 * side; }
+  tr.load.push(p.id); p[key]--;
+  hop(p.tapFr ? (p[key] % 2 ? "🪵" : "📦") : "🧍", gx, gy, q.x, q.y - q.z * E, 0);
+  tone([660 + 90 * (tr.load.length % 5)], "sine", 0, .12, .14);
+  if (tr.wait > 0) tr.wait = Math.max(tr.wait, 2.2);
+  drawWaiting(p); updateHud();
+}
+// in the cab view a big button loads the people (or boxes) waiting at the station you stopped at
+function cabBoardTick(tr) {
+  let sp = null;
+  if (camMode === "cab" && tr) for (const p of pieces.values()) if (p.boardTr === tr) { sp = p; break; }
+  document.body.classList.toggle("boardable", !!sp);
+  const b = $("cabBoard"); b._p = sp;
+  if (sp) { const key = sp.tapFr ? "box" : "pax", t = (sp.tapFr ? "📦" : "🧍") + " " + (sp[key] || 0); if (b.textContent !== t) b.textContent = t; }
+}
+document.body.appendChild($("cabBoard")); // lives outside the side panel, which the cab view hides
+$("cabBoard").onclick = e => { e.stopPropagation(); const p = $("cabBoard")._p; if (p && p.boardTr) { unlockAudio(); boardOne(p); try { const N = window.__NATIVE__; if (N && N.post) N.post({ t: "hap", k: "light" }); } catch (_) {} } };
 // a tap near a station where a train is waiting loads one passenger or box
 function boardTap(wx, wy) {
   for (const p of pieces.values()) {
@@ -10007,12 +10099,7 @@ function boardTap(wx, wy) {
     const s = stationSpot(p), side = p.tapFr ? -1 : 1, gx = s.x + s.nx * 58 * side, gy = s.y + s.ny * 58 * side;
     const c = pieceCenter(p);
     if (Math.hypot(gx - wx, gy - wy) > 95 && Math.hypot(c.x - wx, c.y - wy) > 90) continue;
-    const tr = p.boardTr, key = p.tapFr ? "box" : "pax", q = carPoses(tr)[1] || carPoses(tr)[0];
-    tr.load.push(p.id); p[key]--;
-    hop(p.tapFr ? (p[key] % 2 ? "🪵" : "📦") : "🧍", gx, gy, q.x, q.y - q.z * E, 0);
-    tone([660 + 90 * (tr.load.length % 5)], "sine", 0, .12, .14);
-    if (tr.wait > 0) tr.wait = Math.max(tr.wait, 2.2);
-    drawWaiting(p); updateHud();
+    boardOne(p, gx, gy);
     return true;
   }
   return false;
@@ -10216,8 +10303,23 @@ const SHOP = [
   { grp: "mejoras", id: "turbo2", price: 35, ic: "⚡", nm: "Turbo rápido", tx: "El turbo 🚀 se recarga el doble de rápido." },
   { grp: "estaciones", id: "andenG", price: 50, ic: "🚉", nm: "Estaciones grandes", tx: "Caben el doble de pasajeros y de cajas esperando en cada estación." },
   { grp: "estaciones", id: "cafe", price: 45, ic: "☕", nm: "Café", tx: "Ponlo junto a una estación (pestaña 🏙️ Ciudad): llega más gente a esa estación." },
+  { grp: "estilo", id: "stPintura", price: 20, ic: "🖌️", nm: "Pinta tu estación", tx: "Elige el color del tejado de tus estaciones." },
+  { grp: "estilo", id: "stFlores", price: 15, ic: "🌷", nm: "Jardineras", tx: "Flores de colores a lo largo del andén." },
+  { grp: "estilo", id: "stFarolas", price: 20, ic: "🏮", nm: "Farolas", tx: "Farolas antiguas que se encienden de noche." },
+  { grp: "estilo", id: "stBancos", price: 15, ic: "🪑", nm: "Bancos", tx: "Bancos de madera para esperar el tren." },
+  { grp: "estilo", id: "stBanderas", price: 12, ic: "🎏", nm: "Banderines", tx: "Banderitas de fiesta bajo el tejado." },
+  { grp: "estilo", id: "stReloj", price: 25, ic: "🕰️", nm: "Torre del reloj", tx: "Un gran reloj en lo alto de la estación." },
+  { grp: "estilo", id: "stFuente", price: 35, ic: "⛲", nm: "Fuente", tx: "Una fuente junto a la estación." },
+  { grp: "estilo", id: "stPerro", price: 12, ic: "🐕", nm: "Perro de la estación", tx: "Un perrito que espera los trenes en el andén." },
+  { grp: "estilo", id: "stOro", price: 60, ic: "👑", nm: "Tejado de oro", tx: "¡El tejado más brillante de la ciudad!" },
 ];
-const SHOP_GRP = { trenes: "🚂 Trenes especiales", mejoras: "🔧 Mejoras", estaciones: "🚉 Estaciones" };
+// how the stations look: what you bought from the 🎨 shelf, the roof colour and what you switched off
+var ST_COLS = ["#d9483b", "#2b6cb0", "#2e8b57", "#8e44ad", "#ff8c1a", "#f06292", "#3a3a3a"], stStyleV = null;
+function stStyle() { return stStyleV || (stStyleV = Object.assign({ col: "#d9483b", off: [] }, sget(KEY + "-stl") || {})); }
+function stHas(id) { try { return owns(id) && !stStyle().off.includes(id); } catch (e) { return false; } }
+function stRoof() { return stHas("stOro") ? "#e3b000" : stHas("stPintura") ? stStyle().col : "#d9483b"; }
+function stSave() { sset(KEY + "-stl", stStyle()); pieces.forEach(p => { if (p.type === "estacion") redrawPiece(p); }); }
+const SHOP_GRP = { trenes: "🚂 Trenes especiales", mejoras: "🔧 Mejoras", estaciones: "🚉 Estaciones", estilo: "🎨 Mi estación" };
 const shopLocked = id => !lvl && SHOP.some(x => x.id === id) && !owns(id);
 function buy(item) {
   if (owns(item.id)) return;
@@ -10250,9 +10352,18 @@ function openShop(focus) {
         const c = addEl(grid, "div", "proj shopit" + (owns(item.id) ? " owned" : "") + (focus === item.id ? " focus" : ""));
         const ic = addEl(c, "div", "sic"); ic.appendChild(shopIcon(item));
         addEl(c, "div", "nm", item.nm); addEl(c, "div", "ds", item.tx);
-        const b = mkBtn(owns(item.id) ? LX("✅ Es tuyo", "✅ Yours", "✅ À toi") : "🪙 " + item.price, item.nm, e => { e.stopPropagation(); buy(item); });
+        const deco = g === "estilo" && owns(item.id), on = deco && stHas(item.id);
+        const b = mkBtn(deco ? (on ? LX("✅ Puesto", "✅ On", "✅ Mis", "✅ An") : LX("⬜ Quitado", "⬜ Off", "⬜ Enlevé", "⬜ Aus")) : owns(item.id) ? LX("✅ Es tuyo", "✅ Yours", "✅ À toi") : "🪙 " + item.price, item.nm, e => {
+          e.stopPropagation();
+          if (deco) { const S = stStyle(); S.off = on ? [...S.off, item.id] : S.off.filter(x => x !== item.id); stSave(); sfx.click(); openShop(item.id); return; }
+          buy(item); if (g === "estilo") stSave();
+        });
         b.className = "b buy"; if (!owns(item.id) && wallet() < item.price) { b.classList.add("off"); b.title = LX(`Te faltan ${item.price - wallet()} monedas`, `${item.price - wallet()} more coins needed`, `Il te manque ${item.price - wallet()} pièces`, `Dir fehlen noch ${item.price - wallet()} Münzen`); }
         c.appendChild(b);
+        if (item.id === "stPintura" && owns(item.id)) { // the colours to choose from
+          const row = addEl(c, "div", "stcols");
+          ST_COLS.forEach(col => { const s = addEl(row, "button", "stcol" + (stStyle().col === col ? " on" : "")); s.style.background = col; s.onclick = e => { e.stopPropagation(); stStyle().col = col; const S = stStyle(); S.off = S.off.filter(x => x !== "stPintura"); stSave(); sfx.click(); openShop(item.id); }; });
+        }
         if (!owns(item.id) && wallet() < item.price) addEl(c, "div", "need", LX(`Te faltan 🪙 ${item.price - wallet()}`, `🪙 ${item.price - wallet()} to go`, `Encore 🪙 ${item.price - wallet()}`, `Noch 🪙 ${item.price - wallet()}`));
       });
     });
@@ -10272,7 +10383,7 @@ const FULL_TRAINS = ["bala", "metro", "tranvia"];
 let fullSet = null;
 function fullItems() {
   if (fullSet) return fullSet;
-  fullSet = new Set(["rampa", "subeI", "subeD", "paso", ...FULL_TRAINS]);
+  fullSet = new Set(["rampa", "subeI", "subeD", "subeBaja", "paso", ...FULL_TRAINS]);
   TABS.filter(t => ["calles", "ciudad", "monumentos"].includes(t.id)).forEach(t => t.items.forEach(i => fullSet.add(i)));
   return fullSet;
 }
@@ -11193,6 +11304,7 @@ const INFO = {
   desvioI: [null, "Desvío", "La vía se divide en dos: recto o curva. Se coloca solo hacia el lado que encaja; tócalo con esta misma pieza para girarlo o darle la vuelta. Con ✋ cambias el camino del tren."],
   desvioD: [null, "Desvío a la derecha", "La vía se divide: recto o a la derecha. Con ✋ se cambia el camino; la flecha verde indica por dónde irá el tren."],
   desvioY: [null, "Desvío en Y", "La vía se divide en dos curvas, izquierda y derecha. Con ✋ se elige cuál."],
+  subeBaja: [null, "Sube o baja", "Un desvío entre pisos: el tren que entra por la punta sube un piso o baja uno, según la palanca. Tócalo con ✋ para cambiarla, o ponle un 🧠 para que elija solo. Si el tren llega por arriba o por abajo, vuelve a la punta."],
   cruce: [null, "Cruce", "Dos vías se cruzan en el mismo piso. ¡Si pasan dos trenes a la vez, chocan!"],
   rampa: [null, "Rampa", "Cambia un piso. Tócala junto a una vía suelta y se pone a su altura (el número rojo es el piso de esa punta): desde el suelo sube, y desde arriba baja. Si ya está puesta, sus botones: ➕ seguir (pone otra igual, ya unida), 🔄 girar y ⇅ sube/baja."],
   subeI: [null, "Curva rampa", "Gira y cambia un piso: se coloca sola hacia el lado que encaja. Pon 4 seguidas (con ➕ seguir) y harás una espiral, como una montaña rusa. El botón ⇅ la cambia de subir a bajar."],
@@ -11236,7 +11348,7 @@ const GROUPS = [
 const LEVEL_ITEMS = ["lapiz", "recta", "corta", "curva", "curvaL", "sesgoI", "sesgoLI", "desvioI", "desvioD", "desvioY", "cruce", "rampa", "subeI", "subeD", "estacion", "tunel", "tunelL", "tope", "paso"];
 const TABS = [
   { id: "vias", grp: "vias", ic: "🛤️", nm: "Vías", items: ["lapiz", "recta", "corta", "curva", "curvaL", "sesgoI", "sesgoLI"] },
-  { id: "cruces", grp: "vias", ic: "🔀", nm: "Desvíos", items: ["desvioI", "desvioY", "cruce", "hz_listo", "hz_senal"] },
+  { id: "cruces", grp: "vias", ic: "🔀", nm: "Desvíos", items: ["desvioI", "desvioY", "subeBaja", "cruce", "hz_listo", "hz_senal"] },
   { id: "subir", grp: "vias", ic: "⛰️", nm: "Rampas", items: ["rampa", "subeI"] },
   { id: "especial", grp: "vias", ic: "🚉", nm: "Estación", items: ["estacion", "tunel", "tunelL", "tope", "paso"] },
   { id: "campo", grp: "decor", ic: "🌳", nm: "Campo", items: CAMPO.map(d => bigOf(d[0])) },
@@ -11590,7 +11702,7 @@ function sget(k) { try { const v = localStorage.getItem(k); return v ? JSON.pars
 function sset(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
 function serialize() {
   return { v: 2, pieces: [...pieces.values()].map(p => p.fx && Object.keys(p.fx).length ? [p.type, p.c, p.r, p.rot, p.state, p.h, p.fx] : [p.type, p.c, p.r, p.rot, p.state, p.h]),
-    trains: trains.filter(t => !t.trial).map(t => { const p = pieces.get(t.start.pid); return p ? [t.kind, t.cars, p.c, p.r, p.h, t.start.ri, t.start.dir, Math.round(t.start.d || 0), t.c1, t.name] : null; }).filter(Boolean),
+    trains: trains.filter(t => !t.trial).map(t => { const p = pieces.get(t.start.pid); return p ? [t.kind, t.cars, p.c, p.r, p.h, t.start.ri, t.start.dir, Math.round(t.start.d || 0), t.c1, t.name, Math.round(t.odo || 0)] : null; }).filter(Boolean),
     cars: cars.map(c => { const p = pieces.get(c.start.pid); return p ? [c.kind, c.ci, p.c, p.r, c.start.ri, c.start.dir, Math.round(c.start.d || 0)] : null; }).filter(Boolean) };
 }
 function clearBoard() {
@@ -11612,7 +11724,7 @@ function loadData(data) {
     let [k, n, c, r, h, ri, dir, d] = tt;
     if (data.v !== 2) { [k, n, c, r, ri, dir, d] = tt; h = 0; }
     const p = piecesIn(c, r).find(q => q.c === c && q.r === r && q.h === h && q.geo.routes.length);
-    if (p && KINDS[k]) { const t2 = addTrain(k, clamp(n | 0, 0, 9), p.id, ri | 0, dir === -1 ? -1 : 1, d, typeof tt[8] === "string" ? tt[8] : null); if (t2 && typeof tt[9] === "string") t2.name = tt[9].slice(0, 20); }
+    if (p && KINDS[k]) { const t2 = addTrain(k, clamp(n | 0, 0, 9), p.id, ri | 0, dir === -1 ? -1 : 1, d, typeof tt[8] === "string" ? tt[8] : null); if (t2 && typeof tt[9] === "string") t2.name = tt[9].slice(0, 20); if (t2 && tt[10] > 0) t2.odo = +tt[10]; }
   });
   (data.cars || []).forEach(([k, ci, c, r, ri, dir, d]) => {
     const p = piecesIn(c, r).find(q => q.c === c && q.r === r && q.geo.rroutes.length);
@@ -13849,6 +13961,22 @@ const deOf = s => { if (!s) return ""; const k = s.trim(); return I18N_DE[s] || 
 const LANGS = { es: "🇪🇸", en: "🇬🇧", fr: "🇫🇷", de: "🇩🇪" };
 const I18N = new Map();
 I18N_ROWS.push(["Desafío", "Challenge", "Défi", "Wettkampf"], ["Pegatinas", "Stickers", "Autocollants", "Sticker"], ["Foto de mi circuito", "Photo of my railway", "Photo de mon circuit", "Foto von meiner Strecke"], ["Toca una pieza o un tren para quitarlo. Mantén pulsada la goma para borrarlo todo.", "Tap a piece or a train to remove it. Hold the eraser down to clear everything.", "Touche une pièce ou un train pour l'enlever. Garde le doigt sur la gomme pour tout effacer.", "Tippe ein Teil oder einen Zug an, um es wegzunehmen. Halte den Radierer gedrückt, um alles zu löschen."]);
+I18N_ROWS.push(["Sube o baja", "Up-or-down switch", "Aiguillage monte-descend", "Hoch-oder-runter-Weiche"],
+  ["Un desvío entre pisos: el tren que entra por la punta sube un piso o baja uno, según la palanca. Tócalo con ✋ para cambiarla, o ponle un 🧠 para que elija solo. Si el tren llega por arriba o por abajo, vuelve a la punta.",
+   "A switch between floors: a train entering at the single end climbs one floor or goes down one, as the lever says. Tap it with ✋ to flip the lever, or give it a 🧠 so it chooses by itself. Trains arriving from above or below go back to the single end.",
+   "Un aiguillage entre étages : le train qui entre par la pointe monte d'un étage ou descend d'un, selon le levier. Touche-le avec ✋ pour changer, ou mets-lui un 🧠 pour qu'il choisisse seul. Les trains qui arrivent d'en haut ou d'en bas reviennent à la pointe.",
+   "Eine Weiche zwischen den Etagen: Ein Zug, der am einzelnen Ende hineinfährt, fährt eine Etage hoch oder eine runter, je nach Hebel. Tippe sie mit ✋ an, um den Hebel umzulegen, oder gib ihr ein 🧠, dann wählt sie selbst. Züge von oben oder unten fahren zurück zum einzelnen Ende."],
+  ["🎨 Mi estación", "🎨 My station", "🎨 Ma gare", "🎨 Mein Bahnhof"],
+  ["Pinta tu estación", "Paint your station", "Peins ta gare", "Bahnhof anmalen"], ["Elige el color del tejado de tus estaciones.", "Choose the roof colour of your stations.", "Choisis la couleur du toit de tes gares.", "Wähle die Dachfarbe deiner Bahnhöfe."],
+  ["Jardineras", "Flower boxes", "Jardinières", "Blumenkästen"], ["Flores de colores a lo largo del andén.", "Colourful flowers along the platform.", "Des fleurs de toutes les couleurs le long du quai.", "Bunte Blumen am Bahnsteig entlang."],
+  ["Farolas", "Lamp posts", "Lampadaires", "Laternen"], ["Farolas antiguas que se encienden de noche.", "Old-fashioned lamps that light up at night.", "De vieux lampadaires qui s'allument la nuit.", "Alte Laternen, die nachts leuchten."],
+  ["Bancos", "Benches", "Bancs", "Bänke"], ["Bancos de madera para esperar el tren.", "Wooden benches to wait for the train.", "Des bancs en bois pour attendre le train.", "Holzbänke zum Warten auf den Zug."],
+  ["Banderines", "Bunting", "Fanions", "Wimpel"], ["Banderitas de fiesta bajo el tejado.", "Party flags under the roof.", "Des petits drapeaux de fête sous le toit.", "Bunte Partywimpel unter dem Dach."],
+  ["Torre del reloj", "Clock tower", "Tour de l'horloge", "Uhrturm"], ["Un gran reloj en lo alto de la estación.", "A big clock on top of the station.", "Une grande horloge en haut de la gare.", "Eine große Uhr oben auf dem Bahnhof."],
+  ["Fuente", "Fountain", "Fontaine", "Brunnen"], ["Una fuente junto a la estación.", "A fountain next to the station.", "Une fontaine à côté de la gare.", "Ein Brunnen neben dem Bahnhof."],
+  ["Perro de la estación", "Station dog", "Chien de la gare", "Bahnhofshund"], ["Un perrito que espera los trenes en el andén.", "A little dog that waits for the trains on the platform.", "Un petit chien qui attend les trains sur le quai.", "Ein kleiner Hund, der am Bahnsteig auf die Züge wartet."],
+  ["Tejado de oro", "Golden roof", "Toit en or", "Goldenes Dach"], ["¡El tejado más brillante de la ciudad!", "The shiniest roof in town!", "Le toit le plus brillant de la ville !", "Das glänzendste Dach der Stadt!"],
+  ["¡Que suban!", "All aboard!", "En voiture !", "Einsteigen!"]);
 I18N_ROWS.forEach(([es, en, fr, de]) => I18N.set(es.trim(), { en, fr, de: de || I18N_DE[es.trim()] || en }));
 const LX = (es, en, fr, de) => LANG === "en" ? en : LANG === "fr" ? fr : LANG === "de" ? (de || deOf(es) || en) : es;
 const I18N_PAT = [
