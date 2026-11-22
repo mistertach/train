@@ -11062,7 +11062,7 @@ function glyphCells(ch) {
 }
 // the piece (and turn) whose ends are exactly these sides
 const LTR_TYPES = ["tope", "corta", "curva", "desvioI", "desvioD", "cruce"];
-function pieceForEdges(es) {
+function ltrPiece(es) {
   const want = [...es].sort().join();
   for (const t of LTR_TYPES) for (let r = 0; r < 4; r++) {
     const got = DEFS[t].ports.map(pt => (pt[2] + r) % 4).sort().join();
@@ -11133,7 +11133,7 @@ function findRoom(w, h) {
 function buildPlan(plan, c0, r0) {
   const made = [];
   plan.cells.forEach((es, k) => {
-    const [x, y] = k.split(",").map(Number), pr = pieceForEdges(es); if (!pr) return;
+    const [x, y] = k.split(",").map(Number), pr = ltrPiece(es); if (!pr) return;
     const p = addPiece(pr[0], c0 + x, r0 + y, pr[1], 0, 0); if (!p) return;
     if (DEFS[pr[0]].sw) { p.fx = Object.assign({}, p.fx, { smart: 1 }); redrawPiece(p); }
     made.push(p);
