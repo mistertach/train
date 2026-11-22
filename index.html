@@ -10758,6 +10758,7 @@ function stkNext() {
   if (stkBusy || !stkQ.length) return;
   stkBusy = true;
   const S = STK().find(x => x.id === stkQ.shift());
+  if (!S) { stkBusy = false; stkNext(); return; } // a sticker that is no longer in the list
   const box = document.createElement("div"); box.className = "stkpop";
   box.appendChild(stkIcon(S)); const t = addEl(box, "div", ""); addEl(t, "small", "", LX("¡Pegatina nueva!", "New sticker!", "Nouvel autocollant !", "Neuer Sticker!")); addEl(t, "b", "", S.name());
   box.onclick = () => { sfx.click(); openStickers(); };
