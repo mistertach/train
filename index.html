@@ -10148,16 +10148,20 @@ function drawWaiting(p) {
 
   if (n) { const cx = s.x + s.nx * 58, cy = s.y + s.ny * 58, len = n * 30 + 20; el("rect", { x: cx - (Math.abs(s.tx) > .5 ? len / 2 : 22), y: cy - (Math.abs(s.tx) > .5 ? 14 : len / 2) + 8, width: Math.abs(s.tx) > .5 ? len : 44, height: Math.abs(s.tx) > .5 ? 28 : len, rx: 10, fill: "#e8dcc4", stroke: "#b9a37a", "stroke-width": 2.5 }, g); }
   for (let i = 0; i < n; i++) { const pg = miniPerson(g, s.x + s.nx * 58 + s.tx * (i - (n - 1) / 2) * 30, s.y + s.ny * 58 + s.ty * (i - (n - 1) / 2) * 30, p.id * 3 + i); pg.setAttribute("transform", pg.getAttribute("transform") + " scale(1.35)"); }
-  for (let i = 0; i < b; i++) miniCargo(g, s.x - s.nx * 60 + s.tx * (i - (b - 1) / 2) * 26, s.y - s.ny * 60 + s.ty * (i - (b - 1) / 2) * 26, i % 2 === 1);
+  const Gw = order && order.from === p.id ? goodsOf(order.g) : null;
+  for (let i = 0; i < b; i++) { const bx = s.x - s.nx * 60 + s.tx * (i - (b - 1) / 2) * 30, by = s.y - s.ny * 60 + s.ty * (i - (b - 1) / 2) * 30;
+    if (Gw) { const t = el("text", { x: bx, y: by, "font-size": 34, "text-anchor": "middle", "dominant-baseline": "central" }, g); t.textContent = Gw.em; } else miniCargo(g, bx, by, i % 2 === 1); }
 }
 function hop(emoji, x0, y0, x1, y1, delay) {
   const w = el("g", { opacity: 0 }, L.fx), k = Math.floor(Math.random() * 30);
-  const inner = emoji === "📦" ? miniCargo(w, 0, 0, false) : emoji === "🪵" ? miniCargo(w, 0, 0, true) : miniPerson(w, 0, 0, k); void inner;
+  const goods = typeof GOODS !== "undefined" && GOODS.some(G => G.em === emoji);
+  const inner = goods ? Object.assign(el("text", { "font-size": 34, "text-anchor": "middle", "dominant-baseline": "central" }, w), { textContent: emoji }) : emoji === "📦" ? miniCargo(w, 0, 0, false) : emoji === "🪵" ? miniCargo(w, 0, 0, true) : miniPerson(w, 0, 0, k); void inner;
   const d0 = delay || 0;
   addFx(w, .7 + d0, (kk, e) => { const u = clamp((kk * (.7 + d0) - d0) / .7, 0, 1); e.setAttribute("opacity", u <= 0 ? 0 : u > .85 ? (1 - u) / .15 : 1); e.setAttribute("transform", `translate(${(x0 + (x1 - x0) * u).toFixed(1)} ${(y0 + (y1 - y0) * u - 50 * Math.sin(Math.PI * u)).toFixed(1)})`); });
 }
 function stationStop(tr, p) {
   if (!p || tr.ambient || lvl) return;
+  if (isFreight(tr)) { freightStop(tr, p); return; } // goods trains work on delivery orders
   if (!tr.load) tr.load = [];
   const s = stationSpot(p), fr = isFreight(tr), em = fr ? "📦" : "🧍";
   const q = carPoses(tr)[1] || carPoses(tr)[0], qx = q.x, qy = q.y - q.z * E;
@@ -10250,7 +10254,9 @@ function updateHud() {
   hud.textContent = `🪙 ${wallet()}   🧍 ${delivered.pax}   📦 ${delivered.box}`;
 }
 function stationTick(dt) {
-  if (!running || lvl) return;
+  if (lvl) return;
+  if (!running) { if (orderEl) orderTick(0); return; }
+  orderTick(dt);
   stationT += dt; if (stationT < 3) return; stationT = 0;
   const st = [...pieces.values()].filter(p => p.type === "estacion");
   if (st.length < 2) return; // a trip needs two stations
@@ -10259,17 +10265,125 @@ function stationTick(dt) {
     let ch = false;
     const big = owns("andenG") ? 2 : 1, cafe = cafeNear(p);
     if (paxT && (p.pax || 0) < 4 * big + (cafe ? 3 : 0) && Math.random() < (cafe ? .9 : .5)) { p.pax = (p.pax || 0) + 1; ch = true; }
-    if (boxT && (p.box || 0) < 3 * big && Math.random() < .35) { p.box = (p.box || 0) + 1; ch = true; }
+    void boxT; // boxes now come from delivery orders
     if (ch) drawWaiting(p);
   });
   updateHud();
 }
+
+// =====================================================================
+//  🚚 DELIVERY ORDERS: a station asks for goods (the bakery wants apples, the sawmill logs…).
+//  The goods wait at another station; a goods train with the right wagon picks them up (a crane
+//  loads them, no tapping) and brings them over. One order at a time, with a fanfare at the end.
+// =====================================================================
+const GOODS = [
+  { g: "fruta", em: "🍎", wag: "crate", b: "🥐", bn: ["la panadería", "the bakery", "la boulangerie", "die Bäckerei"], wn: ["el vagón de cajas", "the crate wagon", "le wagon à caisses", "den Kistenwagen"] },
+  { g: "troncos", em: "🪵", wag: "logs", b: "🪚", bn: ["el aserradero", "the sawmill", "la scierie", "das Sägewerk"], wn: ["el vagón de troncos", "the log wagon", "le wagon à troncs", "den Holzwagen"] },
+  { g: "leche", em: "🥛", wag: "tank", b: "🧀", bn: ["la quesería", "the cheese dairy", "la fromagerie", "die Käserei"], wn: ["el vagón cisterna", "the tank wagon", "le wagon-citerne", "den Kesselwagen"] },
+  { g: "carbon", em: "🪨", wag: "coal", b: "🏭", bn: ["la fábrica", "the factory", "l'usine", "die Fabrik"], wn: ["el vagón de carbón", "the coal wagon", "le wagon à charbon", "den Kohlewagen"] },
+];
+let order = null, orderCool = 2, orderEl = null;
+const goodsOf = g => GOODS.find(x => x.g === g);
+const gName = (G, k) => LX(G[k][0], G[k][1], G[k][2], G[k][3]);
+const wagonsOf = tr => carTypes(tr.kind, tr.cars).slice(1);
+const capFor = (tr, G) => 2 * wagonsOf(tr).filter(w => w === G.wag).length;
+const goodsTrains = () => trains.filter(t => isFreight(t) && !t.ambient && !t.trial);
+function newOrder() {
+  const st = [...pieces.values()].filter(p => p.type === "estacion"), gt = goodsTrains();
+  if (st.length < 2 || !gt.length) return;
+  const wags = new Set(gt.flatMap(wagonsOf)), opts = GOODS.filter(G => wags.has(G.wag));
+  if (!opts.length) return;
+  const G = opts[(Math.random() * opts.length) | 0], from = st[(Math.random() * st.length) | 0], others = st.filter(p => p !== from), to = others[(Math.random() * others.length) | 0];
+  const n = 2 + ((Math.random() * 3) | 0);
+  order = { g: G.g, n, got: 0, waiting: n, from: from.id, to: to.id };
+  st.forEach(p => { if (p.box) { p.box = 0; drawWaiting(p); } });
+  from.box = n; drawWaiting(from); drawOrder();
+  tone([660, 880], "triangle", .1, .2, .08);
+  speak(LX(`¡Pedido nuevo! ${cap1(gName(G, "bn"))} necesita ${n} ${G.em}. Llévalos en tren de mercancías.`, `New order! ${cap1(gName(G, "bn"))} needs ${n} ${G.em}. Bring them with a goods train.`, `Nouvelle commande ! ${cap1(gName(G, "bn"))} a besoin de ${n} ${G.em}. Apporte-les avec un train de marchandises.`, `Neuer Auftrag! ${cap1(gName(G, "bn"))} braucht ${n} ${G.em}. Bring sie mit einem Güterzug.`));
+}
+const cap1 = s => s.charAt(0).toUpperCase() + s.slice(1);
+function cancelOrder() {
+  if (!order) return;
+  const f = pieces.get(order.from); if (f) { f.box = 0; drawWaiting(f); }
+  trains.forEach(t => { t.cargo = null; });
+  order = null; orderCool = 3; drawOrder();
+}
+function orderTick(dt) {
+  if (order) {
+    const ok = pieces.get(order.from) && pieces.get(order.to) && goodsTrains().length;
+    if (!ok) cancelOrder();
+  } else if ((orderCool -= dt) <= 0) { orderCool = 3; newOrder(); }
+  if (orderEl) { const b = (1 + Math.sin(performance.now() / 260) * .05) * clamp(.6 / view.z, 1, 2.2); orderEl.querySelectorAll(".obub").forEach(g => g.setAttribute("transform", g.dataset.t + ` scale(${b.toFixed(3)})`)); }
+}
+// the bubbles: at the station that asks ("🥐 🍎 1/3") and at the one where the goods wait ("🍎 → 🥐")
+function drawOrder() {
+  if (orderEl) orderEl.remove(); orderEl = null;
+  if (!order) return;
+  const G = goodsOf(order.g), to = pieces.get(order.to), from = pieces.get(order.from); if (!to || !from) return;
+  orderEl = el("g", { "pointer-events": "none" }, L.ui);
+  const bubble = (p, txt, col, big) => {
+    const s = stationSpot(p), x = s.x - s.nx * 70, y = s.y - s.ny * 70 - 110, w = big ? 190 : 150;
+    const g = el("g", { class: "obub" }, orderEl); g.dataset.t = `translate(${x.toFixed(1)} ${y.toFixed(1)})`; g.setAttribute("transform", g.dataset.t);
+    el("path", { d: `M${-w / 2} -32 h${w} a14 14 0 0 1 14 14 v36 a14 14 0 0 1 -14 14 h${-w / 2 + 14} l-14 18 l-14 -18 h${-w / 2 + 14} a14 14 0 0 1 -14 -14 v-36 a14 14 0 0 1 14 -14 Z`, fill: "#fffdf5", stroke: col, "stroke-width": 5 }, g);
+    const t = el("text", { y: 5, "font-size": 34, "font-weight": 900, "text-anchor": "middle", "dominant-baseline": "central", fill: "#3b2a18" }, g); t.textContent = txt;
+  };
+  bubble(to, `${G.b} ${G.em} ${order.got}/${order.n}`, "#e67e22", true);
+  if (order.waiting > 0) bubble(from, `${G.em} ➜ ${G.b}`, "#3a9d3a", false);
+}
+// a crane swings the goods between the platform and the right wagon
+function craneMove(tr, p, G, k, loading) {
+  const s = stationSpot(p), P = carPoses(tr), types = wagonsOf(tr), wi = Math.max(0, types.indexOf(G.wag)) + 1, q = P[Math.min(wi, P.length - 1)];
+  const px = s.x - s.nx * 60, py = s.y - s.ny * 60, qx = q.x, qy = q.y - q.z * E;
+  const c = el("text", { x: px - s.nx * 40, y: py - s.ny * 40 - 10, "font-size": 64, "text-anchor": "middle", "dominant-baseline": "central" }, L.fx); c.textContent = "🏗️";
+  addFx(c, 1.2 + k * .35, (u, e) => { e.setAttribute("transform", `rotate(${(Math.sin(u * 12) * 8).toFixed(1)} ${px} ${py})`); e.setAttribute("opacity", u > .85 ? (1 - u) / .15 : 1); });
+  for (let i = 0; i < k; i++) hop(G.em, loading ? px : qx, loading ? py : qy, loading ? qx : px, loading ? qy : py, .25 + i * .35);
+  setTimeout(() => { tone([220, 180], "square", .06, .08, .05); }, 300); // clunk
+}
+function freightStop(tr, p) {
+  if (!order) return;
+  const G = goodsOf(order.g);
+  // unload at the station that asked for them
+  if (p.id === order.to && tr.cargo && tr.cargo.g === order.g && tr.cargo.k > 0) {
+    const k = tr.cargo.k; tr.cargo = null;
+    craneMove(tr, p, G, k, false);
+    order.got += k; delivered.box += k; dailyProg("box", k);
+    tr.wait = Math.max(tr.wait, 1.6 + .4 * k);
+    const s = stationSpot(p); pay(k * 3, s.x, s.y);
+    if (order.got >= order.n) setTimeout(() => orderDone(p, G), 900);
+    drawOrder(); updateHud(); return;
+  }
+  // load where the goods are waiting
+  if (p.id === order.from && order.waiting > 0) {
+    if (tr.cargo && tr.cargo.g !== order.g) return;
+    const cap = capFor(tr, G) - (tr.cargo ? tr.cargo.k : 0);
+    if (cap <= 0) {
+      if (!capFor(tr, G) && !freightStop.told) { freightStop.told = 1; speak(LX(`Para llevar ${G.em} hace falta ${gName(G, "wn")}.`, `To carry ${G.em} you need ${gName(G, "wn")}.`, `Pour transporter ${G.em} il faut ${gName(G, "wn")}.`, `Für ${G.em} brauchst du ${gName(G, "wn")}.`)); }
+      return;
+    }
+    const k = Math.min(cap, order.waiting);
+    order.waiting -= k; p.box = order.waiting; tr.cargo = { g: order.g, k: (tr.cargo ? tr.cargo.k : 0) + k };
+    craneMove(tr, p, G, k, true);
+    tr.wait = Math.max(tr.wait, 1.8 + .45 * k);
+    drawWaiting(p); drawOrder();
+  }
+}
+function orderDone(p, G) {
+  if (!order) return;
+  const s = stationSpot(p);
+  tone([523, 659, 784, 1047, 1319], "triangle", .09, .3, .1);
+  try { burst(s.x - s.nx * 70, s.y - s.ny * 70 - 60, [G.b, G.em, "🎉", "⭐"], 14); } catch (e) {}
+  pay(6, s.x, s.y - 40);
+  speak(LX(`¡Pedido entregado! ${cap1(gName(G, "bn"))} ya tiene sus ${G.em}. ¡Gracias, maquinista!`, `Order delivered! ${cap1(gName(G, "bn"))} has its ${G.em}. Thank you, driver!`, `Commande livrée ! ${cap1(gName(G, "bn"))} a ses ${G.em}. Merci, conducteur !`, `Auftrag geliefert! ${cap1(gName(G, "bn"))} hat ${G.em}. Danke, Lokführer!`));
+  try { earnSticker("s_order"); } catch (e) {}
+  try { happyMoment(); } catch (e) {}
+  order = null; orderCool = 5; drawOrder();
+}
 function trainBadges() {
   trains.forEach(tr => {
-    const n = tr.load ? tr.load.length : 0;
+    const fr = isFreight(tr), n = fr ? (tr.cargo ? tr.cargo.k : 0) : tr.load ? tr.load.length : 0;
     if (!n || tr.wreck) { if (tr.badge) tr.badge.setAttribute("display", "none"); return; }
     if (!tr.badge) { tr.badge = el("g", { "pointer-events": "none" }, L.ui); el("rect", { x: -34, y: -18, width: 68, height: 34, rx: 17, fill: "#fff", stroke: "#a8743d", "stroke-width": 3 }, tr.badge); tr.badgeT = el("text", { x: 0, y: 0, "font-size": 21, "font-weight": 800, "text-anchor": "middle", "dominant-baseline": "central" }, tr.badge); }
-    tr.badgeT.textContent = (isFreight(tr) ? "📦" : "🧍") + n;
+    tr.badgeT.textContent = (fr ? (goodsOf(tr.cargo.g) || { em: "📦" }).em : "🧍") + n;
     const q = carPoses(tr)[Math.min(1, tr.cars)];
     tr.badge.setAttribute("display", "inline");
     tr.badge.setAttribute("transform", `translate(${q.x.toFixed(1)} ${(q.y - q.z * E - 52 - jumpLift(tr, 1)).toFixed(1)}) scale(${(1 / Math.max(.6, view.z) * .7).toFixed(2)})`);
@@ -10739,6 +10853,7 @@ function STK() {
     ...[["push", "💪"], ["tug", "🪢"], ["race", "⛰️"]].map(([ev, e]) => ({ id: "d_" + ev, em: e, name: () => L3(DUEL_EV[ev].nm), hint: LX("Gana este desafío de trenes.", "Win this train challenge.", "Gagne ce défi de trains.", "Gewinne diesen Zug-Wettkampf.") })),
     { id: "s_tut", em: "🎓", name: () => trn("Aprender a jugar"), hint: LX("Termina el tutorial Aprender a jugar.", "Finish the Learn to play tutorial.", "Termine le tutoriel Apprendre à jouer.", "Mach die Anleitung Spielen lernen fertig.") },
     { id: "s_3star", em: "🌟", name: () => LX("Tres estrellas", "Three stars", "Trois étoiles", "Drei Sterne"), hint: LX("Gana un nivel con tres estrellas.", "Win a level with three stars.", "Gagne un niveau avec trois étoiles.", "Gewinne ein Level mit drei Sternen.") },
+    { id: "s_order", em: "🚚", name: () => LX("Repartidor", "Delivery driver", "Livreur", "Lieferfahrer"), hint: LX("Entrega un pedido con un tren de mercancías.", "Deliver an order with a goods train.", "Livre une commande avec un train de marchandises.", "Liefere einen Auftrag mit einem Güterzug.") },
     { id: "s_photo", em: "📸", name: () => LX("Foto", "Photo", "Photo", "Foto"), hint: LX("Haz una foto de tu circuito con el botón 📸.", "Take a photo of your railway with the 📸 button.", "Prends une photo de ton circuit avec le bouton 📸.", "Mach mit dem Knopf 📸 ein Foto von deiner Strecke.") },
     ...STK_DAILY.map((e, j) => ({ id: "m" + j, em: e, name: () => LX(`Misión ${j + 1}`, `Mission ${j + 1}`, `Mission ${j + 1}`, `Mission ${j + 1}`), hint: LX("Consigue las misiones del día 🎯 en el juego libre.", "Complete the daily missions 🎯 in free play.", "Réussis les missions du jour 🎯 dans le jeu libre.", "Schaff die Tagesmissionen 🎯 im freien Spiel.") })),
   ];
@@ -12109,6 +12224,7 @@ function serialize() {
     cars: cars.map(c => { const p = pieces.get(c.start.pid); return p ? [c.kind, c.ci, p.c, p.r, c.start.ri, c.start.dir, Math.round(c.start.d || 0)] : null; }).filter(Boolean) };
 }
 function clearBoard() {
+  try { cancelOrder(); } catch (e) {}
   trains.slice().forEach(removeTrain);
   cars.slice().forEach(removeCar);
   [...pieces.values()].forEach(removePiece);
