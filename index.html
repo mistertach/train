@@ -828,10 +828,36 @@ body.playing.driving #hzPlay { bottom: calc(190px + env(safe-area-inset-bottom))
 @keyframes ifade { from { opacity: 0; } to { opacity: .16; } }
 @keyframes iword { 0% { transform: scale(.4) translateY(30px); opacity: 0; } 100% { transform: none; opacity: 1; } }
 #intro.assembled .ilayer, #intro.assembled .ishad, #intro.assembled .iword { animation: none; }
+#intro.assembled .ib { animation: ihop2 .45s ease-out .05s both; }
+#intro.assembled .iblk { animation: ihop2 .45s ease-out calc(var(--d) - .03s) both; }
+#intro.assembled .itrk { animation: ihop2 .45s ease-out .78s both; }
+#intro.assembled .iword { animation: iwig .7s ease-in-out 1.25s both; }
+@keyframes ihop2 { 35% { transform: translateY(-30px) rotate(-1.5deg); } 65% { transform: translateY(5px); } }
+@keyframes iwig { 30% { transform: scale(1.08) rotate(-2deg); } 60% { transform: scale(.97) rotate(1.5deg); } }
 #intro.assembled { background: #6ab8df; } #intro.assembled .ibox { width: 300px; } /* same colour and size as the app's native splash */
-#intro.assembled .iloco { animation: ihop .5s ease-out .15s both; }
-@keyframes ihop { 40% { transform: translateY(-14px); } }
+#intro.assembled .iloco { animation: ihop .6s ease-out 1s both; }
+@keyframes ihop { 35% { transform: translateY(-40px) rotate(-4deg); } 65% { transform: translateY(6px) scale(1.04, .95); } }
 @media (prefers-reduced-motion: reduce) { #intro .ilayer, #intro .iword, #intro .ipuff, #intro .ishad { animation: none !important; } }
+
+/* sections (tabs) each have a colour; their sub-tabs sit in a tinted strip of it */
+.tab { background: color-mix(in srgb, var(--c, #1f6fd1) 13%, #fff) !important; color: color-mix(in srgb, var(--c, #1f6fd1) 80%, #000) !important; box-shadow: none !important; }
+.tab.sel { background: var(--c, #1f6fd1) !important; color: #fff !important; box-shadow: 0 3px 0 color-mix(in srgb, var(--c, #1f6fd1) 65%, #000) !important; }
+#subtabs { background: color-mix(in srgb, var(--gc, #1f6fd1) 12%, #fff); border-left: 0 !important; border-radius: 999px; padding: 4px 6px !important; margin-left: 12px !important; position: relative; }
+#subtabs::before { content: ""; position: absolute; left: -9px; top: 50%; border: 6px solid transparent; border-right-color: color-mix(in srgb, var(--gc, #1f6fd1) 25%, #fff); transform: translateY(-50%); }
+#subtabs:empty::before { display: none; }
+.stab { background: #fff !important; color: #4a5a6a !important; box-shadow: 0 1px 2px rgba(0,0,0,.08) !important; }
+.stab.sel { background: #fff !important; color: var(--gc, #1f6fd1) !important; box-shadow: 0 0 0 3px var(--gc, #1f6fd1) !important; }
+@media (max-height: 500px) { #subtabs { margin-left: 8px !important; padding: 2px 4px !important; } }
+/* spit things while following a train */
+#spitBox { position: fixed; right: calc(76px + env(safe-area-inset-right)); top: 50%; transform: translateY(-50%); z-index: 6; display: none; align-items: center; gap: 6px; flex-direction: row-reverse; }
+body.playing.following #spitBox { display: flex; }
+#spitBtn { width: 64px; height: 64px; font-size: 32px; border-radius: 50%; background: linear-gradient(165deg, #ffe58a, #ffb340); box-shadow: 0 5px 0 #c78500, 0 8px 18px rgba(120,80,0,.3); animation: hglow 1.8s ease-in-out infinite; }
+#spitBox .spitMore { width: 30px; height: 30px; font-size: 13px; border-radius: 50%; }
+#spitBox .spitPick { display: none; gap: 6px; background: rgba(255,255,255,.9); border-radius: 999px; padding: 6px; box-shadow: var(--ll-shadow); }
+#spitBox.open .spitPick { display: flex; }
+#spitBox .spitPick .b { width: 46px; height: 46px; font-size: 24px; border-radius: 50%; }
+#spitBox .spitPick .b.on { box-shadow: 0 0 0 3px #ffb340; }
+@media (max-height: 500px) { #spitBox { right: calc(60px + env(safe-area-inset-right)); } #spitBtn { width: 52px; height: 52px; font-size: 26px; } #spitBox .spitPick .b { width: 38px; height: 38px; font-size: 20px; } }
 </style>
 </head>
 <body>
@@ -894,6 +920,7 @@ body.playing.driving #hzPlay { bottom: calc(190px + env(safe-area-inset-bottom))
     <div id="floorShow">0<small>PISO</small></div>
     <button class="b" id="fDown" title="Bajar un piso">⬇️</button>
   </div>
+  <div id="spitBox"><div class="spitPick"></div><button class="b" id="spitBtn" title="¡Lanza cosas!">🫧</button></div>
   <div id="camBox">
     <button class="b" id="camFollow" title="Seguir al tren">🎥</button>
     <button class="b" id="camCab" title="Ir montado en el tren">👀</button>
@@ -4036,6 +4063,7 @@ function setCam(m) {
   camMode = m; camAng = null; if (typeof c3Ang !== "undefined") { c3Ang = null; C3.zs = null; }
   document.body.classList.toggle("cab", m === "cab");
   $("camFollow").classList.toggle("on", m === "follow"); $("camCab").classList.toggle("on", m === "cab");
+  document.body.classList.toggle("following", m === "follow"); try { $("spitBox").classList.remove("open"); } catch (e) {}
   if (m === "free") applyView();
 }
 $("camFollow").onclick = () => {
@@ -5730,8 +5758,61 @@ function playIntro() {
   const fin = () => { if (!d.isConnected || d.classList.contains("out")) return; d.classList.add("out"); setTimeout(() => d.remove(), 520); };
   d.addEventListener("pointerdown", () => { unlockAudio(); fin(); });
   // the loco lands with a little toot (only once sound is allowed by the browser)
-  setTimeout(() => { try { if (actx && actx.state === "running") whistle(.45); } catch (e) {} }, d.classList.contains("assembled") ? 250 : 1300);
-  setTimeout(fin, d.classList.contains("assembled") ? 1500 : 2800);
+  setTimeout(() => { try { if (actx && actx.state === "running") whistle(.45); } catch (e) {} }, d.classList.contains("assembled") ? 1050 : 1300);
+  setTimeout(fin, d.classList.contains("assembled") ? 2300 : 2800);
+}
+
+
+// =====================================================================
+//  🫧 SPIT: while following a train, it can throw water, bubbles, music, letter cubes, balls or confetti
+// =====================================================================
+const SPITS = [["agua", "💧"], ["burbujas", "🫧"], ["musica", "🎵"], ["letras", "🔤"], ["pelotas", "🔴"], ["confeti", "🎉"]];
+let spitKind = "burbujas";
+function spitTrain() { const l = camTrains(); return (camMode !== "free" && l[camIdx % Math.max(1, l.length)]) || drvSel || l[0]; }
+function spit() {
+  const tr = spitTrain(); if (!tr || tr.wreck) { sfx.no(); return; }
+  unlockAudio();
+  const P = carPoses(tr), q = P[tr.flip ? P.length - 1 : 0], a = (q.a + (tr.flip ? 180 : 0)) * Math.PI / 180;
+  const x0 = q.x + Math.cos(a) * 46, y0 = q.y - q.z * E - 30 + Math.sin(a) * 46, ground = q.y - q.z * E + 18;
+  const kind = spitKind, N = { agua: 18, burbujas: 12, musica: 7, letras: 6, pelotas: 7, confeti: 30 }[kind];
+  const COLS = ["#e74c3c", "#f6c23e", "#3a8de0", "#34b366", "#9b59b6", "#ff7a1a", "#ff6fb5"];
+  for (let i = 0; i < N; i++) setTimeout(() => {
+    const g = el("g", {}, L.fx), c = COLS[(Math.random() * COLS.length) | 0];
+    const spd = rnd(180, 330), dir = a + rnd(-.45, .45);
+    let vx = Math.cos(dir) * spd, vy = Math.sin(dir) * spd - rnd(220, 380), x = x0, y = y0, bounces = 0;
+    if (kind === "agua") el("path", { d: "M0 -12 C7 -2 9 4 0 9 C-9 4 -7 -2 0 -12Z", fill: "#5bb8f5", stroke: "#fff", "stroke-width": 2 }, g);
+    if (kind === "burbujas") { const r = rnd(12, 24); el("circle", { r, fill: "rgba(180,225,255,.25)", stroke: "#bfe6ff", "stroke-width": 2.5 }, g); el("circle", { cx: -r * .35, cy: -r * .35, r: r * .22, fill: "#fff", opacity: .85 }, g); vx *= .35; vy = -rnd(60, 120); }
+    if (kind === "musica") { const t = el("text", { "font-size": 46, "text-anchor": "middle", "dominant-baseline": "central", fill: c, stroke: "#fff", "stroke-width": 3, "paint-order": "stroke", "font-weight": 900 }, g); t.textContent = ["♪", "♫", "♬", "♩"][i % 4]; vx *= .3; vy = -rnd(90, 150); tone([[523, 587, 659, 784, 880, 1047][(Math.random() * 6) | 0]], "triangle", 0, .35, .08); }
+    if (kind === "letras") { el("rect", { x: -20, y: -20, width: 40, height: 40, rx: 8, fill: c, stroke: "#fff", "stroke-width": 3 }, g); const t = el("text", { y: 2, "font-size": 28, "text-anchor": "middle", "dominant-baseline": "central", fill: "#fff", "font-weight": 900 }, g); t.textContent = String.fromCharCode(65 + ((Math.random() * 26) | 0)); }
+    if (kind === "pelotas") { const r = rnd(12, 18); el("circle", { r, fill: c, stroke: "#fff", "stroke-width": 3 }, g); el("circle", { cx: -r * .35, cy: -r * .35, r: r * .3, fill: "#fff", opacity: .6 }, g); }
+    if (kind === "confeti") { el("rect", { x: -6, y: -3, width: 12, height: 6, rx: 2, fill: c }, g); vx *= .8; vy *= .9; }
+    const grav = { agua: 900, burbujas: -40, musica: -20, letras: 900, pelotas: 900, confeti: 520 }[kind];
+    const dur = { agua: 1.1, burbujas: 2.6, musica: 2, letras: 2.2, pelotas: 2.4, confeti: 2 }[kind];
+    let last = 0, rot = rnd(-180, 180); const wob = rnd(0, 6);
+    addFx(g, dur, (k, e) => {
+      const t = k * dur, dt = Math.max(0, t - last); last = t;
+      vy += grav * dt; x += vx * dt; y += vy * dt;
+      if (kind === "confeti") { vx *= Math.pow(.25, dt); vy = Math.min(vy, 140); rot += 400 * dt; }
+      if (kind === "burbujas" || kind === "musica") x += Math.sin(t * 4 + wob) * .8;
+      if ((kind === "letras" || kind === "pelotas") && y > ground && vy > 0) { y = ground; vy *= -.55; vx *= .7; bounces++; rot += 90; if (bounces < 3) tone([kind === "pelotas" ? 300 + bounces * 80 : 900], "sine", 0, .08, .05); }
+      if (kind === "agua" && y > ground) { y = ground; vy = 0; vx = 0; }
+      const pop = kind === "burbujas" && k > .85 ? 1 + (k - .85) * 6 : 1;
+      e.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${(kind === "agua" || kind === "burbujas" || kind === "musica" ? 0 : rot).toFixed(0)}) scale(${pop.toFixed(2)})`);
+      e.setAttribute("opacity", k > .75 ? (1 - k) / .25 : 1);
+    });
+  }, i * (kind === "confeti" ? 18 : kind === "agua" ? 35 : 90));
+  if (kind === "agua") noise(.7, 1800, .7, .08, "bandpass");
+  if (kind === "confeti") tone([784, 988, 1175], "triangle", .06, .18, .07);
+  if (kind === "burbujas") slide(500, 900, .3, "sine", .05);
+}
+{ const box = $("spitBox"), pick = box.querySelector(".spitPick"), btn = $("spitBtn");
+  SPITS.forEach(([k, em]) => { const b = document.createElement("button"); b.className = "b" + (k === spitKind ? " on" : ""); b.textContent = em; b.dataset.k = k;
+    b.onclick = e => { e.stopPropagation(); spitKind = k; btn.textContent = em; pick.querySelectorAll(".b").forEach(x => x.classList.toggle("on", x === b)); box.classList.remove("open"); sfx.click(); spit(); }; pick.appendChild(b); });
+  let holdT = null, held = false;
+  btn.addEventListener("pointerdown", () => { held = false; holdT = setTimeout(() => { held = true; box.classList.add("open"); sfx.toc(); }, 450); });
+  ["pointerup", "pointerleave", "pointercancel"].forEach(ev => btn.addEventListener(ev, () => clearTimeout(holdT)));
+  btn.onclick = e => { e.stopPropagation(); if (held) return; if (box.classList.contains("open")) { box.classList.remove("open"); return; } spit(); };
+  const pk = document.createElement("button"); pk.className = "b spitMore"; pk.textContent = "▾"; pk.title = "Elegir qué lanza"; pk.onclick = e => { e.stopPropagation(); box.classList.toggle("open"); sfx.click(); }; box.appendChild(pk);
 }
 
 // secret switch for testing: 5 quick taps on the parents' page icon
@@ -6361,10 +6442,11 @@ const grpOf = id => (TABS.find(t => t.id === id) || TABS[0]).grp;
 const subsOf = g => TABS.filter(t => t.grp === g);
 // what to light up in a tutorial: the small sub-tab if its big tab is open, otherwise the big tab
 function tabSel(id) { const g = grpOf(id); return grpOf(curTab) === g && subsOf(g).length > 1 ? `.stab[data-tab="${id}"]` : `.tab[data-grp="${g}"]`; }
+const GCOL = { vias: "#e07b16", calles: "#5b6f86", decor: "#2a9d55", trenes: "#d6402f" };
 function buildTabs() {
   const tb = $("tabs");
   GROUPS.forEach(G => {
-    const subs = subsOf(G.id), d = document.createElement("div"); d.className = "tab"; d.dataset.grp = G.id; d.title = G.nm;
+    const subs = subsOf(G.id), d = document.createElement("div"); d.className = "tab"; d.dataset.grp = G.id; d.title = G.nm; d.style.setProperty("--c", GCOL[G.id] || "#1f6fd1");
     if (subs.length === 1) d.dataset.tab = subs[0].id;
     d.innerHTML = `${TAB_IC[G.id] ? ic(TAB_IC[G.id]) : G.ic}<small>${G.nm}</small>`;
     d.onclick = () => { unlockAudio(); selectTab(lastSub[G.id] || subs[0].id); sfx.click(); };
@@ -6450,10 +6532,14 @@ function selectTab(id) {
   if (!TABS.some(t => t.id === id)) id = "vias";
   curTab = id; lastSub[grpOf(id)] = id;
   document.querySelectorAll(".tab").forEach(e => e.classList.toggle("sel", e.dataset.grp === grpOf(id)));
+  $("tabs").style.setProperty("--gc", GCOL[grpOf(id)] || "#1f6fd1");
   renderSubtabs(); try { buildFullBadges(); } catch (e) {}
   const pal = $("palette"); pal.innerHTML = "";
   pal.appendChild(makeItem("hand", () => selectTool("hand")));
   pal.appendChild(makeItem("erase", () => selectTool("erase")));
+  ["lapiz", "lapizCalle"].forEach(pid => { // drawing is the quickest way to build, so the pencils are always there
+    const d = makeItem(pid, () => fullLocked(pid) ? askGrownUp() : selectTool(pid)); if (fullLocked(pid)) fullBadge(d); pal.appendChild(d);
+  });
   pal.appendChild(Object.assign(document.createElement("div"), { className: "sep" }));
   const tab = TABS.find(t => t.id === id);
   if (id === "trenes") {
@@ -6482,7 +6568,7 @@ function selectTab(id) {
     selectTool("train");
     updateCarsUI();
   } else {
-    tab.items.filter(allowedItem).forEach(it => { const fl = fullLocked(it), lk = !fl && shopLocked(it), d = makeItem(it, () => fullLocked(it) ? askGrownUp() : shopLocked(it) ? openShop(it) : selectTool(it)); if (fl) fullBadge(d); else if (lk) lockItem(d, it); pal.appendChild(d); });
+    tab.items.filter(allowedItem).filter(it => it !== "lapiz" && it !== "lapizCalle").forEach(it => { const fl = fullLocked(it), lk = !fl && shopLocked(it), d = makeItem(it, () => fullLocked(it) ? askGrownUp() : shopLocked(it) ? openShop(it) : selectTool(it)); if (fl) fullBadge(d); else if (lk) lockItem(d, it); pal.appendChild(d); });
     if (id === "subir" && proMode && tab.items.some(allowedItem)) {
       pal.appendChild(Object.assign(document.createElement("div"), { className: "sep" }));
       const sw = document.createElement("div"); sw.className = "dirsw"; sw.title = "¿La pieza sube o baja?";
@@ -9769,7 +9855,7 @@ document.addEventListener("keyup", e => {
 applyIcons(); if (!proMode) { miniOn = false; $("mini").classList.add("hide"); $("miniBtn").classList.add("off"); }
 langPicker($("home"), null, true); setLang(LANG); buildTabs(); buildProjects(); markTutHome();
 try { playIntro(); } catch (e) {}
-if (!sget(KEY + "-tut")) setTimeout(() => { if (!$("home").hidden && $("modal").hidden) offerTutorial(); }, window.__NATIVE__ ? 1900 : 3200); selectTab("vias"); selectTool("hand"); sizeMini(); layoutUI(); setFloor(0);
+if (!sget(KEY + "-tut")) setTimeout(() => { if (!$("home").hidden && $("modal").hidden) offerTutorial(); }, window.__NATIVE__ ? 2700 : 3200); selectTab("vias"); selectTool("hand"); sizeMini(); layoutUI(); setFloor(0);
 (function start() {
   const auto = sget(KEY + "-auto");
   if (auto && auto.data && auto.data.pieces && auto.data.pieces.length) { loadData(auto.data); curName = auto.name || ""; }
