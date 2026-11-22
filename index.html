@@ -6467,8 +6467,7 @@ function renderSubtabs() {
 }
 function allowedItem(id) {
   if (!lvl || id === "hand" || id === "erase") return true;
-  if (id === "lapiz") return lvl.inv.corta != null && lvl.inv.curva != null;
-  if (id === "lapizCalle") return lvl.inv.calle != null && lvl.inv.calleC != null;
+  if (id === "lapiz" || id === "lapizCalle") return false; // no pencils in the adventure: each piece is placed by hand
   return lvl.inv[id] != null;
 }
 function makeItem(id, onClick) {
