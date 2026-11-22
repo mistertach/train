@@ -5273,8 +5273,11 @@ const DEFS = {
   desvioI: { sw: true, cells: P1, ports: [[0, 0, 3], [0, 0, 1], [0, 0, 0]], routes: [{ a: 0, b: 1, g: WE }, { a: 0, b: 2, g: CWN }] },
   desvioD: { sw: true, cells: P1, ports: [[0, 0, 3], [0, 0, 1], [0, 0, 2]], routes: [{ a: 0, b: 1, g: WE }, { a: 0, b: 2, g: CWS }] },
   desvioY: { sw: true, cells: P1, ports: [[0, 0, 3], [0, 0, 0], [0, 0, 2]], routes: [{ a: 0, b: 1, g: CWN }, { a: 0, b: 2, g: CWS }] },
+  // double-curve switch: lever one way joins west→north and east→south, the other way west→south and east→north
+  dobleC: { sw: true, pairs: true, cells: P1, ports: [[0, 0, 3], [0, 0, 1], [0, 0, 0], [0, 0, 2]], routes: [{ a: 0, b: 2, g: CWN }, { a: 1, b: 3, g: CES }, { a: 0, b: 3, g: CWS }, { a: 1, b: 2, g: CEN }] },
   // up-or-down switch: from the single end a train climbs one floor or goes down one, as the lever says (🧠 can choose)
-  subeBaja: { sw: true, span: 3, cells: P2, ports: [[0, 0, 3, 1], [1, 0, 1, 2], [1, 0, 1, 0]], routes: [{ a: 0, b: 1, g: LONG, z0: 1, z1: 2 }, { a: 0, b: 2, g: LONG, z0: 1, z1: 0 }] },
+  subeBaja: { sw: true, span: 3, cells: P1, ports: [[0, 0, 3, 1], [0, 0, 1, 2], [0, 0, 1, 0]], routes: [{ a: 0, b: 1, g: WE, z0: 1, z1: 2 }, { a: 0, b: 2, g: WE, z0: 1, z1: 0 }] },
+  rampaC:  { span: 2, cells: P1, ports: [[0, 0, 3, 0], [0, 0, 1, 1]], routes: [{ a: 0, b: 1, g: WE, z0: 0, z1: 1 }] },
   cruce:   { cells: P1, ports: [[0, 0, 3], [0, 0, 1], [0, 0, 0], [0, 0, 2]], routes: [{ a: 0, b: 1, g: WE }, { a: 2, b: 3, g: NSg }] },
   rampa:   { span: 2, cells: P2, ports: [[0, 0, 3, 0], [1, 0, 1, 1]], routes: [{ a: 0, b: 1, g: LONG, z0: 0, z1: 1 }] },
   subeI:   { span: 2, cells: P1, ports: [[0, 0, 3, 0], [0, 0, 0, 1]], routes: [{ a: 0, b: 1, g: CWN, z0: 0, z1: 1 }] },
@@ -5518,9 +5521,10 @@ function drawRails(g, routes, p, act) {
   routes.forEach(R => el("path", { d: R.d0, stroke: "#7d4f22", "stroke-width": 54, fill: "none" }, g));
   routes.forEach(R => el("path", { d: R.d0, stroke: wood, "stroke-width": 47, fill: "none" }, g));
   routes.forEach(R => el("path", { d: R.dg, stroke: "rgba(255,255,255,.2)", "stroke-width": 3, fill: "none" }, g));
-  const order = act ? [...routes].sort((a, b) => (a === act) - (b === act)) : routes;
+  const actS = Array.isArray(act) ? act : act ? [act] : null, isAct = R => !!actS && actS.includes(R);
+  const order = actS ? [...routes].sort((a, b) => isAct(a) - isAct(b)) : routes;
   order.forEach(R => {
-    const faint = act && R !== act;
+    const faint = actS && !isAct(R);
     [R.dl, R.dr].forEach(d => el("path", { d, stroke: faint ? "rgba(110,65,25,.3)" : "#6b3f17", "stroke-width": faint ? 5 : 6.5, fill: "none", "stroke-linecap": "round" }, g));
   });
   const used = new Set(); routes.forEach(R => { used.add(R.a); if (R.b >= 0) used.add(R.b); });
@@ -5598,7 +5602,7 @@ function drawPiece(p, lay) {
     }
     return;
   }
-  const routes = p.geo.routes, act = d.sw ? routes[p.state % routes.length] : null;
+  const routes = p.geo.routes, act = d.pairs ? [routes[2 * (p.state % 2)], routes[2 * (p.state % 2) + 1]] : d.sw ? routes[p.state % routes.length] : null;
   const elevated = routes.some(R => Math.max(R.za, R.zb) > 0);
   if (routes.some(R => Math.min(R.za, R.zb) < 0)) { // underground: a dark tube around the track
     routes.filter(R => Math.min(R.za, R.zb) < 0).forEach(R => el("path", { d: R.d0, stroke: "rgba(40,28,18,.55)", "stroke-width": 76, fill: "none" }, g));
@@ -5668,12 +5672,12 @@ function drawPiece(p, lay) {
       el("path", { d: "M-7 -9 L6 0 L-7 9", stroke: "rgba(255,255,255,.95)", "stroke-width": 5, fill: "none", "stroke-linecap": "round", "stroke-linejoin": "round", transform: `translate(${ax} ${ay}) rotate(${a})` }, g);
     });
   }
-  if (act) {
+  if (act) (Array.isArray(act) ? act : [act]).forEach(act => { // green arrows on the way(s) the switch is set
     const [ax, ay] = ppAt(act, act.len * .72), [bx, by] = ppAt(act, act.len * .9);
     const a = Math.atan2(by - ay, bx - ax) * 180 / Math.PI;
     const ag = el("g", { transform: `translate(${ax} ${ay}) rotate(${a})`, class: "swarr" }, g);
     el("path", { d: "M-9 -11 L11 0 L-9 11 Z", fill: "#2ecc40", stroke: "#fff", "stroke-width": 3, "stroke-linejoin": "round" }, ag);
-  }
+  });
   if (p.type === "tunel" || p.type === "tunelL" || p.type === "paso") {
     const og = el("g", {}, lay("over")); els.push(og);
     const lo = el("g", { transform: tf }, og);
@@ -7521,8 +7525,8 @@ function placePiece(type, c, r, f, opts) {
 //  SLOPES: build going up or going down, and flip a slope after placing it
 // =====================================================================
 let slopeMode = "up", slopeSel = null, slopeBtn = null;
-const isSlope = type => type === "rampa" || type === "subeI" || type === "subeD";
-const SLOPE_FAM = { rampa: ["rampa"], subeI: ["subeI", "subeD"], subeD: ["subeI", "subeD"] };
+const isSlope = type => type === "rampa" || type === "rampaC" || type === "subeI" || type === "subeD";
+const SLOPE_FAM = { rampa: ["rampa"], rampaC: ["rampaC"], subeI: ["subeI", "subeD"], subeD: ["subeI", "subeD"] };
 function setSlopeMode(m) {
   slopeMode = m;
   document.querySelectorAll(".dirsw button").forEach(b => b.classList.toggle("on", b.dataset.m === m));
@@ -7659,7 +7663,7 @@ function renderSlopeBtn() {
 // =====================================================================
 let sideOn = false, profSel = null, profMark = null;
 const LH = 40, TRAIN_H = 30; // side-view height of one floor and of a train, in world units
-function profileRoute(p) { return DEFS[p.type].sw ? p.state % p.geo.routes.length : 0; }
+function profileRoute(p) { return DEFS[p.type].pairs ? 2 * (p.state % 2) : DEFS[p.type].sw ? p.state % p.geo.routes.length : 0; }
 function profileWalk(p, reach) {
   const ri = profileRoute(p), R = p.geo.routes[ri];
   const walk = dir => {
@@ -8721,7 +8725,7 @@ function g3Init() {
     const R = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: "high-performance" });
     if (!R.getContext()) throw new Error("no gl");
     R.setPixelRatio(Math.min(2, devicePixelRatio || 1));
-    R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap;
+    R.shadowMap.enabled = true; R.shadowMap.type = 1; // PCFShadowMap
     const S = new THREE.Scene(), cam = new THREE.PerspectiveCamera(60, 1, 2, 4200);
     S.fog = new THREE.Fog(0xcfe9f7, 900, 3400);
     // sky dome with a soft gradient, a sun, clouds and stars
@@ -8776,6 +8780,34 @@ function g3Tex(kind) {
   } else if (kind === "windows") {
     cv.width = 64; cv.height = 128; x.fillStyle = "#ffffff"; x.fillRect(0, 0, 64, 128);
     for (let r = 0; r < 8; r++) for (let c = 0; c < 4; c++) { x.fillStyle = Math.random() < .25 ? "#ffe8a0" : "#6d93b8"; x.fillRect(4 + c * 15, 4 + r * 15.5, 10, 10); }
+  } else if (kind === "water") {
+    x.fillStyle = "#3f9ad8"; x.fillRect(0, 0, 256, 256);
+    const wrap = f => [-256, 0, 256].forEach(dx => [-256, 0, 256].forEach(dy => f(dx, dy))); // drawn 9 times so the squares join without seams
+    for (let i = 0; i < 40; i++) { const cx = Math.random() * 256, cy = Math.random() * 256, rx = 20 + Math.random() * 30, ry = 8 + Math.random() * 10; x.fillStyle = "rgba(30,90,160,.25)"; wrap((dx, dy) => { x.beginPath(); x.ellipse(cx + dx, cy + dy, rx, ry, 0, 0, 7); x.fill(); }); }
+    for (let i = 0; i < 90; i++) { const y = Math.random() * 256, x0 = Math.random() * 256, w = 20 + Math.random() * 40, a = .15 + Math.random() * .3, lw = 2 + Math.random() * 2; x.strokeStyle = `rgba(255,255,255,${a})`; x.lineWidth = lw; wrap((dx, dy) => { x.beginPath(); x.moveTo(x0 + dx, y + dy); x.quadraticCurveTo(x0 + dx + w / 2, y + dy - 5, x0 + dx + w, y + dy); x.stroke(); }); }
+  } else if (kind === "plaza") {
+    x.fillStyle = "#9c9488"; x.fillRect(0, 0, 256, 256);
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) { const l = 72 + Math.random() * 14; x.fillStyle = `hsl(35,${10 + Math.random() * 8}%,${l}%)`; x.beginPath(); x.roundRect ? x.roundRect(c * 32 + (r % 2) * 16 + 2, r * 32 + 2, 28, 28, 7) : x.rect(c * 32 + 2, r * 32 + 2, 28, 28); x.fill(); }
+  } else if (kind === "arena") {
+    x.fillStyle = "#f2d98d"; x.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 3000; i++) { x.fillStyle = Math.random() < .5 ? "rgba(200,160,80,.35)" : "rgba(255,250,220,.5)"; x.fillRect(Math.random() * 256, Math.random() * 256, 1.5, 1.5); }
+    for (let k = 0; k < 9; k++) { x.strokeStyle = "rgba(190,150,70,.25)"; x.lineWidth = 3; x.beginPath(); for (let i = 0; i <= 256; i += 8) x.lineTo(i, k * 30 + 10 + Math.sin(i / 20 + k) * 5); x.stroke(); }
+  } else if (kind === "parque") {
+    x.fillStyle = "#5fb04f"; x.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 1500; i++) { x.fillStyle = `hsla(${100 + Math.random() * 20},55%,${35 + Math.random() * 20}%,.6)`; x.fillRect(Math.random() * 256, Math.random() * 256, 2, 4); }
+    for (let i = 0; i < 70; i++) { const px = Math.random() * 256, py = Math.random() * 256, c = ["#ffffff", "#ffd23f", "#ff6fb5", "#c56cf0"][i % 4]; x.fillStyle = c; for (let k = 0; k < 5; k++) { x.beginPath(); x.arc(px + Math.cos(k * 1.26) * 3, py + Math.sin(k * 1.26) * 3, 2.2, 0, 7); x.fill(); } x.fillStyle = "#f5b301"; x.beginPath(); x.arc(px, py, 1.8, 0, 7); x.fill(); }
+  } else if (kind === "nieve") {
+    x.fillStyle = "#f3f7fb"; x.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 30; i++) { x.fillStyle = "rgba(170,195,225,.09)"; x.beginPath(); x.ellipse(Math.random() * 256, Math.random() * 256, 30 + Math.random() * 40, 12 + Math.random() * 14, Math.random(), 0, 7); x.fill(); }
+    for (let i = 0; i < 300; i++) { x.fillStyle = "#ffffff"; x.fillRect(Math.random() * 256, Math.random() * 256, 2, 2); }
+  } else if (kind === "campo") {
+    for (let k = 0; k < 16; k++) { x.fillStyle = k % 2 ? "#a7b347" : "#c7cf63"; x.fillRect(0, k * 16, 256, 16); }
+    for (let i = 0; i < 900; i++) { x.fillStyle = "rgba(90,110,30,.5)"; const yy = ((Math.random() * 16) | 0) * 16 + 8; x.fillRect(Math.random() * 256, yy - 3 + Math.random() * 3, 2, 5); }
+  } else if (kind === "tile") {
+    x.fillStyle = "#ffffff"; x.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 1500; i++) { x.fillStyle = `rgba(0,0,0,${Math.random() * .06})`; x.fillRect(Math.random() * 256, Math.random() * 256, 3, 3); }
+    x.strokeStyle = "rgba(0,0,0,.16)"; x.lineWidth = 3; for (let k = 0; k <= 4; k++) { x.beginPath(); x.moveTo(k * 64, 0); x.lineTo(k * 64, 256); x.moveTo(0, k * 64); x.lineTo(256, k * 64); x.stroke(); }
+    x.strokeStyle = "rgba(255,255,255,.35)"; x.lineWidth = 2; for (let k = 0; k < 4; k++) { x.beginPath(); x.moveTo(k * 64 + 3, 3); x.lineTo(k * 64 + 61, 3); x.stroke(); }
   } else if (kind === "stone") {
     x.fillStyle = "#8c8377"; x.fillRect(0, 0, 256, 256);
     for (let r = 0; r < 8; r++) for (let c = 0; c < 6; c++) { const l = 42 + Math.random() * 16; x.fillStyle = `hsl(30,8%,${l}%)`; x.fillRect(c * 44 + (r % 2) * 22 + 2, r * 32 + 2, 40, 28); }
@@ -8787,7 +8819,7 @@ function g3Tex(kind) {
 function g3Bag() { return { parts: {}, add(mat, geo) { (this.parts[mat.uuid] = this.parts[mat.uuid] || { mat, list: [] }).list.push(geo); } }; }
 function g3Flush(bag, group, shadow) {
   Object.values(bag.parts).forEach(({ mat, list }) => {
-    const norm = list.map(g => { const n = g.index ? g.toNonIndexed() : g; if (n.attributes.uv) n.deleteAttribute("uv"); if (!n.attributes.normal) n.computeVertexNormals(); if (!n.attributes.color) g3Col(n, "#ffffff"); return n; });
+    const norm = list.map(g => { const n = g.index ? g.toNonIndexed() : g; if (n.attributes.uv && !mat.map) n.deleteAttribute("uv"); if (!n.attributes.normal) n.computeVertexNormals(); if (!n.attributes.color) g3Col(n, "#ffffff"); return n; });
     const geo = THREE.mergeGeometries(norm, false); list.forEach(g => g.dispose());
     if (!geo) return;
     const m = new THREE.Mesh(geo, mat); m.castShadow = !!shadow; m.receiveShadow = true; group.add(m);
@@ -8858,7 +8890,9 @@ function g3Build() {
   // ground: the board as squares (with holes for the ramps down) and a wide meadow around it
   const gm = new THREE.MeshLambertMaterial({ map: g3Tex("grass"), color: 0xffffff }); G3.groundMat = gm;
   const gq = [];
-  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (!pit[r * COLS + c]) gq.push(new THREE.PlaneGeometry(T, T).rotateX(-Math.PI / 2).translate(c * T + T / 2, 0, r * T + T / 2));
+  const wet = new Uint8Array(COLS * ROWS); pieces.forEach(p => { if (DEFS[p.type].water) p.geo.cells.forEach(([c, r]) => { if (inB(c, r)) wet[r * COLS + c] = 1; }); });
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (wet[r * COLS + c]) bag.add(VC, g3Col(new THREE.PlaneGeometry(T, T).rotateX(-Math.PI / 2).translate(c * T + T / 2, -7, r * T + T / 2), "#2a6c98"));
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (!pit[r * COLS + c] && !wet[r * COLS + c]) gq.push(new THREE.PlaneGeometry(T, T).rotateX(-Math.PI / 2).translate(c * T + T / 2, 0, r * T + T / 2));
   const M = 6000;
   [[-M / 2, BH / 2, M, BH + M * 2], [BW + M / 2, BH / 2, M, BH + M * 2], [BW / 2, -M / 2, BW, M], [BW / 2, BH + M / 2, BW, M]].forEach(([cx, cz, w, h]) => gq.push(new THREE.PlaneGeometry(w, h).rotateX(-Math.PI / 2).translate(cx, 0, cz)));
   gq.forEach(g => { const uv = g.attributes.uv, p = g.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, p.getX(i) / 260, p.getZ(i) / 260); });
@@ -8883,7 +8917,15 @@ function g3Build() {
   pieces.forEach(p => {
     const d = DEFS[p.type];
     if (d.gtile || d.water) { // squares of colour or water
-      p.geo.cells.forEach(([c, r]) => { const g = new THREE.PlaneGeometry(T, T).rotateX(-Math.PI / 2).translate(c * T + T / 2, d.water ? .9 : .5, r * T + T / 2); bag.add(d.water ? g3Water() : VC, d.water ? g : g3Col(g, d.gtile, .06)); });
+      p.geo.cells.forEach(([c, r]) => {
+        const g = new THREE.PlaneGeometry(T, T).rotateX(-Math.PI / 2).translate(c * T + T / 2, d.water ? -.6 : .5, r * T + T / 2);
+        bag.add(d.water ? g3Water() : g3TileMat(p.type, d.gtile), g);
+        if (d.water) for (let e = 0; e < 4; e++) { // a sandy shore where the water meets the land
+          const nc = c + DX[e], nr = r + DY[e]; if (!inB(nc, nr) || piecesIn(nc, nr).some(q => DEFS[q.type].water)) continue;
+          const s = new THREE.BoxGeometry(e % 2 ? 9 : T + 9, 2.4, e % 2 ? T + 9 : 9).translate(c * T + T / 2 + DX[e] * (T / 2 - 2), .4, r * T + T / 2 + DY[e] * (T / 2 - 2));
+          bag.add(VCf, g3Col(s, "#e9d9a6", .1));
+        }
+      });
       return;
     }
     (p.geo.rroutes || []).forEach(R => { // roads with kerbs and a dashed line
@@ -8899,7 +8941,14 @@ function g3Build() {
   g3Flush(bag, W, false); g3Flush(tall, W, true);
   G3.world = W; G3.S.add(W);
 }
-function g3Water() { return G3.waterMat || (G3.waterMat = new THREE.MeshPhongMaterial({ color: 0x3f9ad8, shininess: 90, specular: 0xbfe6ff, transparent: true, opacity: .92 })); }
+function g3Water() { return G3.waterMat || (G3.waterMat = new THREE.MeshPhongMaterial({ color: 0xffffff, map: g3Tex("water"), shininess: 110, specular: 0xd8f0ff, transparent: true, opacity: .93 })); }
+// ground tiles: cobbles, sand, flowers, snow, crop rows, or painted squares
+function g3TileMat(id, col) {
+  G3.tileMats = G3.tileMats || {};
+  if (G3.tileMats[id]) return G3.tileMats[id];
+  const special = ["plaza", "arena", "parque", "nieve", "campo"].includes(id);
+  return (G3.tileMats[id] = new THREE.MeshLambertMaterial({ map: g3Tex(special ? id : "tile"), color: special ? 0xffffff : col }));
+}
 // grass tufts and little flowers that sway in the wind
 function g3Grass(W, tufts, flowers) {
   const blade = [];
@@ -8956,16 +9005,16 @@ function g3Track(p, bag, tall, VC, VCf) {
       // lamps along the walls
       for (let i = 2; i < run.length; i += 9) { const s = run[i], side = i % 18 < 9 ? 1 : -1; G3.lamps.push(g3V(s.x + s.nx * side * 38, s.y + s.ny * side * 38, s.z + 44)); bag.add(G3.lampMat || (G3.lampMat = new THREE.MeshBasicMaterial({ color: 0xffe2a0 })), g3Put(new THREE.SphereGeometry(3.2, 8, 6), s.x + s.nx * side * 40, s.y + s.ny * side * 40, s.z + 44, 0)); }
       [run[0], run[run.length - 1]].forEach((e, k) => {
-        const a = Math.atan2(e.ty, e.tx), arch = (pth, r, w, base) => { pth.moveTo(-w, base); pth.lineTo(w, base); pth.lineTo(w, 52); pth.absarc(0, 52, r, 0, Math.PI, false); pth.lineTo(-w, base); return pth; };
-        let sh;
-        if (deep) { sh = new THREE.Shape(); sh.moveTo(-60, -1); sh.lineTo(60, -1); sh.lineTo(60, -e.z); sh.lineTo(-60, -e.z); sh.lineTo(-60, -1); }
-        else sh = arch(new THREE.Shape(), 56, 56, -1);
-        sh.holes.push(arch(new THREE.Path(), 44, 44, -1));
-        const g = new THREE.ExtrudeGeometry(sh, { depth: 10, bevelEnabled: false, curveSegments: 12 }); g.rotateY(Math.PI / 2).translate(k ? -10 : 0, 0, 0);
+        const a = Math.atan2(e.ty, e.tx), V = (x, y) => new THREE.Vector2(x, y);
+        const ell = (w, ht, from, to) => { const o = []; for (let i = 0; i <= 14; i++) { const t = from + (to - from) * i / 14; o.push(V(Math.cos(t) * w, 2 + Math.sin(t) * ht)); } return o; };
+        // one outline with a notch for the opening (holes touching the ground don't cut cleanly)
+        const ring = deep ? [V(-60, -1), V(-44, -1), ...ell(44, 62, Math.PI, 0), V(44, -1), V(60, -1), V(60, -e.z), V(-60, -e.z)]
+                          : [V(-56, -1), V(-44, -1), ...ell(44, 62, Math.PI, 0), V(44, -1), V(56, -1), ...ell(56, 76, 0, Math.PI)];
+        const g = new THREE.ExtrudeGeometry(new THREE.Shape(ring), { depth: 10, bevelEnabled: false }); g.rotateY(Math.PI / 2).translate(k ? -10 : 0, 0, 0);
         tall.add(VCf, g3Col(g3Put(g, e.x, e.y, e.z, a), deep ? "#8d8d93" : "#b3a896", .08));
         if (!deep) { // the mountain's face around the portal
-          const f = new THREE.Shape(G3_MTN.map(([u, v]) => new THREE.Vector2(u, v))); f.holes.push(arch(new THREE.Path(), 56, 56, -2));
-          const face = new THREE.ExtrudeGeometry(f, { depth: 2, bevelEnabled: false, curveSegments: 12 }); face.rotateY(Math.PI / 2).translate(k ? -2 : 0, 0, 0);
+          const face = new THREE.ExtrudeGeometry(new THREE.Shape([...G3_MTN.slice(-1).map(([u, v]) => V(u, v)), V(56, -2), ...ell(56, 76, 0, Math.PI), V(-56, -2), ...G3_MTN.slice(0, -1).map(([u, v]) => V(u, v))]), { depth: 2, bevelEnabled: false });
+          face.rotateY(Math.PI / 2).translate(k ? -2 : 0, 0, 0);
           bag.add(VCf, g3Col(g3Put(face, e.x, e.y, e.z, a), "#4f8a3b", .1));
         }
       });
@@ -9349,8 +9398,10 @@ function render3GL(dt) {
   const fr = g3MyFront(tr), dzf = slope; fr.position.set(P0.x - hx * (steam ? 22 : 4), g3Z(P0.z) + 5, P0.y - hy * (steam ? 26 : 4)); fr.rotation.set(0, -c3Ang, Math.atan(dzf));
   // where are we: underground, in a tunnel, or out in the open
   const UNDER = P0.z < -.3, cc = Math.floor(P0.x / T), cr = Math.floor(P0.y / T);
-  const inTun = UNDER || piecesIn(cc, cr).some(p => (g3IsTun(p) && Math.abs(p.h - P0.z) < .6) || (p.type === "monte" && P0.z < .9 && P0.z > -.1));
-  G3.inside += ((inTun ? 1 : 0) - G3.inside) * (1 - Math.exp(-dt * 3));
+  void cc; void cr;
+  const kc = Math.floor(ex / T), kr = Math.floor(ey / T), camLv = P0.z;
+  const inTun = UNDER || piecesIn(kc, kr).some(p => (g3IsTun(p) && Math.abs(p.h - camLv) < .6) || (p.type === "monte" && camLv < .9 && camLv > -.1));
+  G3.inside += ((inTun ? 1 : 0) - G3.inside) * (1 - Math.exp(-dt * 8));
   // sky, light and weather
   const wet = weather === "lluvia", snow = weather === "nevada", dusk = night ? 1 : 0;
   const top = night ? 0x060b26 : wet ? 0x8fa4b5 : 0x4f9fe0, hor = night ? 0x24356b : wet ? 0xc9d3da : 0xd6efff;
@@ -9363,8 +9414,8 @@ function render3GL(dt) {
   const fogC = UNDER ? 0x1a1a20 : hor; S.fog.color.set(fogC); S.fog.near = UNDER ? 150 : wet ? 500 : 900; S.fog.far = UNDER ? 900 : wet ? 2200 : 3400;
   S.background = null; R.setClearColor(fogC);
   G3.sky.visible = !UNDER; G3.sun.visible = !UNDER && !wet;
-  G3.hemi.intensity = (night ? .45 : wet ? 1.25 : 1.6) * (1 - ins * .6); G3.hemi.color.set(night ? 0x8090c0 : 0xddefff); G3.hemi.groundColor.set(snow ? 0xdde6ee : night ? 0x203020 : 0x6d8a4a);
-  G3.dir.intensity = (night ? .25 : wet ? .6 : 2.2) * (1 - ins * .85); G3.dir.color.set(night ? 0xaab8ff : 0xfff1d6);
+  G3.hemi.intensity = night ? .45 : wet ? 1.25 : 1.6; G3.hemi.color.set(night ? 0x8090c0 : 0xddefff); G3.hemi.groundColor.set(snow ? 0xdde6ee : night ? 0x203020 : 0x6d8a4a);
+  G3.dir.intensity = night ? .25 : wet ? .6 : 2.2; G3.dir.color.set(night ? 0xaab8ff : 0xfff1d6);
   G3.dir.position.set(ex + sunDir.x * 1400, ez + sunDir.y * 1400, ey + sunDir.z * 1400); G3.dir.target.position.set(ex + hx * 350, 0, ey + hy * 350);
   G3.head.intensity = 60000 * Math.max(ins, night ? 1 : 0);
   G3.head.position.set(ex + hx * 40, ez - 18, ey + hy * 40); G3.head.target.position.set(ex + hx * 400, ez - 60, ey + hy * 400);
@@ -9375,7 +9426,7 @@ function render3GL(dt) {
   if (G3.grass) G3.grass.visible = !snow; if (G3.flowers) G3.flowers.visible = !snow;
   G3.wind.value = G3.t * (weather === "viento" ? 2.4 : 1);
   G3.clouds.visible = !UNDER; G3.clouds.children.forEach(c => { c.position.x += c.userData.v * dt; if (c.position.x > COLS * T / 2 + 3200) c.position.x -= 6400; });
-  if (G3.waterMat) G3.waterMat.color.setHSL(.57, .62, .52 + Math.sin(G3.t * 1.3) * .02);
+  if (G3.waterMat) { G3.waterMat.map.offset.set(G3.t * .03, Math.sin(G3.t * .5) * .04); }
   // pictures: load when ready, turn to face you (inside their square)
   G3.bills.forEach(b => {
     if (!b.ready) { (b.fixed ? g3MonReady : g3BillReady)(b); return; }
@@ -10383,7 +10434,7 @@ const FULL_TRAINS = ["bala", "metro", "tranvia"];
 let fullSet = null;
 function fullItems() {
   if (fullSet) return fullSet;
-  fullSet = new Set(["rampa", "subeI", "subeD", "subeBaja", "paso", ...FULL_TRAINS]);
+  fullSet = new Set(["rampa", "rampaC", "subeI", "subeD", "subeBaja", "dobleC", "paso", ...FULL_TRAINS]);
   TABS.filter(t => ["calles", "ciudad", "monumentos"].includes(t.id)).forEach(t => t.items.forEach(i => fullSet.add(i)));
   return fullSet;
 }
@@ -11304,6 +11355,8 @@ const INFO = {
   desvioI: [null, "Desvío", "La vía se divide en dos: recto o curva. Se coloca solo hacia el lado que encaja; tócalo con esta misma pieza para girarlo o darle la vuelta. Con ✋ cambias el camino del tren."],
   desvioD: [null, "Desvío a la derecha", "La vía se divide: recto o a la derecha. Con ✋ se cambia el camino; la flecha verde indica por dónde irá el tren."],
   desvioY: [null, "Desvío en Y", "La vía se divide en dos curvas, izquierda y derecha. Con ✋ se elige cuál."],
+  dobleC: [null, "Desvío de dos curvas", "Dos curvas en una casilla: si el tren viene del oeste sale por el norte, y si viene del este sale por el sur. Tócalo con ✋ para darle la vuelta (oeste→sur, este→norte), o ponle un 🧠 para que cambie solo."],
+  rampaC: [null, "Rampa empinada", "Cambia un piso en una sola casilla: ¡cuesta arriba despacio y cuesta abajo a toda velocidad!"],
   subeBaja: [null, "Sube o baja", "Un desvío entre pisos: el tren que entra por la punta sube un piso o baja uno, según la palanca. Tócalo con ✋ para cambiarla, o ponle un 🧠 para que elija solo. Si el tren llega por arriba o por abajo, vuelve a la punta."],
   cruce: [null, "Cruce", "Dos vías se cruzan en el mismo piso. ¡Si pasan dos trenes a la vez, chocan!"],
   rampa: [null, "Rampa", "Cambia un piso. Tócala junto a una vía suelta y se pone a su altura (el número rojo es el piso de esa punta): desde el suelo sube, y desde arriba baja. Si ya está puesta, sus botones: ➕ seguir (pone otra igual, ya unida), 🔄 girar y ⇅ sube/baja."],
@@ -11348,8 +11401,8 @@ const GROUPS = [
 const LEVEL_ITEMS = ["lapiz", "recta", "corta", "curva", "curvaL", "sesgoI", "sesgoLI", "desvioI", "desvioD", "desvioY", "cruce", "rampa", "subeI", "subeD", "estacion", "tunel", "tunelL", "tope", "paso"];
 const TABS = [
   { id: "vias", grp: "vias", ic: "🛤️", nm: "Vías", items: ["lapiz", "recta", "corta", "curva", "curvaL", "sesgoI", "sesgoLI"] },
-  { id: "cruces", grp: "vias", ic: "🔀", nm: "Desvíos", items: ["desvioI", "desvioY", "subeBaja", "cruce", "hz_listo", "hz_senal"] },
-  { id: "subir", grp: "vias", ic: "⛰️", nm: "Rampas", items: ["rampa", "subeI"] },
+  { id: "cruces", grp: "vias", ic: "🔀", nm: "Desvíos", items: ["desvioI", "desvioY", "dobleC", "subeBaja", "cruce", "hz_listo", "hz_senal"] },
+  { id: "subir", grp: "vias", ic: "⛰️", nm: "Rampas", items: ["rampa", "rampaC", "subeI"] },
   { id: "especial", grp: "vias", ic: "🚉", nm: "Estación", items: ["estacion", "tunel", "tunelL", "tope", "paso"] },
   { id: "campo", grp: "decor", ic: "🌳", nm: "Campo", items: CAMPO.map(d => bigOf(d[0])) },
   { id: "calles", grp: "calles", ic: "🚗", nm: "Calles", items: ["lapizCalle", "calle", "calleC", "calleT", "calleX", "paso", "calleVia", "calleViaC", "car_coche", "car_taxi", "car_bus", "car_policia", "car_bomberos", "car_tuktuk"] },
@@ -11565,7 +11618,7 @@ function selectTab(id) {
   const pal = $("palette"); pal.innerHTML = "";
   pal.appendChild(makeItem("hand", () => selectTool("hand")));
   pal.appendChild(makeItem("erase", () => selectTool("erase")));
-  ["lapiz", "lapizCalle"].forEach(pid => { // drawing is the quickest way to build, so the pencils are always there
+  (grpOf(id) === "calles" ? ["lapiz", "lapizCalle"] : ["lapiz"]).forEach(pid => { // the track pencil is always there; the street one in the Streets tab
     const d = makeItem(pid, () => fullLocked(pid) ? askGrownUp() : selectTool(pid)); if (fullLocked(pid)) fullBadge(d); pal.appendChild(d);
   });
   pal.appendChild(Object.assign(document.createElement("div"), { className: "sep" }));
@@ -13961,6 +14014,13 @@ const deOf = s => { if (!s) return ""; const k = s.trim(); return I18N_DE[s] || 
 const LANGS = { es: "🇪🇸", en: "🇬🇧", fr: "🇫🇷", de: "🇩🇪" };
 const I18N = new Map();
 I18N_ROWS.push(["Desafío", "Challenge", "Défi", "Wettkampf"], ["Pegatinas", "Stickers", "Autocollants", "Sticker"], ["Foto de mi circuito", "Photo of my railway", "Photo de mon circuit", "Foto von meiner Strecke"], ["Toca una pieza o un tren para quitarlo. Mantén pulsada la goma para borrarlo todo.", "Tap a piece or a train to remove it. Hold the eraser down to clear everything.", "Touche une pièce ou un train pour l'enlever. Garde le doigt sur la gomme pour tout effacer.", "Tippe ein Teil oder einen Zug an, um es wegzunehmen. Halte den Radierer gedrückt, um alles zu löschen."]);
+I18N_ROWS.push(["Desvío de dos curvas", "Double-curve switch", "Aiguillage à deux courbes", "Doppelkurven-Weiche"],
+  ["Dos curvas en una casilla: si el tren viene del oeste sale por el norte, y si viene del este sale por el sur. Tócalo con ✋ para darle la vuelta (oeste→sur, este→norte), o ponle un 🧠 para que cambie solo.",
+   "Two curves in one square: a train coming from the west leaves to the north, and one from the east leaves to the south. Tap it with ✋ to swap them (west→south, east→north), or give it a 🧠 so it changes by itself.",
+   "Deux courbes dans une case : un train qui vient de l'ouest part vers le nord, et un qui vient de l'est part vers le sud. Touche-le avec ✋ pour inverser (ouest→sud, est→nord), ou mets-lui un 🧠 pour qu'il change tout seul.",
+   "Zwei Kurven in einem Feld: Ein Zug von Westen fährt nach Norden, einer von Osten nach Süden. Tippe sie mit ✋ an, um zu tauschen (West→Süd, Ost→Nord), oder gib ihr ein 🧠, dann wechselt sie von selbst."],
+  ["Rampa empinada", "Steep ramp", "Rampe raide", "Steile Rampe"],
+  ["Cambia un piso en una sola casilla: ¡cuesta arriba despacio y cuesta abajo a toda velocidad!", "Changes one floor in a single square: slow going up and super fast coming down!", "Change d'un étage en une seule case : lentement en montant et à toute vitesse en descendant !", "Wechselt eine Etage auf nur einem Feld: langsam hoch und superschnell runter!"]);
 I18N_ROWS.push(["Sube o baja", "Up-or-down switch", "Aiguillage monte-descend", "Hoch-oder-runter-Weiche"],
   ["Un desvío entre pisos: el tren que entra por la punta sube un piso o baja uno, según la palanca. Tócalo con ✋ para cambiarla, o ponle un 🧠 para que elija solo. Si el tren llega por arriba o por abajo, vuelve a la punta.",
    "A switch between floors: a train entering at the single end climbs one floor or goes down one, as the lever says. Tap it with ✋ to flip the lever, or give it a 🧠 so it chooses by itself. Trains arriving from above or below go back to the single end.",
