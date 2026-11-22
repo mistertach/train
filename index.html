@@ -6980,7 +6980,10 @@ function nearestOnPiece(p, wx, wy) {
   p.geo.routes.forEach((R, ri) => R.pp.forEach((pt, i) => { const dd = Math.hypot(pt[0] - wx, pt[1] - wy); if (dd < best.dist) best = { ri, d: R.cum[i], dist: dd }; }));
   return best;
 }
+let contSel = null; // ➕ seguir follows the last piece that was added or turned
 function afterEdit(p, removed) {
+  if (removed) { if (contSel === p.id) contSel = null; }
+  else if (p.geo && p.geo.routes.length && !DEFS[p.type].road && !p.fixed) contSel = p.id;
   trains.slice().forEach(tr => {
     if (tr.start.pid === p.id && removed) removeTrain(tr);
     else if (tr.start.pid === p.id || (tr.head && tr.head.pid === p.id && !tr.wreck)) resetTrain(tr);
@@ -7319,11 +7322,16 @@ function handleTap0(wx, wy) {
     const q = tr.wreck[tr.flip ? tr.wreck.length - 1 : 0], qy = q.y - q.z * E;
     if (Math.hypot(q.x - wx, qy - 70 - wy) < 60 || Math.hypot(q.x - wx, qy - wy) < 70) { resetTrain(tr); sfx.toc(); return; }
   }
+  const cp = contSel && pieces.get(contSel);
+  if (!running && cp && contBtn && contBtn.getAttribute("display") !== "none") {
+    const b = contBtnPos(cp);
+    if (b && Math.hypot(b.x - wx, b.y - wy) < 44 * .64 / view.z + 6) { continueFrom(cp); return; }
+  }
   const sp = slopeSel && pieces.get(slopeSel);
   if (!running && sp && slopeBtn && slopeBtn.getAttribute("display") !== "none") {
     const rr = 40 * .5 / view.z + 6;
     const hit = slopeBtnLayout(sp).find(b => Math.hypot(b.x - wx, b.y - wy) < rr);
-    if (hit) { ({ girar: () => rotatePiece(sp), forma: () => morphSlope(sp), flip: () => flipSlope(sp), seguir: () => continueSlope(sp) })[hit.id](); return; }
+    if (hit) { ({ girar: () => rotatePiece(sp), forma: () => morphSlope(sp), flip: () => flipSlope(sp), seguir: () => continueFrom(sp) })[hit.id](); return; }
   }
   if (running && playHzTap(wx, wy)) return;
   if (running && boardTap(wx, wy)) return;
@@ -7606,9 +7614,7 @@ function morphSlope(p) {
 }
 // where each floating button of the selected slope goes (world coordinates)
 function slopeBtnLayout(p) {
-  const [x, y0] = slopeBtnPos(p), k = .5 / view.z, pt = slopeCont(p);
-  let sg = null;
-  if (pt) { const [px, py] = portXY(pt), d = 30 + 52 * k; sg = { id: "seguir", x: px + DX[pt.e] * d, y: py + DY[pt.e] * d }; }
+  const [x, y0] = slopeBtnPos(p), k = .5 / view.z, cp = contSel && pieces.get(contSel), sg = cp ? contBtnPos(cp) : null;
   const row = y => proMode ? [{ id: "girar", x: x - 110 * k, y }, { id: "forma", x, y }, { id: "flip", x: x + 110 * k, y }] : [{ id: "girar", x: x - 60 * k, y }, { id: "flip", x: x + 60 * k, y }];
   const clash = r => sg && r.some(b => Math.hypot(b.x - sg.x, b.y - sg.y) < 100 * k);
   let out = row(y0);
@@ -7616,8 +7622,53 @@ function slopeBtnLayout(p) {
     const below = row(y0 + 2 * (46 / view.z + 20) + 40 * k);
     out = clash(below) ? row(y0 - 120 * k) : below;
   }
-  if (sg) out.push(sg);
   return out;
+}
+// ➕ seguir: the piece chosen in the menu (or the same one again) is joined to the open end of the last piece added or turned
+function contPort(p) {
+  if (isSlope(p.type)) return slopeCont(p);
+  const open = p.geo.ports.filter(portOpen);
+  if (open.length < 2) return open[0] || null;
+  if (DEFS[p.type].sw) { const R = p.geo.routes[profileRoute(p)], far = R && open.find(pt => p.geo.ports.indexOf(pt) === R.b); if (far) return far; }
+  return open[open.length - 1];
+}
+function contBtnPos(p) {
+  const pt = contPort(p); if (!pt) return null;
+  const [px, py] = portXY(pt), k = .64 / view.z, d = 30 + 52 * k;
+  return { id: "seguir", x: px + DX[pt.e] * d, y: py + DY[pt.e] * d, pt };
+}
+const contType = p => { const d = DEFS[tool]; return d && d.routes && d.routes.length && !d.road && !d.deco && !d.mon ? tool : p.type; };
+function continueFrom(p) {
+  const pt = contPort(p);
+  if (!pt) { sfx.no(); toast("🔗"); return; }
+  const type = contType(p);
+  if (fullLocked(type)) { askGrownUp(); return; }
+  const keep = slopeMode;
+  if (isSlope(p.type)) { const other = p.geo.ports.find(o => o !== pt); slopeMode = pt.z > other.z ? "up" : pt.z < other.z ? "down" : keep; }
+  const q = placePiece(type, pt.c + DX[pt.e], pt.r + DY[pt.e], pt.z, {});
+  slopeMode = keep;
+  if (!q) toast("🚫");
+}
+let contBtn = null;
+function renderContBtn() {
+  const p = contSel && pieces.get(contSel);
+  const b = p && !running && !lvlBuilding && (isBuild() || tool === "hand") && !tool.startsWith("lapiz") && tool !== "erase" ? contBtnPos(p) : null;
+  if (!b) { if (contBtn) contBtn.setAttribute("display", "none"); return; }
+  if (!contBtn) {
+    contBtn = el("g", {}, L.ui); const inner = el("g", { class: "resetbtn" }, contBtn);
+    el("circle", { r: 38, fill: "#6fd36f", stroke: "#236b23", "stroke-width": 6 }, inner);
+    const t = el("text", { y: 1, "font-size": 38, "font-weight": 900, "text-anchor": "middle", "dominant-baseline": "central", fill: "#3b2a18" }, inner); t.textContent = "➕";
+    contBtn.ic = el("g", { transform: "translate(34 -34) scale(.42)" }, contBtn);
+    const l = el("text", { y: 60, "font-size": 18, "font-weight": 800, "text-anchor": "middle", fill: "#3b2a18", stroke: "#fff8e8", "stroke-width": 5, "paint-order": "stroke" }, contBtn); l.textContent = trn("seguir");
+  }
+  const ty = contType(p);
+  if (contBtn.ty !== ty) { // a little picture of the piece that will be added
+    contBtn.ty = ty; contBtn.ic.innerHTML = "";
+    el("circle", { r: 46, fill: "#fff", stroke: "#236b23", "stroke-width": 6 }, contBtn.ic);
+    try { const s = pieceIcon(ty); s.setAttribute("x", -40); s.setAttribute("y", -40); s.setAttribute("width", 80); s.setAttribute("height", 80); contBtn.ic.appendChild(s); } catch (e) {}
+  }
+  contBtn.setAttribute("display", "inline");
+  contBtn.setAttribute("transform", `translate(${b.x.toFixed(1)} ${b.y.toFixed(1)}) scale(${(.64 / view.z).toFixed(3)})`);
 }
 function slopeBtnPos(p) { const R = p.geo.routes[0], [x, y] = ppAt(R, R.len / 2); return [x, y - 46 / view.z - 20]; }
 let slopeLbl = null, slopeLblKey = "";
@@ -7641,7 +7692,7 @@ function renderSlopeBtn() {
   if (!slopeBtn) {
     slopeBtn = el("g", {}, L.ui);
     slopeBtn.parts = {};
-    [["girar", "🔄", "girar", "#fff8e8"], ["forma", "↰", "forma", "#bfe6ff"], ["flip", "⇅", "sube/baja", "#ffd34d"], ["seguir", "➕", "seguir", "#6fd36f"]].forEach(([id, ic, lb, col]) => {
+    [["girar", "🔄", "girar", "#fff8e8"], ["forma", "↰", "forma", "#bfe6ff"], ["flip", "⇅", "sube/baja", "#ffd34d"]].forEach(([id, ic, lb, col]) => {
       const g = el("g", {}, slopeBtn), inner = el("g", { class: id === "seguir" ? "resetbtn" : "" }, g);
       el("circle", { r: 38, fill: col, stroke: id === "seguir" ? "#236b23" : "#7a4e22", "stroke-width": 6 }, inner);
       const t = el("text", { y: ic === "↰" ? 3 : 1, "font-size": ic === "⇅" || ic === "↰" ? 50 : 38, "font-weight": 900, "text-anchor": "middle", "dominant-baseline": "central", fill: "#3b2a18" }, inner); t.textContent = ic;
@@ -11314,7 +11365,7 @@ function step(dt) {
   if (running && crashTimer <= 0) { computeOcc(); trains.forEach(tr => updateTrain(tr, dt)); checkCollisions(); updateCars(dt); }
   else if (lvl && crashTimer <= 0) trains.forEach(tr => { if (tr.ambient) updateTrain(tr, dt); });
   cowTick(dt); hzTick(dt);
-  updateWrecks(dt); updateCrossings(dt); updateFx(dt); renderTrains(); renderCars(); renderSlopeBtn(); drawMini(); tutTick(dt); guideTick(); lvlTick(); camTick(dt);
+  updateWrecks(dt); updateCrossings(dt); updateFx(dt); renderTrains(); renderCars(); renderSlopeBtn(); renderContBtn(); drawMini(); tutTick(dt); guideTick(); lvlTick(); camTick(dt);
 }
 
 // =====================================================================
