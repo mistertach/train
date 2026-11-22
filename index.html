@@ -877,6 +877,7 @@ body.cab.boardable #cabBoard { display: flex; }
 .wkey { height: 52px; border-radius: 14px; border: 0; background: #fff8e8; box-shadow: 0 4px 0 #d9c39a; font-size: 26px; font-weight: 900; color: #3b2a18; cursor: pointer; }
 .wkey:active { transform: translateY(3px); box-shadow: 0 1px 0 #d9c39a; }
 .wkey.wfn { background: #ffe9b8; }
+.wkey.wcase { background: #cfe8ff; box-shadow: 0 4px 0 #8db8e0; font-size: 20px; }
 .wrow { display: flex; gap: 10px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
 .wrow .b { width: auto !important; padding: 0 20px; height: 56px; font-size: 20px; font-weight: 900; border-radius: 999px; }
 .wjoin { background: #fff; } .wjoin.on { background: #d8f3d0; box-shadow: 0 0 0 3px #3a9d3a inset; }
@@ -10506,7 +10507,7 @@ let fullSet = null;
 function fullItems() {
   if (fullSet) return fullSet;
   fullSet = new Set(["rampa", "rampaC", "subeI", "subeD", "subeBaja", "dobleC", "paso", ...FULL_TRAINS]);
-  TABS.filter(t => ["calles", "ciudad", "monumentos", "letras"].includes(t.id)).forEach(t => t.items.forEach(i => fullSet.add(i)));
+  TABS.filter(t => ["calles", "ciudad", "monumentos", "letras", "letrasMin"].includes(t.id)).forEach(t => t.items.forEach(i => fullSet.add(i)));
   fullSet.delete("ltr_write"); // writing a word is open to all: the free version builds the first letter
   return fullSet;
 }
@@ -11012,9 +11013,41 @@ const GLYPHS = {
 };
 // "5" gets a square step instead of a diagonal (track only runs along the grid)
 GLYPHS[5] = [[[2, 0], [0, 0], [0, 2], [2, 2], [2, 4], [0, 4]], [[2, 0], [2, 1]]];
-const LTR_KEYS = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"];
-const ltrNorm = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/[^A-Z0-9 ]/g, "");
+// joined-up lowercase: letters sit on the bottom line (row 4), tall ones reach row 0 and tails hang to row 6
+Object.assign(GLYPHS, {
+  a: [[[1, 2], [0, 2], [0, 4], [2, 4]], [[1, 2], [2, 2], [2, 4]]],
+  b: [[[0, 0], [0, 4], [2, 4], [2, 2], [0, 2]]],
+  c: [[[2, 2], [0, 2], [0, 4], [2, 4]]],
+  d: [[[2, 0], [2, 4], [0, 4], [0, 2], [2, 2]]],
+  e: [[[0, 3], [2, 3], [2, 2], [0, 2], [0, 4], [2, 4]]],
+  f: [[[2, 0], [1, 0], [1, 4]], [[0, 2], [2, 2]]],
+  g: [[[1, 2], [0, 2], [0, 4], [2, 4]], [[1, 2], [2, 2], [2, 6], [0, 6], [0, 5]]],
+  h: [[[0, 0], [0, 4]], [[0, 2], [2, 2], [2, 4]]],
+  i: [[[0, 2], [0, 4]]],
+  j: [[[1, 2], [1, 6], [0, 6], [0, 5]]],
+  k: [[[0, 0], [0, 4]], [[0, 3], [1, 3], [1, 2], [2, 2]], [[1, 3], [1, 4], [2, 4]]],
+  l: [[[0, 0], [0, 4], [1, 4]]],
+  m: [[[0, 4], [0, 2], [4, 2], [4, 4]], [[2, 2], [2, 4]]],
+  n: [[[0, 4], [0, 2], [2, 2], [2, 4]]],
+  o: [[[0, 2], [2, 2], [2, 4], [0, 4], [0, 2]]],
+  p: [[[0, 6], [0, 2], [2, 2], [2, 4], [0, 4]]],
+  q: [[[2, 6], [2, 2], [0, 2], [0, 4], [2, 4]]],
+  r: [[[0, 4], [0, 2], [2, 2]]],
+  s: [[[2, 2], [0, 2], [0, 3], [2, 3], [2, 4], [0, 4]]],
+  t: [[[1, 0], [1, 4], [2, 4]], [[0, 1], [2, 1]]],
+  u: [[[0, 2], [0, 4], [2, 4]], [[2, 2], [2, 4]]],
+  v: [[[0, 2], [0, 3], [1, 3], [1, 4]], [[2, 2], [2, 3], [1, 3]]],
+  w: [[[0, 2], [0, 4], [4, 4], [4, 2]], [[2, 4], [2, 3]]],
+  x: [[[0, 2], [1, 2], [1, 4]], [[0, 4], [0, 3], [2, 3], [2, 2]]],
+  y: [[[0, 2], [0, 4], [2, 4]], [[2, 2], [2, 6], [0, 6], [0, 5]]],
+  z: [[[0, 2], [2, 2], [2, 3], [0, 3], [0, 4], [2, 4]]],
+});
+const GLYPH_DOT = { i: [0, 0], j: [1, 0] }; // the dot is a sunflower
+const LTR_UP = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"], LTR_LO = [..."abcdefghijklmnopqrstuvwxyz"], LTR_NUM = [..."0123456789"];
+const LTR_KEYS = [...LTR_UP, ...LTR_NUM];
+const ltrNorm = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9 ]/g, "");
 const glyphW = ch => { let w = 0; (GLYPHS[ch] || []).forEach(l => l.forEach(([x]) => { w = Math.max(w, x + 1); })); return w; };
+const glyphBottom = ch => { let b = 4; (GLYPHS[ch] || []).forEach(l => l.forEach(([, y]) => { b = Math.max(b, y); })); return b; };
 // which sides of each square a letter's strokes join: { "x,y": Set of edges (0 N, 1 E, 2 S, 3 W) }
 function glyphCells(ch) {
   const cells = new Map(), add = (x, y, e) => { const k = x + "," + y; if (!cells.has(k)) cells.set(k, new Set()); if (e != null) cells.get(k).add(e); };
@@ -11036,39 +11069,50 @@ function pieceForEdges(es) {
   }
   return null;
 }
-// lay out a word: lines of up to `max` letters; returns cells per absolute square, plus where trains go
+// lay out a word. Joined: each letter links to the next along the bottom line, like handwriting.
 function wordPlan(word, joined) {
-  const chars = [...ltrNorm(word)].filter(ch => ch === " " || GLYPHS[ch]);
-  const lines = [[]];
+  // whole words move to the next row when they don't fit (a very long word is split)
+  const words = ltrNorm(word).split(/ +/).map(wd => [...wd].filter(ch => GLYPHS[ch])).filter(wd => wd.length);
+  const lines = [[]], last = () => lines[lines.length - 1], wdW = wd => wd.reduce((s, ch) => s + glyphW(ch) + 1, 0) - 1;
   let lw = 0;
-  chars.forEach(ch => { const w = ch === " " ? 2 : glyphW(ch); if (lw + w > COLS - 4 && lines[lines.length - 1].length) { lines.push([]); lw = 0; } if (ch === " " && !lines[lines.length - 1].length) return; lines[lines.length - 1].push(ch); lw += w + 1; });
-  const LH = joined ? 8 : 6, plan = { cells: new Map(), w: 0, h: 0, starts: [] };
-  const put = (x, y, e) => { const k = x + "," + y; if (!plan.cells.has(k)) plan.cells.set(k, new Set()); plan.cells.get(k).add(e); };
-  lines.forEach((ln, li) => {
-    let x0 = 0; const y0 = li * LH, links = [];
-    ln.forEach(ch => {
-      if (ch === " ") { x0 += 2; return; }
-      const gc = glyphCells(ch), w = glyphW(ch);
-      gc.forEach((es, k) => { const [x, y] = k.split(",").map(Number); es.forEach(e => put(x0 + x, y0 + y, e)); });
-      let best = null; // where this letter joins the line underneath: a bottom square with few ends
-      if (joined) gc.forEach((es, k) => { const [x, y] = k.split(",").map(Number); if (y !== 4 || es.has(2)) return; const sc = es.size * 10 + Math.abs(x - (w - 1) / 2); if (!best || sc < best.sc) best = { x: x0 + x, sc }; });
-      if (best) links.push(best.x);
-      else { // a train for a letter on its own: on a straight square if it has one
-        let st = null; gc.forEach((es, k) => { const [x, y] = k.split(",").map(Number); if (!st || (es.size === 2 && (es.has(0) && es.has(2) || es.has(1) && es.has(3)))) st = [x0 + x, y0 + y]; });
-        if (st && !joined) plan.starts.push(st);
-      }
-      x0 += w + 1;
-    });
-    if (joined && links.length) {
-      links.forEach(x => { put(x, y0 + 4, 2); put(x, y0 + 5, 0); put(x, y0 + 5, 2); put(x, y0 + 6, 0); });
-      const a = Math.min(...links), b = Math.max(...links);
-      for (let x = a; x < b; x++) { put(x, y0 + 6, 1); put(x + 1, y0 + 6, 3); }
-      let sx = null; for (let x = Math.round((a + b) / 2), k = 0; k <= b - a && sx == null; k++) for (const xx of [x - k, x + k]) if (xx > a && xx < b && !links.includes(xx)) { sx = xx; break; }
-      plan.starts.push(sx != null ? [sx, y0 + 6] : [a, y0 + 5]); // the train starts on a plain straight of the joining line
-    }
-    plan.w = Math.max(plan.w, x0 - 1);
+  words.forEach(wd => {
+    if (last().length && lw + 2 + wdW(wd) > COLS - 4) { lines.push([]); lw = 0; }
+    if (last().length) { last().push(" "); lw += 2; }
+    wd.forEach(ch => { const w = glyphW(ch); if (last().length && last()[last().length - 1] !== " " && lw + w > COLS - 4) { lines.push([]); lw = 0; } last().push(ch); lw += w + 1; });
   });
-  plan.h = lines.length * LH - (joined ? 1 : 1);
+  const plan = { cells: new Map(), w: 0, h: 0, starts: [], dots: [], letters: [] };
+  const put = (x, y, e) => { const k = x + "," + y; if (!plan.cells.has(k)) plan.cells.set(k, new Set()); plan.cells.get(k).add(e); };
+  let y0 = 0;
+  lines.forEach(ln => {
+    let x0 = 0, prev = null, segLinks = []; const lh = Math.max(...ln.map(ch => ch === " " ? 4 : glyphBottom(ch))) + 1;
+    const endSeg = () => { // a train for each joined group: on a straight join between two letters, or on the letter itself
+      if (segLinks.length) plan.starts.push(segLinks[Math.floor(segLinks.length / 2)]);
+      else if (prev) plan.starts.push(prev.straight);
+      segLinks = [];
+    };
+    ln.forEach(ch => {
+      if (ch === " ") { endSeg(); prev = null; x0 += 2; return; }
+      const gc = glyphCells(ch), w = glyphW(ch);
+      let left = null, right = null, straight = null;
+      gc.forEach((es, k) => {
+        const [x, y] = k.split(",").map(Number); es.forEach(e => put(x0 + x, y0 + y, e));
+        if (y === 4) { if (left == null || x < left) left = x; if (right == null || x > right) right = x; }
+        if (!straight || (es.size === 2 && ((es.has(0) && es.has(2)) || (es.has(1) && es.has(3))))) straight = [x0 + x, y0 + y];
+      });
+      if (GLYPH_DOT[ch]) plan.dots.push([x0 + GLYPH_DOT[ch][0], y0 + GLYPH_DOT[ch][1]]);
+      const cur = { left: x0 + left, right: x0 + right, straight };
+      plan.letters.push([x0, y0, w]);
+      if (joined && prev) { // the join: along the bottom line from the end of one letter to the start of the next
+        for (let x = prev.right; x < cur.left; x++) { put(x, y0 + 4, 1); put(x + 1, y0 + 4, 3); }
+        segLinks.push([prev.right + 1, y0 + 4]);
+      } else if (!joined && prev) endSeg();
+      prev = cur; x0 += w + 1;
+    });
+    endSeg();
+    plan.w = Math.max(plan.w, x0 - 1);
+    y0 += lh + 1;
+  });
+  plan.h = y0 - 1;
   return plan;
 }
 // a free rectangle for the word, as close as possible to the middle of the screen
@@ -11093,6 +11137,7 @@ function buildPlan(plan, c0, r0) {
     if (DEFS[pr[0]].sw) { p.fx = Object.assign({}, p.fx, { smart: 1 }); redrawPiece(p); }
     made.push(p);
   });
+  plan.dots.forEach(([x, y]) => { const p = addPiece("girasol", c0 + x, r0 + y, 0, 0, 0); if (p) made.push(p); });
   return made;
 }
 function popIn(ps, letterOf) { // pieces appear letter by letter, with a little "toc"
@@ -11105,7 +11150,7 @@ function popIn(ps, letterOf) { // pieces appear letter by letter, with a little 
 function writeWord(word, joined) {
   let w = ltrNorm(word).trim(); if (!w) return false;
   let taste = false;
-  if (!isFull()) { taste = w.length > 1; w = w.replace(/ /g, "")[0]; joined = false; } // free version: the first letter, as a taste
+  if (!isFull()) { taste = w.replace(/ /g, "").length > 1; w = w.replace(/ /g, "")[0]; } // free version: the first letter, as a taste
   const plan = wordPlan(w, joined), room = findRoom(plan.w, plan.h);
   if (!room) { sfx.no(); toast("🚫 " + LX("No hay sitio: borra algo o usa la goma", "No room: clear some space first", "Pas de place : fais un peu de place", "Kein Platz: räum erst etwas weg")); return false; }
   if (running) setRunning(false);
@@ -11118,7 +11163,8 @@ function writeWord(word, joined) {
     });
     autosave();
   });
-  popIn(ps, p => Math.floor((p.c - room.c) / 4) + Math.floor((p.r - room.r) / 8) * 11);
+  const letterAt = p => { const i = plan.letters.findIndex(([x, y, lw]) => p.c - room.c >= x - 1 && p.c - room.c < x + lw && p.r - room.r >= y && p.r - room.r <= y + 6); return Math.max(0, i); };
+  popIn(ps, letterAt);
   // show the whole word
   const z = clamp(Math.min(innerWidth * .82 / ((plan.w + 2) * T), innerHeight * .62 / ((plan.h + 2) * T)), minZ(), 1.2);
   view.z = z; view.x = innerWidth / 2 - (room.c + plan.w / 2) * T * z; view.y = innerHeight * .46 - (room.r + plan.h / 2) * T * z; userMoved = true; applyView();
@@ -11127,54 +11173,66 @@ function writeWord(word, joined) {
     speak(LX("¡Mira! Tu nombre hecho de vías. Pulsa el botón verde y el tren lo recorre.", "Look! Your name made of track. Press the green button and the train will ride along it.", "Regarde ! Ton nom en rails. Appuie sur le bouton vert et le train va le parcourir.", "Schau! Dein Name aus Schienen. Drück den grünen Knopf, dann fährt der Zug darauf."));
     try { hintPlay(); } catch (e) {}
     if (taste) setTimeout(() => toast("🔒 " + LX("La palabra entera, con la versión completa", "The whole word comes with the full version", "Le mot entier avec la version complète", "Das ganze Wort gibt es mit der Vollversion")), 2200);
-  }, 300 + ps.length * 6);
+  }, 300 + plan.letters.length * 160);
   return true;
 }
 // a single letter dropped where you tap (its top-left a little up and left of your finger)
 function placeLetterAt(ch, c, r) {
   const plan = wordPlan(ch, false), c0 = c - Math.floor(plan.w / 2), r0 = r - 2;
-  for (let y = 0; y < plan.h; y++) for (let x = 0; x < plan.w; x++) if (plan.cells.has(x + "," + y) && (!inB(c0 + x, r0 + y) || piecesIn(c0 + x, r0 + y).some(q => !DEFS[q.type].gtile))) { sfx.no(); toast("🚫"); return; }
+  for (const k of plan.cells.keys()) { const [x, y] = k.split(",").map(Number); if (!inB(c0 + x, r0 + y) || piecesIn(c0 + x, r0 + y).some(q => !DEFS[q.type].gtile)) { sfx.no(); toast("🚫"); return; } }
   const ps = buildPlan(plan, c0, r0);
   popIn(ps, () => 0); autosave();
 }
-// the little picture of a letter in the palette
-function letterIcon(ch) {
-  const w = glyphW(ch), s = el("svg", { xmlns: NS, viewBox: `-0.9 -0.9 ${w + .8} 5.8` });
-  el("rect", { x: -.9, y: -.9, width: w + .8, height: 5.8, rx: .7, fill: "#fff3dc" }, s);
+// the little picture of a letter (rows: fixed 0..6 so a word's letters share one bottom line)
+function letterIcon(ch, fixed) {
+  const w = glyphW(ch), rows = fixed ? 7 : glyphBottom(ch) + 1, s = el("svg", { xmlns: NS, viewBox: `-0.9 -0.9 ${w + .8} ${rows + .8}` });
+  el("rect", { x: -.9, y: -.9, width: w + .8, height: rows + .8, rx: .7, fill: fixed ? "none" : "#fff3dc" }, s);
   (GLYPHS[ch] || []).forEach(l => {
     const d = l.map(([x, y], i) => (i ? "L" : "M") + x + " " + y).join("");
     el("path", { d, stroke: "#7d4f22", "stroke-width": .78, fill: "none", "stroke-linecap": "round", "stroke-linejoin": "round" }, s);
     el("path", { d, stroke: "#d9a566", "stroke-width": .55, fill: "none", "stroke-linecap": "round", "stroke-linejoin": "round" }, s);
   });
+  if (GLYPH_DOT[ch]) { const [x, y] = GLYPH_DOT[ch]; el("circle", { cx: x, cy: y + .3, r: .4, fill: "#f5b301", stroke: "#7d4f22", "stroke-width": .12 }, s); }
   return s;
 }
-// ✏️ the big keyboard: type a word, it is built in track
-function openWriter() {
+// ✏️ the big keyboard: type a word (capitals or small letters), it is built in track
+function openWriter(lower) {
   if (running) setRunning(false);
-  let word = (sget(KEY + "-word") || "").slice(0, 16), joined = sget(KEY + "-wordJoin") !== false;
+  let word = (sget(KEY + "-word") || "").slice(0, 16), joined = sget(KEY + "-wordJoin") !== false, low = lower == null ? curTab === "letrasMin" : lower;
   openModal(card => {
     card.classList.add("writer");
     h2(card, LX("✏️ Escribe tu nombre", "✏️ Write your name", "✏️ Écris ton prénom", "✏️ Schreib deinen Namen"));
     const show = addEl(card, "div", "wshow");
+    const keys = addEl(card, "div", "wkeys");
+    const row = addEl(card, "div", "wrow");
+    const go = document.createElement("button");
     const draw = () => {
       show.innerHTML = "";
       const chars = [...ltrNorm(word)];
       if (!chars.length) addEl(show, "span", "wph", LX("Toca las letras…", "Tap the letters…", "Touche les lettres…", "Tippe die Buchstaben…"));
-      chars.forEach(ch => { if (ch === " ") { addEl(show, "span", "wsp"); return; } const t = addEl(show, "span", "wtile"); t.appendChild(letterIcon(ch)); });
+      chars.forEach(ch => { if (ch === " ") { addEl(show, "span", "wsp"); return; } const t = addEl(show, "span", "wtile"); t.appendChild(letterIcon(ch, true)); });
       go.classList.toggle("off", !chars.some(c => c !== " "));
     };
-    const keys = addEl(card, "div", "wkeys");
-    [...LTR_KEYS, "␣", "⌫"].forEach(k => {
-      const b = addEl(keys, "button", "wkey" + (k === "⌫" || k === "␣" ? " wfn" : ""), k);
-      b.onclick = e => { e.stopPropagation(); unlockAudio(); if (k === "⌫") word = word.slice(0, -1); else if (word.length < 16) word += k === "␣" ? " " : k; tone([520 + LTR_KEYS.indexOf(k) * 9], "triangle", 0, .07, .08); draw(); };
-    });
-    const row = addEl(card, "div", "wrow");
-    const jb = addEl(row, "button", "b wjoin" + (joined ? " on" : ""), (joined ? "🔗 " : "⛓️‍💥 ") + LX("Letras unidas", "Joined letters", "Lettres reliées", "Verbundene Buchstaben"));
-    jb.onclick = e => { e.stopPropagation(); joined = !joined; sset(KEY + "-wordJoin", joined); jb.classList.toggle("on", joined); jb.textContent = (joined ? "🔗 " : "⛓️‍💥 ") + LX("Letras unidas", "Joined letters", "Lettres reliées", "Verbundene Buchstaben"); sfx.click(); };
-    const go = addEl(row, "button", "b wgo", "✅ " + LX("¡Constrúyelo!", "Build it!", "Construis !", "Bauen!"));
+    const drawKeys = () => {
+      keys.innerHTML = "";
+      [...(low ? LTR_LO : LTR_UP), ...LTR_NUM, "⇧", "␣", "⌫"].forEach(k => {
+        const b = addEl(keys, "button", "wkey" + (k === "⌫" || k === "␣" || k === "⇧" ? " wfn" : ""), k === "⇧" ? (low ? "ABC" : "abc") : k);
+        if (k === "⇧") b.classList.add("wcase");
+        b.onclick = e => {
+          e.stopPropagation(); unlockAudio();
+          if (k === "⇧") { low = !low; drawKeys(); sfx.click(); return; }
+          if (k === "⌫") word = word.slice(0, -1); else if (word.length < 16) word += k === "␣" ? " " : k;
+          tone([520 + (LTR_KEYS.indexOf(k.toUpperCase()) + 1) * 9], "triangle", 0, .07, .08); draw();
+        };
+      });
+    };
+    const jb = addEl(row, "button", "b wjoin" + (joined ? " on" : ""));
+    const jt = () => { jb.textContent = (joined ? "🔗 " : "✂️ ") + (joined ? LX("Letras unidas", "Joined letters", "Lettres reliées", "Verbundene Buchstaben") : LX("Letras sueltas", "Separate letters", "Lettres séparées", "Einzelne Buchstaben")); jb.classList.toggle("on", joined); };
+    jb.onclick = e => { e.stopPropagation(); joined = !joined; sset(KEY + "-wordJoin", joined); jt(); sfx.click(); };
+    go.className = "b wgo"; go.textContent = "✅ " + LX("¡Constrúyelo!", "Build it!", "Construis !", "Bauen!"); row.appendChild(go);
     go.onclick = e => { e.stopPropagation(); if (!ltrNorm(word).trim()) { sfx.no(); return; } closeModal(); setTimeout(() => writeWord(word, joined), 120); };
     if (!isFull()) addEl(card, "p", "wnote", "🔒 " + LX("Versión gratis: se construye la primera letra. Con la versión completa, la palabra entera.", "Free version: the first letter is built. The full version builds the whole word.", "Version gratuite : la première lettre est construite. La version complète construit tout le mot.", "Gratisversion: Der erste Buchstabe wird gebaut. Die Vollversion baut das ganze Wort."));
-    draw();
+    jt(); drawKeys(); draw();
   });
 }
 
@@ -11688,7 +11746,8 @@ const TABS = [
   { id: "cruces", grp: "vias", ic: "🔀", nm: "Desvíos", items: ["desvioI", "desvioY", "dobleC", "subeBaja", "cruce", "hz_listo", "hz_senal"] },
   { id: "subir", grp: "vias", ic: "⛰️", nm: "Rampas", items: ["rampa", "rampaC", "subeI"] },
   { id: "especial", grp: "vias", ic: "🚉", nm: "Estación", items: ["estacion", "tunel", "tunelL", "tope", "paso"] },
-  { id: "letras", grp: "vias", ic: "🔤", nm: "Letras", items: ["ltr_write", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"].map(c => c.length === 1 ? "ltr_" + c : c) },
+  { id: "letras", grp: "vias", ic: "🔠", nm: "ABC", items: ["ltr_write", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"].map(c => c.length === 1 ? "ltr_" + c : c) },
+  { id: "letrasMin", grp: "vias", ic: "🔡", nm: "abc", items: ["ltr_write", ..."abcdefghijklmnopqrstuvwxyz"].map(c => c.length === 1 ? "ltr_" + c : c) },
   { id: "campo", grp: "decor", ic: "🌳", nm: "Campo", items: CAMPO.map(d => bigOf(d[0])) },
   { id: "calles", grp: "calles", ic: "🚗", nm: "Calles", items: ["lapizCalle", "calle", "calleC", "calleT", "calleX", "paso", "calleVia", "calleViaC", "car_coche", "car_taxi", "car_bus", "car_policia", "car_bomberos", "car_tuktuk"] },
   { id: "suelos", grp: "decor", ic: "🎨", nm: "Suelos", items: ["plaza", "arena", "parque", "nieve", "campo", "gris", "rosa", "naranja", "azul", "amarillo", "marron", "rojo", "agua"] },
@@ -11905,7 +11964,7 @@ function selectTab(id) {
   document.querySelectorAll(".tab").forEach(e => e.classList.toggle("sel", e.dataset.grp === grpOf(id)));
   $("tabs").style.setProperty("--gc", GCOL[grpOf(id)] || "#1f6fd1");
   renderSubtabs(); try { buildFullBadges(); } catch (e) {}
-  const pal = $("palette"); pal.innerHTML = ""; pal.classList.toggle("onerow", id === "letras");
+  const pal = $("palette"); pal.innerHTML = ""; pal.classList.toggle("onerow", id === "letras" || id === "letrasMin");
   pal.appendChild(makeItem("hand", () => selectTool("hand")));
   pal.appendChild(makeItem("erase", () => selectTool("erase")));
   (grpOf(id) === "calles" ? ["lapiz", "lapizCalle"] : ["lapiz"]).forEach(pid => { // the track pencil is always there; the street one in the Streets tab
