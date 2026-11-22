@@ -7633,7 +7633,7 @@ function contPort(p) {
   return open[open.length - 1];
 }
 function contBtnPos(p) {
-  const pt = contPort(p); if (!pt) return null;
+  const pt = contPort(p); if (!pt || pt.z === 0) return null; // only off the ground: on floor 0 building is easy enough without it
   const [px, py] = portXY(pt), k = .64 / view.z, d = 30 + 52 * k;
   return { id: "seguir", x: px + DX[pt.e] * d, y: py + DY[pt.e] * d, pt };
 }
