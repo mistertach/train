@@ -830,37 +830,84 @@ body.playing.driving #hzPlay { bottom: calc(190px + env(safe-area-inset-bottom))
 @media (max-height: 500px) { #drive.dr2 { transform: scale(.75); } body.playing.driving #hzPlay { bottom: calc(140px + env(safe-area-inset-bottom)) !important; } }
 
 /* intro: pieces stacked on pieces */
-#intro { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; background: #6ab8df linear-gradient(#69c3f5, #a9e0fb 55%, #d8f2fd); transition: opacity .5s ease; cursor: pointer; }
+/* 🎬 intro: a little animated morning with Coco and friends */
+#intro { position: fixed; inset: 0; z-index: 70; background: #4fb0ee; transition: opacity .55s ease; cursor: pointer; overflow: hidden; }
 #intro.out { opacity: 0; pointer-events: none; }
-#intro .ibox { width: min(88vw, 620px, 92vh); display: flex; flex-direction: column; align-items: center; }
-#intro .isvg { width: 100%; height: auto; display: block; overflow: visible; }
-#intro .iword { width: 86%; margin-top: -2%; }
-#intro .iword .hword { width: 100%; height: auto; max-width: none; }
-#intro .ilayer { transform-box: view-box; }
-#intro .ib { animation: iup .5s cubic-bezier(.2,1.4,.4,1) both; }
-#intro .iblk { animation: idrop .55s cubic-bezier(.3,1.5,.5,1) both; animation-delay: var(--d); }
-#intro .itrk { animation: idrop .5s cubic-bezier(.3,1.5,.5,1) .86s both; }
-#intro .iloco { animation: iloco .65s cubic-bezier(.3,1.6,.5,1) 1.12s both; transform-origin: 500px 430px; }
-#intro .ipuff { animation: ipuff 1.4s ease-out 1.45s infinite both; transform-box: fill-box; transform-origin: 80% 100%; }
-#intro .ishad { animation: ifade .6s ease-out both; }
-#intro .iword { animation: iword .6s cubic-bezier(.3,1.6,.5,1) 1.45s both; }
-@keyframes iup { from { transform: translateY(260px); opacity: 0; } to { transform: none; opacity: 1; } }
-@keyframes idrop { 0% { transform: translateY(-520px); opacity: 0; } 60% { opacity: 1; } 100% { transform: none; opacity: 1; } }
-@keyframes iloco { 0% { transform: translateY(-640px) rotate(-8deg); opacity: 0; } 55% { transform: translateY(16px) scale(1.06, .92); opacity: 1; } 78% { transform: translateY(-10px) scale(.98, 1.03); } 100% { transform: none; opacity: 1; } }
-@keyframes ipuff { 0% { opacity: 0; transform: scale(.5) translate(0, 10px); } 30% { opacity: 1; } 100% { opacity: 0; transform: scale(1.25) translate(-14px, -26px); } }
-@keyframes ifade { from { opacity: 0; } to { opacity: .16; } }
-@keyframes iword { 0% { transform: scale(.4) translateY(30px); opacity: 0; } 100% { transform: none; opacity: 1; } }
-#intro.assembled .ilayer, #intro.assembled .ishad, #intro.assembled .iword { animation: none; }
-#intro.assembled .ib { animation: ihop2 .45s ease-out .05s both; }
-#intro.assembled .iblk { animation: ihop2 .45s ease-out calc(var(--d) - .03s) both; }
-#intro.assembled .itrk { animation: ihop2 .45s ease-out .78s both; }
-#intro.assembled .iword { animation: iwig .7s ease-in-out 1.25s both; }
-@keyframes ihop2 { 35% { transform: translateY(-30px) rotate(-1.5deg); } 65% { transform: translateY(5px); } }
-@keyframes iwig { 30% { transform: scale(1.08) rotate(-2deg); } 60% { transform: scale(.97) rotate(1.5deg); } }
-#intro.assembled { background: #6ab8df; } #intro.assembled .ibox { width: 300px; } /* same colour and size as the app's native splash */
-#intro.assembled .iloco { animation: ihop .6s ease-out 1s both; }
-@keyframes ihop { 35% { transform: translateY(-40px) rotate(-4deg); } 65% { transform: translateY(6px) scale(1.04, .95); } }
-@media (prefers-reduced-motion: reduce) { #intro .ilayer, #intro .iword, #intro .ipuff, #intro .ishad { animation: none !important; } }
+#intro .isvg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#intro .isvg * { transform-box: view-box; }
+#intro .iword { position: absolute; left: 50%; top: calc(3vh + env(safe-area-inset-top)); width: min(62vw, 640px, 95vh); transform: translateX(-50%); animation: iword .75s cubic-bezier(.3,1.6,.5,1) 2.35s both; }
+#intro .iword .hword { width: 100%; height: auto; max-width: none; display: block; filter: drop-shadow(0 8px 14px rgba(20,50,90,.3)); }
+#intro .itap { position: absolute; right: calc(22px + env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom)); font-size: 34px; opacity: 0; animation: itap 1.2s ease-in-out 3.4s infinite; }
+@keyframes iword { 0% { transform: translateX(-50%) translateY(-140%) scale(.6) rotate(-6deg); opacity: 0; } 60% { transform: translateX(-50%) translateY(6%) scale(1.06, .94); opacity: 1; } 80% { transform: translateX(-50%) translateY(-3%) scale(.98, 1.03); } 100% { transform: translateX(-50%); opacity: 1; } }
+@media (max-aspect-ratio: 5/4) { #intro .iword { top: 17vh; width: min(84vw, 640px); } }
+@keyframes itap { 0%, 100% { opacity: .0; transform: translateY(0); } 40% { opacity: .85; transform: translateY(-8px); } }
+/* sky */
+#intro .sRays { animation: sRays 14s linear infinite; }
+@keyframes sRays { to { transform: rotate(360deg); } }
+#intro .sSun { animation: sSunUp 1.1s cubic-bezier(.3,1.4,.5,1) both; }
+@keyframes sSunUp { from { transform: translateY(160px); opacity: 0; } }
+#intro .sSunWink { opacity: 0; animation: sWinkOn 4s 2.9s forwards; } #intro .sSunEyeR { animation: sWinkOff 4s 2.9s forwards; transform-origin: 1314px 160px; }
+#intro .sSunEyeL { animation: aBlink 3.2s 1.2s infinite; }
+@keyframes sWinkOn { 0%, 14% { opacity: 1; } 15%, 100% { opacity: 0; } }
+@keyframes sWinkOff { 0%, 14% { opacity: 0; } 15%, 100% { opacity: 1; } }
+#intro .sCloud { animation: sCloud 9s ease-in-out var(--d) infinite alternate; }
+@keyframes sCloud { from { transform: translateX(-40px); } to { transform: translateX(50px); } }
+#intro .sBird { animation: sBird 7s linear var(--d) infinite; }
+@keyframes sBird { from { transform: translate(-300px, 30px); } to { transform: translate(1300px, -60px); } }
+#intro .sWing { animation: sWing .32s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes sWing { from { transform: scaleY(1); } to { transform: scaleY(-.6); } }
+#intro .sSway { animation: sSway 3s ease-in-out var(--d) infinite alternate; }
+@keyframes sSway { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
+#intro .sFlower { animation: sSway 1.8s ease-in-out var(--d) infinite alternate; }
+#intro .sHSmoke { animation: sHSmoke 2s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes sHSmoke { from { transform: translate(0, 0) scale(.6); opacity: .8; } to { transform: translate(18px, -50px) scale(1.8); opacity: 0; } }
+#intro .sSpark { opacity: 0; transform-box: fill-box; transform-origin: center; animation: sSpark 1.4s ease-out calc(2.6s + var(--i) * .16s) 2 both; }
+@keyframes sSpark { 0% { opacity: 0; transform: scale(.2) rotate(0); } 40% { opacity: 1; transform: scale(1.15) rotate(40deg); } 100% { opacity: 0; transform: scale(.4) rotate(90deg); } }
+/* Coco: down the hill, chugging, then a squashy stop, a toot with a big O and a wink */
+#intro .sCocoGo { animation: sCoco 2.4s cubic-bezier(.35,.05,.45,1) both; }
+#intro .sCocoStop { animation: sStop .55s cubic-bezier(.3,1.6,.5,1) 2.02s both; transform-origin: 0 0; }
+@keyframes sStop { 0% { transform: none; } 35% { transform: scale(1.06, .92); } 70% { transform: scale(.98, 1.04); } 100% { transform: none; } }
+#intro .cB { animation: cChug .2s ease-in-out 0s 10 alternate; transform-origin: 0 0; }
+@keyframes cChug { from { transform: translateY(0) rotate(-1deg); } to { transform: translateY(-10px) rotate(1deg); } }
+#intro .cP { opacity: 0; transform-box: fill-box; transform-origin: center; animation: cPuff 1.1s ease-out calc(var(--i) * .33s) 3 both; }
+@keyframes cPuff { 0% { opacity: 0; transform: translate(0, 0) scale(.4); } 20% { opacity: .95; } 100% { opacity: 0; transform: translate(calc(-60px + var(--i) * 20px), -220px) scale(2.2); } }
+#intro .cTootP circle { opacity: 0; transform-box: fill-box; transform-origin: center; animation: cToot .9s ease-out calc(2.05s + var(--i) * .12s) both; }
+@keyframes cToot { 0% { opacity: 0; transform: scale(.3); } 25% { opacity: 1; } 100% { opacity: 0; transform: translateY(-260px) scale(3); } }
+#intro .cNote { opacity: 0; transform-box: fill-box; transform-origin: center; animation: cNote 1.6s ease-out calc(2.15s + var(--i) * .18s) both; }
+@keyframes cNote { 0% { opacity: 0; transform: translate(0, 0) scale(.4); } 25% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--x), -280px) scale(1.2) rotate(15deg); } }
+#intro .cSmile { animation: cSmileOff 1s 2.02s forwards; } #intro .cO { animation: cOOn 1s 2.02s forwards; }
+@keyframes cSmileOff { 0%, 75% { opacity: 0; } 76%, 100% { opacity: 1; } }
+@keyframes cOOn { 0%, 75% { opacity: 1; } 76%, 100% { opacity: 0; } }
+#intro .cBrow { animation: cBrow 1s ease-in-out 2.02s both; transform-box: fill-box; transform-origin: center; }
+@keyframes cBrow { 0%, 100% { transform: none; } 20%, 70% { transform: translateY(-16px) rotate(-4deg); } }
+#intro .cBrowR { animation-name: cBrowR; } @keyframes cBrowR { 0%, 100% { transform: none; } 20%, 70% { transform: translateY(-16px) rotate(4deg); } }
+#intro .cEye { animation: aBlink 2.6s .6s infinite; transform-box: fill-box; transform-origin: center; }
+#intro .cEyeR { animation: aBlink 2.6s .6s infinite, cWinkOff 3s 3.3s forwards; }
+#intro .cWink { animation: cWinkOn 3s 3.3s forwards; }
+@keyframes cWinkOn { 0%, 30% { opacity: 1; } 31%, 100% { opacity: 0; } }
+@keyframes cWinkOff { 0%, 30% { opacity: 0; } 31%, 100% { opacity: 1; } }
+#intro .cLook { animation: cLook 4s ease-in-out .3s infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes cLook { 0%, 30%, 100% { transform: none; } 40%, 55% { transform: translate(-6px, 2px); } 65%, 80% { transform: translate(6px, 2px); } }
+#intro .cChk { animation: cChk 1.2s ease-in-out 2.1s 2 alternate; }
+@keyframes cChk { to { opacity: 1; } }
+#intro .cLamp { animation: cLamp 1.6s ease-in-out infinite alternate; } @keyframes cLamp { to { opacity: .55; } }
+/* friends pop up and wave */
+#intro .aPop { animation: aPop .6s cubic-bezier(.3,1.7,.5,1) var(--d) both; }
+@keyframes aPop { from { transform: translateY(170px); } }
+#intro .aWave { transform-box: view-box; animation: aWave .4s ease-in-out 2.4s 8 alternate both; }
+@keyframes aWave { from { transform: rotate(-28deg); } to { transform: rotate(22deg); } }
+#intro .aEye { animation: aBlink 3s 1.7s infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes aBlink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+#intro .aEar { animation: aEar 1.6s ease-in-out 2.4s infinite alternate; transform-box: fill-box; transform-origin: 80% 50%; }
+#intro .aEarR { transform-origin: 20% 50%; animation-direction: alternate-reverse; }
+@keyframes aEar { to { transform: rotate(14deg); } }
+#intro .aTilt { animation: aTilt 1.8s ease-in-out 2.9s infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes aTilt { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+#intro .aBob { animation: aBob 1s ease-in-out infinite alternate; } @keyframes aBob { to { transform: translateY(-6px); } }
+#intro .aFlap { transform-box: view-box; animation: aFlap .22s ease-in-out 2.9s 10 alternate both; } @keyframes aFlap { to { transform: rotate(-38deg); } }
+#intro .aBeak { animation: aBeak .2s ease-in-out 3s 6 alternate both; transform-box: fill-box; transform-origin: 50% 0; } @keyframes aBeak { to { transform: translateY(6px) scaleY(1.4); } }
+#intro .aEarT { animation: aEarT 1.4s ease-in-out 3s infinite alternate; transform-box: view-box; } #intro .aEarT2 { animation-delay: 3.3s; } @keyframes aEarT { to { transform: rotate(-16deg); } }
+@media (prefers-reduced-motion: reduce) { #intro *, #intro .iword { animation-duration: .01s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; } }
 
 /* sections (tabs) each have a colour; their sub-tabs sit in a tinted strip of it */
 .tab { background: color-mix(in srgb, var(--c, #1f6fd1) 13%, #fff) !important; color: color-mix(in srgb, var(--c, #1f6fd1) 80%, #000) !important; box-shadow: none !important; }
@@ -11559,50 +11606,172 @@ function maybeAskRate() {
 
 
 // =====================================================================
-//  🎬 INTRO: pieces stacked on pieces — a wooden board, four toy blocks, a track, the loco, the name
-//  (the app's native splash shows the finished stack, so in the app it starts assembled)
+//  🎬 INTRO: a little morning in Loco land. Coco chugs down the hill towards you, puffing; the sun
+//  smiles, the birds fly, a sheep, a cow, a duckling and a bunny pop up to wave; Coco stops, toots
+//  with a big "O", the name bounces in, and Coco gives you a wink. Tap anywhere to skip.
 // =====================================================================
-function introStackSVG() {
-  const blocks = [["#e74c3c", "#b8322a", "L", -4], ["#f6c23e", "#c9921a", "O", 3], ["#3a8de0", "#2766ad", "C", -2], ["#34b366", "#23824a", "O", 4]];
-  const wood = (id, a, b) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
-  const loco = document.querySelector(".hlogo .hloco");
-  return `<svg class="isvg" viewBox="0 0 1000 720" xmlns="http://www.w3.org/2000/svg">
-  <defs>${wood("iwA", "#f7d3a0", "#cf9358")}${wood("iwB", "#fbe2bd", "#dba56a")}
-    <filter id="ishadow" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#1d3d5c" flood-opacity=".22"/></filter></defs>
-  <ellipse class="ishad" cx="500" cy="676" rx="330" ry="26" fill="#1d3d5c" opacity=".16"/>
-  <g class="ilayer ib" filter="url(#ishadow)">
-    <rect x="190" y="596" width="620" height="74" rx="20" fill="url(#iwA)"/>
-    <rect x="190" y="596" width="620" height="18" rx="9" fill="#fff" opacity=".28"/>
-    <path d="M220 628 C360 618 520 640 780 626 M230 650 C420 642 600 660 770 648" stroke="#b77a3f" stroke-width="3" fill="none" opacity=".45"/>
-    <circle cx="226" cy="633" r="7" fill="#a76b34" opacity=".55"/><circle cx="774" cy="633" r="7" fill="#a76b34" opacity=".55"/>
-  </g>
-  ${blocks.map(([c, d, ch, r], i) => { const x = 236 + i * 136; return `<g class="ilayer iblk" style="--d:${(.28 + i * .13).toFixed(2)}s" filter="url(#ishadow)"><g transform="rotate(${r} ${x + 60} 536)">
-    <rect x="${x}" y="474" width="120" height="122" rx="20" fill="${d}"/><rect x="${x}" y="470" width="120" height="114" rx="20" fill="${c}"/>
-    <rect x="${x + 10}" y="478" width="100" height="20" rx="10" fill="#fff" opacity=".28"/>
-    <text x="${x + 60}" y="552" text-anchor="middle" font-family="ui-rounded,'SF Pro Rounded','Arial Rounded MT Bold',sans-serif" font-weight="900" font-size="78" fill="#fff" stroke="${d}" stroke-width="10" paint-order="stroke">${ch}</text></g></g>`; }).join("")}
-  <g class="ilayer itrk" filter="url(#ishadow)">
-    <rect x="214" y="414" width="572" height="58" rx="14" fill="url(#iwB)"/>
-    <rect x="214" y="414" width="572" height="14" rx="7" fill="#fff" opacity=".32"/>
-    <rect x="234" y="430" width="532" height="7" rx="3.5" fill="#a86f38" opacity=".75"/><rect x="234" y="452" width="532" height="7" rx="3.5" fill="#a86f38" opacity=".75"/>
-    <circle cx="786" cy="443" r="15" fill="url(#iwB)"/><circle cx="214" cy="443" r="11" fill="#a86f38" opacity=".55"/>
-  </g>
-  <g class="ilayer iloco">
-    ${loco ? `<image href="${loco.getAttribute("src")}" x="404" y="96" width="192" height="330" preserveAspectRatio="xMidYMax meet"/>` : ""}
-  </g>
-  <g class="ipuff"><circle cx="452" cy="104" r="16" fill="#fff"/><circle cx="430" cy="74" r="22" fill="#fff" opacity=".85"/><circle cx="402" cy="40" r="28" fill="#fff" opacity=".65"/></g>
+function introCocoSVG() { // Coco, drawn facing you (origin: the middle of his bottom edge)
+  return `<g class="cB">
+    <ellipse cx="0" cy="4" rx="170" ry="20" fill="#1d4a1a" opacity=".22"/>
+    <circle cx="-150" cy="-44" r="42" fill="#3b2a18"/><circle cx="150" cy="-44" r="42" fill="#3b2a18"/>
+    <circle cx="-150" cy="-44" r="18" fill="#ffcf3a"/><circle cx="150" cy="-44" r="18" fill="#ffcf3a"/>
+    <path d="M-124 -72H124L94 0H-94Z" fill="#c0392b" stroke="#7a1f17" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M-66 -68L-52 -4M-22 -68L-17 -4M22 -68L17 -4M66 -68L52 -4" stroke="#7a1f17" stroke-width="6" stroke-linecap="round"/>
+    <rect x="-166" y="-132" width="332" height="64" rx="16" fill="#a93226" stroke="#7a1f17" stroke-width="6"/>
+    <rect x="-156" y="-126" width="312" height="14" rx="7" fill="#e85a4b"/>
+    <circle cx="-130" cy="-100" r="19" fill="#2b2b2b" stroke="#111" stroke-width="4"/><circle cx="130" cy="-100" r="19" fill="#2b2b2b" stroke="#111" stroke-width="4"/>
+    <circle cx="-88" cy="-100" r="12" fill="#ffe27a" stroke="#b8860b" stroke-width="4"/><circle cx="88" cy="-100" r="12" fill="#ffe27a" stroke="#b8860b" stroke-width="4"/>
+    <rect x="-152" y="-408" width="304" height="282" rx="34" fill="url(#cRed)" stroke="#7a1f17" stroke-width="7"/>
+    <rect x="-136" y="-392" width="24" height="250" rx="12" fill="#fff" opacity=".16"/>
+    <path d="M-176 -398Q0 -486 176 -398V-382H-176Z" fill="#8e2a20" stroke="#5e170f" stroke-width="6" stroke-linejoin="round"/>
+    <rect x="-152" y="-150" width="304" height="14" fill="#ffcf3a" stroke="#b8860b" stroke-width="3"/>
+    <g class="cChim"><rect x="-28" y="-512" width="56" height="96" rx="10" fill="#2b2b2b"/><rect x="-40" y="-526" width="80" height="24" rx="10" fill="#3d3d3d"/><rect x="-20" y="-508" width="10" height="84" rx="5" fill="#fff" opacity=".18"/></g>
+    <circle cx="0" cy="-392" r="32" fill="#ffcf3a" stroke="#b8860b" stroke-width="6"/><circle cx="0" cy="-392" r="16" fill="#fff6c8"/><circle class="cLamp" cx="0" cy="-392" r="44" fill="#fff6a0" opacity="0"/>
+    <circle cx="0" cy="-248" r="120" fill="#8e2a20"/>
+    <circle cx="0" cy="-248" r="106" fill="url(#cFace)" stroke="#d9bf8f" stroke-width="4"/>
+    <ellipse class="cChk" cx="-66" cy="-212" rx="24" ry="15" fill="#ff8fa0" opacity=".65"/><ellipse class="cChk" cx="66" cy="-212" rx="24" ry="15" fill="#ff8fa0" opacity=".65"/>
+    <g class="cEye cEyeL"><ellipse cx="-40" cy="-266" rx="24" ry="30" fill="#fff" stroke="#3b2a18" stroke-width="5"/><g class="cLook"><circle cx="-36" cy="-260" r="15" fill="#3b2a18"/><circle cx="-31" cy="-266" r="5.5" fill="#fff"/></g></g>
+    <g class="cEye cEyeR"><ellipse cx="40" cy="-266" rx="24" ry="30" fill="#fff" stroke="#3b2a18" stroke-width="5"/><g class="cLook"><circle cx="44" cy="-260" r="15" fill="#3b2a18"/><circle cx="49" cy="-266" r="5.5" fill="#fff"/></g></g>
+    <path class="cWink" d="M18 -262Q40 -282 62 -262" stroke="#3b2a18" stroke-width="7" fill="none" stroke-linecap="round" opacity="0"/>
+    <path class="cBrow cBrowL" d="M-66 -312Q-42 -330 -16 -314" stroke="#6b4423" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <path class="cBrow cBrowR" d="M16 -314Q42 -330 66 -312" stroke="#6b4423" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <g class="cSmile"><path d="M-44 -208Q0 -160 44 -208Q0 -186 -44 -208Z" fill="#7a1f17" stroke="#3b2a18" stroke-width="5" stroke-linejoin="round"/><path d="M-18 -188Q0 -178 18 -188Q0 -172 -18 -188Z" fill="#ff8fa0"/></g>
+    <g class="cO" opacity="0"><ellipse cx="0" cy="-196" rx="20" ry="25" fill="#7a1f17" stroke="#3b2a18" stroke-width="5"/><ellipse cx="0" cy="-185" rx="11" ry="8" fill="#ff8fa0"/></g>
+    ${[0, 1, 2, 3, 4, 5].map(i => `<circle class="cP" style="--i:${i}" cx="0" cy="-540" r="${30 + i % 3 * 8}" fill="#fff"/>`).join("")}
+    <g class="cTootP">${[0, 1, 2].map(i => `<circle style="--i:${i}" cx="0" cy="-540" r="${44 - i * 6}" fill="#fff"/>`).join("")}</g>
+    ${[["♪", -120, "#ff6fb5"], ["♫", 110, "#3a8de0"], ["♬", -40, "#34b366"], ["♪", 60, "#ff9f1a"]].map(([n, x, c], i) => `<text class="cNote" style="--i:${i};--x:${x}px" x="0" y="-560" font-size="64" font-weight="900" text-anchor="middle" fill="${c}" stroke="#fff" stroke-width="6" paint-order="stroke">${n}</text>`).join("")}
+  </g>`;
+}
+function introSheep() {
+  return `<g class="aPop" style="--d:2.05s"><g transform="translate(0 0)">
+    <g class="aWave" style="transform-origin:40px -112px"><rect x="34" y="-176" width="16" height="68" rx="8" fill="#4a4a4a"/><ellipse cx="42" cy="-178" rx="12" ry="9" fill="#2b2b2b"/></g>
+    ${[[-44, -78, 36], [0, -92, 42], [44, -78, 36], [-30, -44, 34], [30, -44, 34], [0, -54, 38]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#fbfbf6" stroke="#d8d4c8" stroke-width="4"/>`).join("")}
+    <ellipse cx="-44" cy="-150" rx="22" ry="11" fill="#4a4a4a" transform="rotate(-25 -44 -150)" class="aEar"/><ellipse cx="44" cy="-150" rx="22" ry="11" fill="#4a4a4a" transform="rotate(25 44 -150)" class="aEar aEarR"/>
+    <ellipse cx="0" cy="-138" rx="38" ry="44" fill="#5d5d5d"/>
+    ${[[-18, -182, 16], [0, -188, 18], [18, -182, 16]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#fbfbf6" stroke="#d8d4c8" stroke-width="3"/>`).join("")}
+    <g class="aEye"><ellipse cx="-15" cy="-144" rx="10" ry="12" fill="#fff"/><circle cx="-13" cy="-142" r="6" fill="#111"/><circle cx="-11" cy="-145" r="2" fill="#fff"/></g>
+    <g class="aEye"><ellipse cx="15" cy="-144" rx="10" ry="12" fill="#fff"/><circle cx="17" cy="-142" r="6" fill="#111"/><circle cx="19" cy="-145" r="2" fill="#fff"/></g>
+    <ellipse cx="-24" cy="-122" rx="8" ry="5" fill="#ff9aa8" opacity=".7"/><ellipse cx="24" cy="-122" rx="8" ry="5" fill="#ff9aa8" opacity=".7"/>
+    <path d="M-10 -116Q0 -106 10 -116" stroke="#222" stroke-width="4" fill="none" stroke-linecap="round"/>
+  </g></g>
+  ${introBush(0, 0, 1.15)}`;
+}
+function introCow() {
+  return `<g class="aPop" style="--d:2.3s"><g class="aTilt">
+    <path d="M-40 -190Q-56 -226 -36 -238M40 -190Q56 -226 36 -238" stroke="#e8d7a8" stroke-width="12" fill="none" stroke-linecap="round"/>
+    <ellipse class="aEar" cx="-62" cy="-176" rx="28" ry="14" fill="#fff" stroke="#3b2a18" stroke-width="4" transform="rotate(-20 -62 -176)"/><ellipse class="aEar aEarR" cx="62" cy="-176" rx="28" ry="14" fill="#fff" stroke="#3b2a18" stroke-width="4" transform="rotate(20 62 -176)"/>
+    <ellipse cx="0" cy="-140" rx="56" ry="64" fill="#fff" stroke="#3b2a18" stroke-width="5"/>
+    <path d="M-50 -170C-36 -196 -10 -186 -16 -164S-46 -146 -50 -170Z" fill="#3b2a18"/><path d="M28 -120C44 -128 56 -114 50 -102S28 -98 28 -120Z" fill="#3b2a18"/>
+    <g class="aEye"><ellipse cx="-20" cy="-150" rx="12" ry="14" fill="#fff" stroke="#3b2a18" stroke-width="3"/><circle cx="-18" cy="-147" r="7" fill="#111"/><circle cx="-15" cy="-151" r="2.4" fill="#fff"/></g>
+    <g class="aEye"><ellipse cx="20" cy="-150" rx="12" ry="14" fill="#fff" stroke="#3b2a18" stroke-width="3"/><circle cx="22" cy="-147" r="7" fill="#111"/><circle cx="25" cy="-151" r="2.4" fill="#fff"/></g>
+    <ellipse cx="0" cy="-98" rx="42" ry="28" fill="#f6a6c8" stroke="#3b2a18" stroke-width="4"/>
+    <ellipse cx="-14" cy="-102" rx="6" ry="8" fill="#b0557a"/><ellipse cx="14" cy="-102" rx="6" ry="8" fill="#b0557a"/>
+    <path d="M-16 -84Q0 -74 16 -84" stroke="#3b2a18" stroke-width="4" fill="none" stroke-linecap="round"/>
+  </g></g>
+  <g><rect x="-110" y="-70" width="16" height="74" rx="4" fill="#c98a4b" stroke="#7a4a2a" stroke-width="3"/><rect x="94" y="-70" width="16" height="74" rx="4" fill="#c98a4b" stroke="#7a4a2a" stroke-width="3"/>
+    <rect x="-130" y="-60" width="260" height="18" rx="6" fill="#e3b77a" stroke="#7a4a2a" stroke-width="3"/><rect x="-130" y="-26" width="260" height="18" rx="6" fill="#e3b77a" stroke="#7a4a2a" stroke-width="3"/></g>`;
+}
+function introDuck() {
+  return `<ellipse cx="0" cy="-6" rx="120" ry="30" fill="#5fb8ec" stroke="#3a8de0" stroke-width="5"/><path d="M-80 -8q14-8 28 0M30 0q14-8 28 0" stroke="#d6f1ff" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <g class="aPop" style="--d:2.5s"><g class="aBob">
+    <ellipse cx="0" cy="-30" rx="44" ry="30" fill="#ffd84d" stroke="#c99a00" stroke-width="4"/>
+    <g class="aFlap" style="transform-origin:-30px -36px"><path d="M-30 -36Q-66 -62 -62 -24Q-46 -20 -30 -30Z" fill="#ffc21a" stroke="#c99a00" stroke-width="4"/></g>
+    <circle cx="10" cy="-78" r="30" fill="#ffd84d" stroke="#c99a00" stroke-width="4"/>
+    <g class="aEye"><circle cx="0" cy="-84" r="6" fill="#111"/><circle cx="2" cy="-86" r="2" fill="#fff"/></g><g class="aEye"><circle cx="24" cy="-84" r="6" fill="#111"/><circle cx="26" cy="-86" r="2" fill="#fff"/></g>
+    <g class="aQuack"><path d="M2 -70Q12 -78 24 -70Q12 -66 2 -70Z" fill="#ff8c1a" stroke="#c45f00" stroke-width="3"/><path d="M4 -68Q12 -58 22 -68" fill="#ff8c1a" stroke="#c45f00" stroke-width="3" class="aBeak"/></g>
+    <ellipse cx="-8" cy="-70" rx="6" ry="4" fill="#ff9aa8" opacity=".7"/>
+  </g></g>`;
+}
+function introBunny() {
+  return `<g class="aPop" style="--d:2.7s"><g>
+    <g class="aEarT" style="transform-origin:-14px -96px"><ellipse cx="-16" cy="-136" rx="11" ry="40" fill="#f4f2ee" stroke="#c9c3b8" stroke-width="3"/><ellipse cx="-16" cy="-132" rx="5" ry="30" fill="#f6a6c8"/></g>
+    <g class="aEarT aEarT2" style="transform-origin:14px -96px"><ellipse cx="16" cy="-136" rx="11" ry="40" fill="#f4f2ee" stroke="#c9c3b8" stroke-width="3"/><ellipse cx="16" cy="-132" rx="5" ry="30" fill="#f6a6c8"/></g>
+    <ellipse cx="0" cy="-74" rx="36" ry="32" fill="#f4f2ee" stroke="#c9c3b8" stroke-width="3"/>
+    <g class="aEye"><circle cx="-12" cy="-80" r="5.5" fill="#111"/><circle cx="-10" cy="-82" r="1.8" fill="#fff"/></g><g class="aEye"><circle cx="12" cy="-80" r="5.5" fill="#111"/><circle cx="14" cy="-82" r="1.8" fill="#fff"/></g>
+    <path d="M-4 -68h8l-4 4Z" fill="#ff8fa0"/><path d="M-8 -60Q0 -54 8 -60" stroke="#555" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </g></g>
+  ${introBush(0, 0, .8)}`;
+}
+function introBush(x, y, s) {
+  return `<g transform="translate(${x} ${y}) scale(${s})">${[[-70, -26, 40], [-24, -44, 50], [30, -40, 48], [74, -22, 38], [0, -14, 44]].map(([cx, cy, r], i) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${["#4f9a3a", "#5fae46", "#56a33f", "#4f9a3a", "#62b34a"][i]}"/>`).join("")}
+    <circle cx="-30" cy="-60" r="9" fill="#ff6fb5"/><circle cx="40" cy="-54" r="8" fill="#ffd34d"/><circle cx="-62" cy="-36" r="7" fill="#fff"/><circle cx="70" cy="-30" r="7" fill="#ff6fb5"/></g>`;
+}
+function introSceneSVG() {
+  // the track comes down the hill towards you: far end at y 505, near end at the bottom
+  const Y0 = 505, Y1 = 900, X = 800, rail = t => 10 + 250 * t; // half the gauge at depth t
+  const ty = t => Y0 + (Y1 - Y0) * t * t;
+  let sleepers = "";
+  for (let i = 1; i <= 16; i++) { const t = Math.pow(i / 16, .8), y = ty(t), w = rail(t * t) * 1.5, h = 3 + 16 * t * t; sleepers += `<rect x="${(X - w).toFixed(1)}" y="${(y - h / 2).toFixed(1)}" width="${(2 * w).toFixed(1)}" height="${h.toFixed(1)}" rx="${(h / 3).toFixed(1)}" fill="#a8743d" stroke="#7a4a2a" stroke-width="${(1 + 2 * t).toFixed(1)}"/>`; }
+  const railP = sgn => { let d = ""; for (let i = 0; i <= 20; i++) { const t = i / 20, y = ty(t); d += (i ? "L" : "M") + (X + sgn * rail(t * t)).toFixed(1) + " " + y.toFixed(1); } return d; };
+  const tree = (x, y, s, c) => `<g class="sSway" style="transform-origin:${x}px ${y}px;--d:${(-(x % 7) * .4).toFixed(1)}s"><rect x="${x - 6 * s}" y="${y - 40 * s}" width="${12 * s}" height="${42 * s}" rx="${4 * s}" fill="#8a5a2b"/><circle cx="${x}" cy="${y - 56 * s}" r="${30 * s}" fill="${c}"/><circle cx="${x - 18 * s}" cy="${y - 44 * s}" r="${20 * s}" fill="${c}"/><circle cx="${x + 18 * s}" cy="${y - 44 * s}" r="${20 * s}" fill="${c}"/><circle cx="${x - 8 * s}" cy="${y - 66 * s}" r="${10 * s}" fill="#fff" opacity=".18"/></g>`;
+  const cloud = (x, y, s, d) => `<g class="sCloud" style="--d:${d}s"><g transform="translate(${x} ${y}) scale(${s})"><path d="M-90 30a40 40 0 0 1 20-62 55 55 0 0 1 100-16 42 42 0 0 1 64 40 30 30 0 0 1-6 38Z" fill="#fff"/><path d="M-80 24h150" stroke="#dcefff" stroke-width="10" stroke-linecap="round"/></g></g>`;
+  const flowers = [...Array(34)].map((_, i) => { const x = (i * 197) % 1600, y = 700 + ((i * 89) % 190), c = ["#ff6fb5", "#ffd34d", "#fff", "#c56cf0", "#ff5a4f"][i % 5]; return Math.abs(x - 800) < 120 + (y - 700) * .9 ? "" : `<g class="sFlower" style="--d:${(-(i % 5) * .3).toFixed(1)}s;transform-origin:${x}px ${y + 14}px"><path d="M${x} ${y + 14}v-12" stroke="#3f8a33" stroke-width="3"/><circle cx="${x}" cy="${y}" r="7" fill="${c}"/><circle cx="${x}" cy="${y}" r="2.6" fill="#ffb300"/></g>`; }).join("");
+  return `<svg class="isvg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4fb0ee"/><stop offset=".55" stop-color="#a7dcfb"/><stop offset="1" stop-color="#e6f7ff"/></linearGradient>
+    <linearGradient id="sH1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b5e08f"/><stop offset="1" stop-color="#8fcc6c"/></linearGradient>
+    <linearGradient id="sH2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd06a"/><stop offset="1" stop-color="#6cb850"/></linearGradient>
+    <linearGradient id="sH3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#72bf54"/><stop offset="1" stop-color="#4f9e3a"/></linearGradient>
+    <linearGradient id="cRed" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c0392b"/><stop offset=".45" stop-color="#e74c3c"/><stop offset="1" stop-color="#b03224"/></linearGradient>
+    <radialGradient id="cFace" cx=".42" cy=".38" r=".7"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#f3dfb8"/></radialGradient>
+    <radialGradient id="sSunG" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff6c0" stop-opacity=".9"/><stop offset="1" stop-color="#fff6c0" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sSky)"/>
+  <g transform="translate(0 60)"><g class="sSun"><circle cx="1290" cy="170" r="150" fill="url(#sSunG)"/>
+    <g class="sRays" style="transform-origin:1290px 170px">${[...Array(12)].map((_, i) => `<path d="M1290 60l10 26h-20Z" fill="#ffc21a" transform="rotate(${i * 30} 1290 170)"/>`).join("")}</g>
+    <circle cx="1290" cy="170" r="72" fill="#ffd84d" stroke="#f2b705" stroke-width="6"/>
+    <g class="sSunEyeL" style="transform-origin:1266px 160px"><ellipse cx="1266" cy="160" rx="8" ry="11" fill="#6b4423"/></g><path class="sSunWink" d="M1302 160q12-12 24 0" stroke="#6b4423" stroke-width="6" fill="none" stroke-linecap="round"/><ellipse class="sSunEyeR" cx="1314" cy="160" rx="8" ry="11" fill="#6b4423"/>
+    <ellipse cx="1248" cy="186" rx="12" ry="7" fill="#ff9f7a" opacity=".6"/><ellipse cx="1332" cy="186" rx="12" ry="7" fill="#ff9f7a" opacity=".6"/>
+    <path d="M1268 190q22 22 44 0" stroke="#6b4423" stroke-width="6" fill="none" stroke-linecap="round"/></g></g>
+  <g opacity=".32" fill="none" stroke-width="34">${["#ff5a4f", "#ffb340", "#ffe066", "#6cc04a", "#4aa8ff", "#a57bff"].map((c, i) => `<path d="M${180 + i * 34} 520A${620 - i * 34} ${620 - i * 34} 0 0 1 ${1420 - i * 34} 520" stroke="${c}"/>`).join("")}</g>
+  ${cloud(300, -220, 1.2, -3)}${cloud(1250, -420, 1, -6)}${cloud(620, -650, .9, -4)}${cloud(1500, -60, .7, -8)}
+  ${cloud(260, 150, 1, -2)}${cloud(720, 90, .7, -5)}${cloud(1500, 300, .8, -1)}${cloud(-40, 330, .6, -7)}
+  <g class="sBird" style="--d:0s"><path class="sWing" d="M480 200q14-14 28 0q14-14 28 0" stroke="#2b3a55" stroke-width="5" fill="none" stroke-linecap="round"/></g>
+  <g class="sBird" style="--d:-1.4s"><path class="sWing" d="M560 240q10-10 20 0q10-10 20 0" stroke="#2b3a55" stroke-width="4" fill="none" stroke-linecap="round"/></g>
+  <path d="M0 520Q200 430 420 480T860 470T1260 460T1600 500V900H0Z" fill="url(#sH1)"/>
+  ${tree(180, 486, .7, "#5fae46")}${tree(1180, 470, .55, "#4f9a3a")}${tree(1440, 470, .7, "#5fae46")}
+  <g transform="translate(1010 470) scale(.75)"><rect x="-34" y="-46" width="68" height="46" fill="#fff3d6" stroke="#7a4a2a" stroke-width="4"/><path d="M-46 -44L0 -86 46 -44Z" fill="#d9483b" stroke="#7a4a2a" stroke-width="4" stroke-linejoin="round"/><rect x="-8" y="-26" width="16" height="26" fill="#a8743d"/><rect x="14" y="-36" width="12" height="12" fill="#8fd0f5" stroke="#7a4a2a" stroke-width="2"/><rect x="18" y="-80" width="12" height="20" fill="#9a4a3a"/>
+    <circle class="sHSmoke" cx="24" cy="-92" r="8" fill="#fff" opacity=".8"/><circle class="sHSmoke" style="animation-delay:-1s" cx="24" cy="-92" r="8" fill="#fff" opacity=".8"/></g>
+  <path d="M0 600Q240 520 520 560Q700 585 760 520H840Q900 585 1080 560Q1360 520 1600 590V900H0Z" fill="url(#sH2)"/>
+  ${tree(330, 585, 1, "#4f9a3a")}${tree(1300, 575, .95, "#5fae46")}${tree(1480, 600, 1.1, "#3f8a33")}
+  <g transform="translate(1240 640)">${introBunny()}</g>
+  <path d="M0 700Q300 640 560 680Q700 700 760 640H840Q900 700 1040 680Q1300 640 1600 700V900H0Z" fill="url(#sH3)"/>
+  <path d="M${X - 18} ${Y0}L${X - 330} 900H${X + 330}L${X + 18} ${Y0}Z" fill="#c9b48a" opacity=".55"/>
+  ${sleepers}
+  <path d="${railP(-1)}" stroke="#8a8f96" stroke-width="7" fill="none" stroke-linejoin="round"/><path d="${railP(1)}" stroke="#8a8f96" stroke-width="7" fill="none" stroke-linejoin="round"/>
+  <path d="${railP(-1)}" stroke="#d9dde2" stroke-width="2.5" fill="none"/><path d="${railP(1)}" stroke="#d9dde2" stroke-width="2.5" fill="none"/>
+  ${flowers}
+  <g transform="translate(500 760)">${introSheep()}</g>
+  <g transform="translate(1110 770)">${introCow()}</g>
+  <g transform="translate(270 860)">${introDuck()}</g>
+  <g class="sCocoGo"><g class="sCocoStop">${introCocoSVG()}</g></g>
+  ${[[640, 150], [960, 140], [560, 260], [1040, 250], [800, 60]].map(([x, y], i) => `<path class="sSpark" style="--i:${i}" d="M${x} ${y - 22}Q${x + 3} ${y - 3} ${x + 22} ${y}Q${x + 3} ${y + 3} ${x} ${y + 22}Q${x - 3} ${y + 3} ${x - 22} ${y}Q${x - 3} ${y - 3} ${x} ${y - 22}Z" fill="#fff6a0" stroke="#e0b000" stroke-width="3"/>`).join("")}
 </svg>`;
+}
+// Coco's trip down the hill (the same perspective as the track)
+function introKeyframes() {
+  const Y0 = 505, steps = [[0, 0], [20, .3], [42, .55], [62, .78], [76, .93], [84, 1]];
+  const at = p => { const t = p, y = Y0 + 330 * t * t, s = .07 + .83 * t * t; return `transform: translate(800px, ${y.toFixed(1)}px) scale(${s.toFixed(3)});`; };
+  return `@keyframes sCoco { ${steps.map(([k, p]) => `${k}% { ${at(p)} }`).join(" ")} 100% { ${at(1)} } }`;
 }
 function playIntro() {
   if (window.__introDone) return; window.__introDone = true;
-  const N = window.__NATIVE__, d = document.createElement("div"); d.id = "intro"; if (N && N.post) d.classList.add("assembled");
-  d.innerHTML = `<div class="ibox">${introStackSVG()}<div class="iword"></div></div>`;
+  const d = document.createElement("div"); d.id = "intro";
+  d.innerHTML = `<style>${introKeyframes()}</style>${introSceneSVG()}<div class="iword"></div><div class="itap">👆</div>`;
   const w = document.querySelector(".hlogo .hword"); if (w) d.querySelector(".iword").appendChild(w.cloneNode(true));
   document.body.appendChild(d);
-  const fin = () => { if (!d.isConnected || d.classList.contains("out")) return; d.classList.add("out"); setTimeout(() => d.remove(), 520); };
+  // tall screens (an iPad held upright) see more of the meadow, with extra sky above
+  const sv = d.querySelector(".isvg"), fit = () => { const k = innerWidth / innerHeight;
+    if (k < 1.25) { const W = 1180, H = W / k; sv.setAttribute("viewBox", `${800 - W / 2} ${900 - H} ${W} ${H}`); sv.setAttribute("preserveAspectRatio", "xMidYMax meet"); }
+    else { sv.setAttribute("viewBox", "0 0 1600 900"); sv.setAttribute("preserveAspectRatio", "xMidYMax slice"); } };
+  fit(); addEventListener("resize", fit);
+  const fin = () => { if (!d.isConnected || d.classList.contains("out")) return; d.classList.add("out"); removeEventListener("resize", fit); setTimeout(() => d.remove(), 600); };
   d.addEventListener("pointerdown", () => { unlockAudio(); fin(); });
-  // the loco lands with a little toot (only once sound is allowed by the browser)
-  setTimeout(() => { try { if (actx && actx.state === "running") whistle(.45); } catch (e) {} }, d.classList.contains("assembled") ? 1050 : 1300);
-  setTimeout(fin, d.classList.contains("assembled") ? 2300 : 2800);
+  // chuffs on the way down, the toot when Coco stops (only once the browser allows sound)
+  const can = () => { try { return actx && actx.state === "running"; } catch (e) { return false; } };
+  [400, 750, 1050, 1300, 1520].forEach(t => setTimeout(() => { if (can() && d.isConnected) try { sfx.chuff(true); } catch (e) {} }, t));
+  setTimeout(() => { if (can() && d.isConnected) try { whistle(.5); } catch (e) {} }, 2050);
+  setTimeout(fin, 5200);
 }
 
 
@@ -12872,7 +13041,7 @@ function selectTab(id) {
   document.querySelectorAll(".tab").forEach(e => e.classList.toggle("sel", e.dataset.grp === grpOf(id)));
   $("tabs").style.setProperty("--gc", GCOL[grpOf(id)] || "#1f6fd1");
   renderSubtabs(); try { buildFullBadges(); } catch (e) {}
-  const pal = $("palette"); pal.innerHTML = ""; pal.classList.toggle("onerow", id === "letras" || id === "letrasMin");
+  const pal = $("palette"); pal.innerHTML = ""; pal.classList.toggle("onerow", id === "letras" || id === "letrasMin" || id === "trenes");
   pal.appendChild(makeItem("hand", () => selectTool("hand")));
   pal.appendChild(makeItem("erase", () => selectTool("erase")));
   (grpOf(id) === "calles" ? ["lapiz", "lapizCalle"] : ["lapiz"]).forEach(pid => { // the track pencil is always there; the street one in the Streets tab
@@ -12882,6 +13051,8 @@ function selectTab(id) {
   const tab = TABS.find(t => t.id === id);
   if (id === "trenes") {
     Object.entries(KINDS).forEach(([k, K]) => {
+      // only the trains you can use: special ones wait in the shop until bought; full-version ones only show on a free test-ride day
+      if (fullLocked(k) ? !trialFree() : shopLocked(k)) return;
       const it = document.createElement("div"); it.className = "it wide"; it.dataset.kind = k; it.title = K.t;
       it.appendChild(trainIcon(k, 2, K.c1[0], K.c2[0]));
       const bd = document.createElement("span"); bd.className = "badge"; bd.textContent = "⚡".repeat(K.spd); it.appendChild(bd);
