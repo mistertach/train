@@ -241,8 +241,13 @@
   .it.shoplock { position: relative; }
   .it.shoplock > :first-child { opacity: .45; filter: grayscale(.6); }
   .it .lockb { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); background: #fff3b0; border: 2px solid #e0b000; border-radius: 10px; font-size: 12px; font-weight: 800; padding: 0 4px; white-space: nowrap; }
-  .paints { display: flex; flex-wrap: wrap; gap: 6px; max-width: 200px; align-items: center; }
-  .paints .paint { width: 30px; height: 30px; border-radius: 50%; border: 3px solid #a8743d; cursor: pointer; padding: 0; }
+  .paints { display: grid; grid-template-columns: repeat(6, 26px); gap: 5px; align-content: center; }
+  .paints .paint { width: 26px; height: 26px; border-radius: 50%; border: 3px solid #a8743d; cursor: pointer; padding: 0; }
+  .paintBox { display: flex; flex-direction: column; gap: 4px; flex: 0 0 auto; }
+  #palette .paintBox .it { flex: 0 0 auto; width: 44px; height: 36px; border-width: 3px; border-radius: 12px; font-size: 22px; }
+  .paintPick { width: 44px; height: 36px; border-radius: 12px; border: 3px solid #e6cfa6; background: #fff8e8; cursor: pointer; padding: 0; display: grid; place-items: center; box-shadow: 0 3px 0 rgba(0,0,0,.15); }
+  .paintPick span { width: 26px; height: 26px; border-radius: 50%; border: 3px solid #a8743d; }
+  .paintPop { position: fixed; z-index: 40; background: #fff8e8; border: 4px solid #a8743d; border-radius: 18px; padding: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.3); }
   .paints .paint.on { box-shadow: 0 0 0 3px #ffd400; transform: scale(1.12); }
   html, body, button, input { font-family: ui-rounded, "SF Pro Rounded", "Nunito", "Varela Round", "Arial Rounded MT Bold", system-ui, -apple-system, sans-serif; }
   html, body { background: #b07a47 repeating-linear-gradient(92deg, rgba(255,255,255,.035) 0 3px, transparent 3px 22px, rgba(0,0,0,.04) 22px 25px, transparent 25px 60px); }
@@ -12462,12 +12467,23 @@ function selectTab(id) {
     const cs = document.createElement("div"); cs.id = "carsShow"; pal.appendChild(cs);
     pal.appendChild(mk("➕", "Más vagones", () => { const mx = owns("vagones") ? 9 : 6; if (trainCars >= mx && !owns("vagones")) { openShop("vagones"); return; } trainCars = Math.min(mx, trainCars + 1); updateCarsUI(); sfx.click(); }));
     if (owns("pintura")) {
-      pal.appendChild(Object.assign(document.createElement("div"), { className: "sep" }));
-      const row = document.createElement("div"); row.className = "paints";
-      [null, ...PAINTS].forEach(c => { const b = document.createElement("button"); b.className = "paint" + (c === trainPaint ? " on" : ""); b.style.background = c || "conic-gradient(#e74c3c,#f1c40f,#2ecc71,#3498db,#9b59b6,#e74c3c)"; b.title = c ? "🎨" : "↺";
-        b.onclick = () => { trainPaint = c; row.querySelectorAll(".paint").forEach(x => x.classList.toggle("on", x === b)); sfx.click(); }; row.appendChild(b); });
-      pal.appendChild(row);
-      pal.appendChild(makeItem("repaint", () => selectTool("repaint"))); // 🪣 repaint trains already on the board
+      // one round button with the chosen colour; tapping it opens the colours in a little bubble above
+      const RB = "conic-gradient(#e74c3c,#f1c40f,#2ecc71,#3498db,#9b59b6,#e74c3c)";
+      const pk = document.createElement("button"); pk.className = "paintPick"; pk.title = "🎨";
+      const dot = document.createElement("span"); pk.appendChild(dot); const showDot = () => { dot.style.background = trainPaint || RB; }; showDot();
+      pk.onclick = e => {
+        e.stopPropagation(); const old = document.querySelector(".paintPop"); if (old) { old.remove(); return; }
+        const pop = document.createElement("div"); pop.className = "paintPop paints"; document.body.appendChild(pop);
+        [null, ...PAINTS].forEach(c => { const b = document.createElement("button"); b.className = "paint" + (c === trainPaint ? " on" : ""); b.style.background = c || RB; b.title = c ? "🎨" : "↺";
+          b.onclick = ev => { ev.stopPropagation(); trainPaint = c; showDot(); pop.remove(); sfx.click(); }; pop.appendChild(b); });
+        const r = pk.getBoundingClientRect(), w = pop.offsetWidth;
+        pop.style.left = Math.max(6, Math.min(innerWidth - w - 6, r.left + r.width / 2 - w / 2)) + "px"; pop.style.bottom = (innerHeight - r.top + 8) + "px";
+        const off = ev => { if (!pop.contains(ev.target)) { pop.remove(); document.removeEventListener("pointerdown", off, true); } };
+        setTimeout(() => document.addEventListener("pointerdown", off, true)); sfx.click();
+      };
+      // colour on top, 🪣 below (repaints trains already on the board): one narrow column, so it fits at the end of the wagons row
+      const box = document.createElement("div"); box.className = "paintBox"; box.appendChild(pk);
+      box.appendChild(makeItem("repaint", () => selectTool("repaint"))); pal.appendChild(box);
     }
     selectTool("train");
     updateCarsUI();
