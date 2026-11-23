@@ -867,6 +867,10 @@ body.cab.boardable #cabBoard { display: flex; }
 .stcols { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 6px 0; }
 .stcol { width: 30px; height: 30px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); padding: 0; cursor: pointer; }
 .stcol.on { box-shadow: 0 0 0 3px #3b2a18; }
+.stcol.stemo { background: #fff8e8; font-size: 18px; line-height: 24px; width: 36px; height: 36px; }
+.fairy { animation: fairy 1.2s ease-in-out infinite; }
+.fairy.f1 { animation-delay: .4s; } .fairy.f2 { animation-delay: .8s; }
+@keyframes fairy { 50% { opacity: .25; } }
 #drive .dname .odo { display: block; font-size: 12px; font-weight: 800; color: #6b5a40; margin-top: 2px; }
 .card.writer { max-width: 760px; }
 .wshow { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: flex-end; min-height: 92px; padding: 10px; margin: 4px 0 12px; background: #eaf6e4; border-radius: 18px; box-shadow: inset 0 2px 6px rgba(0,0,0,.08); }
@@ -6826,7 +6830,8 @@ function puff(tr, type) {
   const { q, a } = locoPose(tr);
   const off = type === "steam" ? 22 : -6;
   const x = q.x + Math.cos(a) * off, y = q.y - q.z * E + Math.sin(a) * off;
-  const st = { steam: ["#fff", .85, 8, 24, 1.1], diesel: ["#a8a8a8", .6, 4, 12, .8], dark: ["#4a4a4a", .7, 5, 16, 1] }[type];
+  const st = { steam: ["#fff", .85, 8, 24, 1.1], diesel: ["#a8a8a8", .6, 4, 12, .8], dark: ["#4a4a4a", .7, 5, 16, 1] }[type].slice();
+  if (stHas("tnHumo") && !tr.ambient) { const o = tnOpt("tnHumo"); st[0] = o === "rainbow" ? `hsl(${(performance.now() / 8) % 360},90%,72%)` : o; st[1] = Math.max(st[1], .8); }
   const c = el("circle", { cx: x, cy: y, r: st[2], fill: st[0], opacity: st[1] }, L.smoke);
   const dx = rnd(-15, 15), dy = rnd(-25, -10);
   addFx(c, st[4], (k, e) => { e.setAttribute("r", st[2] + st[3] * k); e.setAttribute("opacity", st[1] * (1 - k)); e.setAttribute("cx", x + dx * k); e.setAttribute("cy", y + dy * k); });
@@ -7357,6 +7362,7 @@ function handleTap0(wx, wy) {
   if (running && boardTap(wx, wy)) return;
   if (hzTapFix(wx, wy)) return;
   const tr = trainAt(wx, wy), car = carAt(wx, wy);
+  if (tool === "repaint") { if (tr && !tr.wreck) repaintTrain(tr); else { sfx.no(); toast("🪣 ➜ 🚂"); } return; }
   if (running) { // while playing: only switches, horns and honks
     if (tr && !tr.wreck) { hornOf(tr); dailyProg("toot"); drvSelect(tr); say(tr, "hi", true); return; }
     if (car) { sfx.beep(); return; }
@@ -10534,12 +10540,19 @@ const SHOP = [
   { grp: "trenes", id: "arcoiris", price: 60, ic: null, nm: "Tren arcoíris", tx: "Cada vagón de un color, y deja una estela de colores." },
   { grp: "trenes", id: "dragonT", price: 80, ic: null, nm: "Tren dragón", tx: "Una locomotora con cara de dragón que ruge y echa fuego por la boca." },
   { grp: "trenes", id: "bomberosT", price: 100, ic: null, nm: "Tren de bomberos", tx: "Lleva un vagón de agua y apaga los fuegos que hay junto a la vía al pasar." },
-  { grp: "mejoras", id: "pintura", price: 20, ic: "🎨", nm: "Pintura", tx: "Elige el color de tus trenes en la pestaña 🚂 Trenes." },
+  { grp: "mejoras", id: "pintura", price: 20, ic: "🎨", nm: "Pintura", tx: "Elige el color de tus trenes en la pestaña 🚂 Trenes, y repinta cualquier tren con el bote 🪣." },
   { grp: "mejoras", id: "vagones", price: 30, ic: "🚃", nm: "Trenes largos", tx: "Hasta 9 vagones en cada tren (antes 6)." },
   { grp: "mejoras", id: "bocina", price: 15, ic: "📯", nm: "Súper bocina", tx: "El botón 📣 del conductor toca una fanfarria." },
   { grp: "mejoras", id: "turbo2", price: 35, ic: "⚡", nm: "Turbo rápido", tx: "El turbo 🚀 se recarga el doble de rápido." },
   { grp: "estaciones", id: "andenG", price: 50, ic: "🚉", nm: "Estaciones grandes", tx: "Caben el doble de pasajeros y de cajas esperando en cada estación." },
   { grp: "estaciones", id: "cafe", price: 45, ic: "☕", nm: "Café", tx: "Ponlo junto a una estación (pestaña 🏙️ Ciudad): llega más gente a esa estación." },
+  { grp: "trenEstilo", id: "tnSombrero", price: 20, ic: "👑", nm: "Sombreros", tx: "Una corona, una chistera, una gorra o un birrete para tus locomotoras." },
+  { grp: "trenEstilo", id: "tnGafas", price: 12, ic: "😎", nm: "Gafas de sol", tx: "¡Las locomotoras más chulas, con gafas de sol!" },
+  { grp: "trenEstilo", id: "tnDibujos", price: 18, ic: "⭐", nm: "Dibujos en los vagones", tx: "Estrellas, flores, corazones o rayos en todos los vagones." },
+  { grp: "trenEstilo", id: "tnLuces", price: 20, ic: "✨", nm: "Lucecitas", tx: "Luces de colores que parpadean a lo largo del tren." },
+  { grp: "trenEstilo", id: "tnHumo", price: 25, ic: "🌈", nm: "Humo de colores", tx: "Humo rosa, azul, lila o arcoíris." },
+  { grp: "trenEstilo", id: "tnBandera", price: 10, ic: "🚩", nm: "Banderín", tx: "Un banderín que ondea encima de la locomotora." },
+  { grp: "trenEstilo", id: "tnNombre", price: 15, ic: "🏷️", nm: "Placa con el nombre", tx: "Cada tren lleva su nombre en una placa dorada." },
   { grp: "estilo", id: "stPintura", price: 20, ic: "🖌️", nm: "Pinta tu estación", tx: "Elige el color del tejado de tus estaciones." },
   { grp: "estilo", id: "stFlores", price: 15, ic: "🌷", nm: "Jardineras", tx: "Flores de colores a lo largo del andén." },
   { grp: "estilo", id: "stFarolas", price: 20, ic: "🏮", nm: "Farolas", tx: "Farolas antiguas que se encienden de noche." },
@@ -10556,8 +10569,72 @@ function stStyle() { return stStyleV || (stStyleV = Object.assign({ col: "#d9483
 function stHas(id) { try { return owns(id) && !stStyle().off.includes(id); } catch (e) { return false; } }
 function stRoof() { return stHas("stOro") ? "#e3b000" : stHas("stPintura") ? stStyle().col : "#d9483b"; }
 function stSave() { sset(KEY + "-stl", stStyle()); pieces.forEach(p => { if (p.type === "estacion") redrawPiece(p); }); }
-const SHOP_GRP = { trenes: "🚂 Trenes especiales", mejoras: "🔧 Mejoras", estaciones: "🚉 Estaciones", estilo: "🎨 Mi estación" };
+const SHOP_GRP = { trenes: "🚂 Trenes especiales", mejoras: "🔧 Mejoras", estaciones: "🚉 Estaciones", trenEstilo: "🎨 Mi tren", estilo: "🎨 Mi estación" };
 const shopLocked = id => !lvl && SHOP.some(x => x.id === id) && !owns(id);
+
+// =====================================================================
+//  🎨 MY TRAIN: repaint trains with the paint pot, and dress them up with things from the shop
+//  (hats, sunglasses, patterns, fairy lights, coloured smoke, a flag and a name plate)
+// =====================================================================
+const TN_CHOICE = {
+  tnSombrero: { key: "hat", opts: ["👑", "🎩", "🧢", "🎓"] },
+  tnDibujos: { key: "pat", opts: ["⭐", "🌸", "❤️", "⚡"] },
+  tnBandera: { key: "flag", opts: ["🚩", "🏁", "🎏"] },
+  tnHumo: { key: "smoke", opts: ["#ff8fc8", "#8fd3ff", "#c3a6ff", "rainbow"] },
+};
+const tnOpt = id => { const C = TN_CHOICE[id], v = stStyle()[C.key]; return C.opts.includes(v) ? v : C.opts[0]; };
+const tnKey = () => ["tnGafas", "tnSombrero", "tnDibujos", "tnLuces", "tnBandera", "tnNombre"].map(id => stHas(id) ? (TN_CHOICE[id] ? tnOpt(id) : 1) : 0).join("|");
+function tnRefresh() { trains.forEach(tr => { tr.decoKey = null; tr.faceKey = null; }); }
+// 🪣 repaint a train that is already on the board
+function repaintTrain(tr) {
+  const K = KINDS[tr.kind];
+  if (K.rainbow) { sfx.no(); toast("🌈"); return; }
+  tr.c1 = trainPaint || PAINTS[(PAINTS.indexOf(tr.c1) + 1) % PAINTS.length];
+  const types = carTypes(tr.kind, tr.cars);
+  tr.gs.forEach((g, i) => { g.innerHTML = ""; drawCar(g, types[i], carColor(K, i, tr.c1), tr.c2); });
+  tr.faceKey = null; tr.decoKey = null;
+  const { q } = locoPose(tr); try { burst(q.x, q.y - q.z * E - 20, ["🎨", "✨", "💧"], 8); } catch (e) {}
+  slide(300, 900, .25, "sine", .08); autosave();
+}
+// what is drawn on the cars themselves (turns with them): patterns on wagons, fairy lights along the sides
+function tnCarDeco(tr) {
+  const pat = stHas("tnDibujos") ? tnOpt("tnDibujos") : null, lights = stHas("tnLuces");
+  tr.gs.forEach((g, i) => {
+    g.querySelectorAll(".tdeco").forEach(e => e.remove());
+    if (!pat && !lights) return;
+    const d = el("g", { class: "tdeco", "pointer-events": "none" }, g);
+    if (pat && i > 0) [-13, 13].forEach(x => { const t = el("text", { x, y: 1, "font-size": 15, "text-anchor": "middle", "dominant-baseline": "central" }, d); t.textContent = pat; });
+    if (lights) { const C = ["#ff5a5a", "#ffd23f", "#4fd06b", "#4aa8ff", "#ff7ae0"]; let k = 0;
+      [-15, 15].forEach(y => { for (let x = -24; x <= 24; x += 12) { const col = C[(k + i) % C.length]; el("circle", { cx: x, cy: y, r: 5.5, fill: col, opacity: .28, class: "fairy f" + (k % 3) }, d); el("circle", { cx: x, cy: y, r: 2.6, fill: col, stroke: "#fff", "stroke-width": .8, class: "fairy f" + (k % 3) }, d); k++; } }); }
+  });
+}
+// what stands upright above the train (does not turn): hat, flag and name plate
+function trainDecoTick() {
+  const key = tnKey();
+  trains.forEach(tr => {
+    if (tr.decoKey !== key + tr.c1) {
+      tr.decoKey = key + tr.c1; tnCarDeco(tr);
+      if (tr.decoUp) tr.decoUp.remove(); tr.decoUp = null;
+      const hat = stHas("tnSombrero") ? tnOpt("tnSombrero") : null, flag = stHas("tnBandera") ? tnOpt("tnBandera") : null, plate = stHas("tnNombre") && tr.name;
+      if (hat || flag || plate) {
+        const g = tr.decoUp = el("g", { "pointer-events": "none" }, L.ui);
+        if (hat) { const t = el("text", { class: "that", "font-size": 30, "text-anchor": "middle", "dominant-baseline": "central" }, g); t.textContent = hat; }
+        if (flag) { const t = el("text", { class: "tflag", "font-size": 24, "text-anchor": "middle", "dominant-baseline": "central" }, g); t.textContent = flag; }
+        if (plate) { const pg = el("g", { class: "tplate" }, g), w = Math.max(56, plate.length * 11 + 18);
+          el("rect", { x: -w / 2, y: -13, width: w, height: 26, rx: 8, fill: "#2b3a55", stroke: "#e3b000", "stroke-width": 3 }, pg);
+          const t = el("text", { y: 1, "font-size": 15, "font-weight": 900, fill: "#ffe9a8", "text-anchor": "middle", "dominant-baseline": "central" }, pg); t.textContent = plate; }
+      }
+    }
+    if (!tr.decoUp) return;
+    const vis = !(camMode === "cab") && !tr.wreck; tr.decoUp.setAttribute("display", vis ? "inline" : "none"); if (!vis) return;
+    const { q, a } = locoPose(tr), y0 = q.y - q.z * E - jumpLift(tr, 0), at = o => [q.x + Math.cos(a) * o, y0 + Math.sin(a) * o];
+    const h = tr.decoUp.querySelector(".that"), f = tr.decoUp.querySelector(".tflag"), pl = tr.decoUp.querySelector(".tplate");
+    if (h) { const [x, y] = at(-10); h.setAttribute("x", x.toFixed(1)); h.setAttribute("y", (y - 26).toFixed(1)); }
+    if (f) { const [x, y] = at(-24); f.setAttribute("x", x.toFixed(1)); f.setAttribute("y", (y - 22 + Math.sin(performance.now() / 160) * 1.5).toFixed(1)); }
+    if (pl) { const [x, y] = at(4); pl.setAttribute("transform", `translate(${x.toFixed(1)} ${(y + 30).toFixed(1)})`); }
+  });
+}
+{ const rt1 = removeTrain; removeTrain = function (tr) { if (tr.decoUp) tr.decoUp.remove(); rt1(tr); }; }
 function buy(item) {
   if (owns(item.id)) return;
   if (wallet() < item.price) { sfx.no(); return; }
@@ -10589,14 +10666,19 @@ function openShop(focus) {
         const c = addEl(grid, "div", "proj shopit" + (owns(item.id) ? " owned" : "") + (focus === item.id ? " focus" : ""));
         const ic = addEl(c, "div", "sic"); ic.appendChild(shopIcon(item));
         addEl(c, "div", "nm", item.nm); addEl(c, "div", "ds", item.tx);
-        const deco = g === "estilo" && owns(item.id), on = deco && stHas(item.id);
+        const deco = (g === "estilo" || g === "trenEstilo") && owns(item.id), on = deco && stHas(item.id);
         const b = mkBtn(deco ? (on ? LX("✅ Puesto", "✅ On", "✅ Mis", "✅ An") : LX("⬜ Quitado", "⬜ Off", "⬜ Enlevé", "⬜ Aus")) : owns(item.id) ? LX("✅ Es tuyo", "✅ Yours", "✅ À toi") : "🪙 " + item.price, item.nm, e => {
           e.stopPropagation();
-          if (deco) { const S = stStyle(); S.off = on ? [...S.off, item.id] : S.off.filter(x => x !== item.id); stSave(); sfx.click(); openShop(item.id); return; }
-          buy(item); if (g === "estilo") stSave();
+          if (deco) { const S = stStyle(); S.off = on ? [...S.off, item.id] : S.off.filter(x => x !== item.id); stSave(); tnRefresh(); sfx.click(); openShop(item.id); return; }
+          buy(item); if (g === "estilo" || g === "trenEstilo") { stSave(); tnRefresh(); }
         });
         b.className = "b buy"; if (!owns(item.id) && wallet() < item.price) { b.classList.add("off"); b.title = LX(`Te faltan ${item.price - wallet()} monedas`, `${item.price - wallet()} more coins needed`, `Il te manque ${item.price - wallet()} pièces`, `Dir fehlen noch ${item.price - wallet()} Münzen`); }
         c.appendChild(b);
+        if (TN_CHOICE[item.id] && owns(item.id)) { // which hat, pattern, flag or smoke colour
+          const C = TN_CHOICE[item.id], row = addEl(c, "div", "stcols");
+          C.opts.forEach(o => { const s = addEl(row, "button", "stcol" + (tnOpt(item.id) === o ? " on" : "")); if (o[0] === "#" || o === "rainbow") s.style.background = o === "rainbow" ? "conic-gradient(#e74c3c,#f1c40f,#2ecc71,#3498db,#9b59b6,#e74c3c)" : o; else { s.textContent = o; s.classList.add("stemo"); }
+            s.onclick = e => { e.stopPropagation(); stStyle()[C.key] = o; const S = stStyle(); S.off = S.off.filter(x => x !== item.id); stSave(); tnRefresh(); sfx.click(); openShop(item.id); }; });
+        }
         if (item.id === "stPintura" && owns(item.id)) { // the colours to choose from
           const row = addEl(c, "div", "stcols");
           ST_COLS.forEach(col => { const s = addEl(row, "button", "stcol" + (stStyle().col === col ? " on" : "")); s.style.background = col; s.onclick = e => { e.stopPropagation(); stStyle().col = col; const S = stStyle(); S.off = S.off.filter(x => x !== "stPintura"); stSave(); sfx.click(); openShop(item.id); }; });
@@ -11451,6 +11533,9 @@ function faceTick(dt) {
     if (tr.faceG) tr.faceG.remove();
     tr.faceG = el("g", { "pointer-events": "none" }, tr.gs[0]);
     drawFace(tr.faceG, loco, mood, blink);
+    if (stHas("tnGafas") && mood !== "dizzy" && mood !== "sleep") { const ex = FACE_AT[loco][0], sg = el("g", {}, tr.faceG); // 😎
+      [-7.5, 7.5].forEach(y => el("ellipse", { cx: ex, cy: y, rx: 5.5, ry: 6.5, fill: "#1d1d1d", stroke: "#000", "stroke-width": 1 }, sg));
+      el("path", { d: `M${ex} -1.5V1.5`, stroke: "#1d1d1d", "stroke-width": 2.5 }, sg); [-7.5, 7.5].forEach(y => el("ellipse", { cx: ex - 2, cy: y - 2.5, rx: 1.6, ry: 1.2, fill: "#fff", opacity: .7 }, sg)); }
   });
 }
 
@@ -11772,7 +11857,7 @@ function step(dt) {
   if (running && crashTimer <= 0) { computeOcc(); trains.forEach(tr => updateTrain(tr, dt)); checkCollisions(); updateCars(dt); }
   else if (lvl && crashTimer <= 0) trains.forEach(tr => { if (tr.ambient) updateTrain(tr, dt); });
   cowTick(dt); hzTick(dt);
-  updateWrecks(dt); updateCrossings(dt); updateFx(dt); renderTrains(); renderCars(); renderSlopeBtn(); renderContBtn(); drawMini(); tutTick(dt); guideTick(); lvlTick(); camTick(dt);
+  updateWrecks(dt); updateCrossings(dt); updateFx(dt); renderTrains(); renderCars(); renderSlopeBtn(); renderContBtn(); trainDecoTick(); drawMini(); tutTick(dt); guideTick(); lvlTick(); camTick(dt);
 }
 
 // =====================================================================
@@ -11794,6 +11879,7 @@ const INFO = {
   hz_nevada: ["❄️", "Nieve", "Nieva: los trenes van despacio y la nieve tapa la vía. Toca la nieve para quitarla."],
   hz_viento: ["💨", "Viento", "Mucho viento: los árboles junto a la vía pueden caerse encima. Toca el árbol y la grúa lo quita."],
   lapizCalle: ["🖍️", "Lápiz de calles", "Arrastra el dedo y la calle se dibuja sola, con curvas y cruces. Si cruzas una vía recta, pone un paso a nivel. Si empiezas junto a una calle, se une a ella."],
+  repaint: ["🪣", "Repintar", "Elige un color arriba y toca un tren para pintarlo (si no eliges color, cada toque prueba uno nuevo)."],
   lapiz: ["✏️", "Lápiz de vías", "Arrastra el dedo por el tablero y la vía se dibuja sola, con rectas y curvas. Si empiezas junto a una vía suelta, se une a ella; si cruzas tu camino, pone un cruce. Vuelve atrás con el dedo para deshacer."],
   recta: [null, "Recta larga", "Vía recta de 2 casillas."],
   corta: [null, "Recta corta", "Vía recta de 1 casilla, para rellenar huecos."],
@@ -12110,6 +12196,7 @@ function selectTab(id) {
       [null, ...PAINTS].forEach(c => { const b = document.createElement("button"); b.className = "paint" + (c === trainPaint ? " on" : ""); b.style.background = c || "conic-gradient(#e74c3c,#f1c40f,#2ecc71,#3498db,#9b59b6,#e74c3c)"; b.title = c ? "🎨" : "↺";
         b.onclick = () => { trainPaint = c; row.querySelectorAll(".paint").forEach(x => x.classList.toggle("on", x === b)); sfx.click(); }; row.appendChild(b); });
       pal.appendChild(row);
+      pal.appendChild(makeItem("repaint", () => selectTool("repaint"))); // 🪣 repaint trains already on the board
     }
     selectTool("train");
     updateCarsUI();
@@ -14481,6 +14568,16 @@ const LANGS = { es: "🇪🇸", en: "🇬🇧", fr: "🇫🇷", de: "🇩🇪" }
 const I18N = new Map();
 I18N_ROWS.push(["Desafío", "Challenge", "Défi", "Wettkampf"], ["Pegatinas", "Stickers", "Autocollants", "Sticker"], ["Foto de mi circuito", "Photo of my railway", "Photo de mon circuit", "Foto von meiner Strecke"], ["Toca una pieza o un tren para quitarlo. Mantén pulsada la goma para borrarlo todo.", "Tap a piece or a train to remove it. Hold the eraser down to clear everything.", "Touche une pièce ou un train pour l'enlever. Garde le doigt sur la gomme pour tout effacer.", "Tippe ein Teil oder einen Zug an, um es wegzunehmen. Halte den Radierer gedrückt, um alles zu löschen."]);
 I18N_ROWS.push(["Letras", "Letters", "Lettres", "Buchstaben"]);
+I18N_ROWS.push(["🎨 Mi tren", "🎨 My train", "🎨 Mon train", "🎨 Mein Zug"],
+  ["Sombreros", "Hats", "Chapeaux", "Hüte"], ["Una corona, una chistera, una gorra o un birrete para tus locomotoras.", "A crown, a top hat, a cap or a graduation cap for your engines.", "Une couronne, un haut-de-forme, une casquette ou une toque pour tes locomotives.", "Eine Krone, ein Zylinder, eine Mütze oder ein Doktorhut für deine Loks."],
+  ["Gafas de sol", "Sunglasses", "Lunettes de soleil", "Sonnenbrille"], ["¡Las locomotoras más chulas, con gafas de sol!", "The coolest engines, in sunglasses!", "Les locomotives les plus cool, avec des lunettes de soleil !", "Die coolsten Loks, mit Sonnenbrille!"],
+  ["Dibujos en los vagones", "Wagon patterns", "Motifs sur les wagons", "Muster auf den Wagen"], ["Estrellas, flores, corazones o rayos en todos los vagones.", "Stars, flowers, hearts or lightning bolts on every wagon.", "Des étoiles, des fleurs, des cœurs ou des éclairs sur tous les wagons.", "Sterne, Blumen, Herzen oder Blitze auf allen Wagen."],
+  ["Lucecitas", "Fairy lights", "Guirlandes", "Lichterkette"], ["Luces de colores que parpadean a lo largo del tren.", "Coloured lights twinkling all along the train.", "Des lumières de couleur qui clignotent tout le long du train.", "Bunte Lichter, die am ganzen Zug blinken."],
+  ["Humo de colores", "Coloured smoke", "Fumée colorée", "Bunter Rauch"], ["Humo rosa, azul, lila o arcoíris.", "Pink, blue, lilac or rainbow smoke.", "De la fumée rose, bleue, lilas ou arc-en-ciel.", "Rosa, blauer, lila oder Regenbogen-Rauch."],
+  ["Banderín", "Flag", "Fanion", "Fähnchen"], ["Un banderín que ondea encima de la locomotora.", "A little flag waving on top of the engine.", "Un fanion qui flotte sur la locomotive.", "Ein Fähnchen, das auf der Lok flattert."],
+  ["Placa con el nombre", "Name plate", "Plaque avec le nom", "Namensschild"], ["Cada tren lleva su nombre en una placa dorada.", "Every train shows its name on a golden plate.", "Chaque train porte son nom sur une plaque dorée.", "Jeder Zug trägt seinen Namen auf einem goldenen Schild."],
+  ["Repintar", "Repaint", "Repeindre", "Umlackieren"], ["Elige un color arriba y toca un tren para pintarlo (si no eliges color, cada toque prueba uno nuevo).", "Pick a colour above and tap a train to paint it (with no colour picked, each tap tries a new one).", "Choisis une couleur en haut et touche un train pour le peindre (sans couleur choisie, chaque toucher en essaie une nouvelle).", "Wähle oben eine Farbe und tippe einen Zug an, um ihn anzumalen (ohne gewählte Farbe probiert jeder Tipp eine neue)."],
+  ["Elige el color de tus trenes en la pestaña 🚂 Trenes, y repinta cualquier tren con el bote 🪣.", "Choose your trains' colour in the 🚂 Trains tab, and repaint any train with the 🪣 pot.", "Choisis la couleur de tes trains dans l'onglet 🚂 Trains, et repeins n'importe quel train avec le pot 🪣.", "Wähle die Farbe deiner Züge im Tab 🚂 Züge und lackiere jeden Zug mit dem Topf 🪣 um."]);
 I18N_ROWS.push(["Desvío de dos curvas", "Double-curve switch", "Aiguillage à deux courbes", "Doppelkurven-Weiche"],
   ["Dos curvas en una casilla: si el tren viene del oeste sale por el norte, y si viene del este sale por el sur. Tócalo con ✋ para darle la vuelta (oeste→sur, este→norte), o ponle un 🧠 para que cambie solo.",
    "Two curves in one square: a train coming from the west leaves to the north, and one from the east leaves to the south. Tap it with ✋ to swap them (west→south, east→north), or give it a 🧠 so it changes by itself.",
