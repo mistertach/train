@@ -962,6 +962,36 @@ body.cab.boardable #cabBoard { display: flex; }
 .shop2 .chip.full { background: #ffe9a8; }
 .shop2 .scard.owned { background: linear-gradient(180deg, #f3fff0, #fff); }
 @media (max-height: 500px) { .shop2 .sview { min-height: 140px; } .shop2 .sview svg { height: 130px; } .shop2 .sttl { font-size: 22px; } .shop2 .stab2 { padding: 6px 10px; font-size: 14px; } }
+
+/* 🔨 toolbox */
+#hzPlay, #drive .funMore, #drive .funPick { display: none !important; }
+#tbBtn { position: fixed; left: calc(10px + env(safe-area-inset-left)); bottom: calc(104px + env(safe-area-inset-bottom)); z-index: 31; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; display: none; padding: 0; }
+body.playing #tbBtn { display: grid; place-items: center; }
+body.playing.driving #tbBtn { bottom: calc(230px + env(safe-area-inset-bottom)); }
+#tbBtn.on { background: #ffd34d; box-shadow: 0 0 0 3px #b8860b; }
+#tbDeck { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 30; display: none; flex-direction: column; align-items: center; gap: 10px; pointer-events: none;
+  width: min(560px, calc(100vw - 24px)); font-family: -apple-system, system-ui, "Segoe UI", sans-serif; }
+body.playing.tbOpen #tbDeck { display: flex; }
+body.playing.tbOpen #playHint { display: none !important; }
+body.playing.driving #tbDeck { width: min(520px, calc(100vw - 2 * 215px)); left: calc(50% + 60px); }
+#tbDeck > * { pointer-events: auto; }
+#tbDeck .tbGo { width: 84px; height: 84px; border-radius: 50%; background: #fff; border: 5px solid rgba(255,255,255,.6); background-clip: padding-box; box-shadow: 0 0 0 4px rgba(0,0,0,.16), 0 8px 24px rgba(0,0,0,.25); font-size: 42px; display: grid; place-items: center; padding: 0; cursor: pointer; }
+#tbDeck .tbGo:active { transform: scale(.92); }
+#tbDeck .tbGo.pop { animation: tbPop .25s ease-out; }
+#tbDeck .tbGo.armed { box-shadow: 0 0 0 5px #ff9f0a, 0 8px 24px rgba(0,0,0,.25); animation: hglow 1.2s ease-in-out infinite; }
+@keyframes tbPop { 50% { transform: scale(.88); } }
+#tbDeck .tbStrip { max-width: 100%; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+#tbDeck .tbStrip::-webkit-scrollbar { display: none; }
+#tbDeck .tbRow { display: flex; align-items: center; gap: 2px; padding: 5px calc(50% - 50px); width: max-content; }
+#tbDeck .tbOval { max-width: 100%; border-radius: 22px; background: rgba(0,0,0,.45); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); overflow: hidden; }
+#tbDeck .tbStrip { -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); }
+#tbDeck .tbChip { border: 0; background: none; color: rgba(255,255,255,.92); font: 700 13px/1 -apple-system, system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; padding: 7px 10px; border-radius: 16px; display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; }
+#tbDeck .tbChip span { font-size: 18px; }
+#tbDeck .tbChip.on { color: #ffb340; background: rgba(255,255,255,.14); }
+#tbDeck .tbChip.lit::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #ffd34d; margin-left: 2px; }
+#tbDeck .tbDot { width: 1px; height: 20px; background: rgba(255,255,255,.3); margin: 0 4px; }
+@media (max-height: 500px) { #tbBtn { width: 46px; height: 46px; font-size: 23px; bottom: calc(12px + env(safe-area-inset-bottom)); } body.playing.driving #tbBtn { bottom: calc(180px + env(safe-area-inset-bottom)); }
+  #tbDeck .tbGo { width: 64px; height: 64px; font-size: 32px; } #tbDeck .tbChip { font-size: 11px; padding: 6px 8px; } #tbDeck .tbChip span { font-size: 16px; } }
 </style>
 </head>
 <body>
@@ -10233,18 +10263,8 @@ drv.querySelectorAll("button").forEach(b => b.onclick = e => { e.stopPropagation
   ["pointerup", "pointercancel"].forEach(ev => dial.addEventListener(ev, () => { if (dragging && moved) tone([520], "sine", 0, .05, .05); dragging = false; }));
 }
 let funKind = "horn", funHeld = false;
-{ const hb = drv.querySelector('[data-a="horn"]'), pick = document.createElement("div"), more = document.createElement("button");
-  pick.className = "funPick"; more.className = "b funMore"; more.textContent = "▾"; more.title = "Elegir: bocina o lanzar"; drv.appendChild(pick); drv.appendChild(more);
-  const fill = () => { pick.innerHTML = ""; [["horn", "📣"], ...SPITS].forEach(([k, em]) => { const b = document.createElement("button"); b.className = "b" + (k === funKind ? " on" : ""); b.textContent = em;
-    b.onclick = e => { e.stopPropagation(); funKind = k; if (k !== "horn") spitKind = k; hb.textContent = em; hb.classList.toggle("spitting", k !== "horn"); drv.classList.remove("funopen"); sfx.click(); drvAction("horn"); }; pick.appendChild(b); }); };
-  more.onclick = e => { e.stopPropagation(); unlockAudio(); fill(); drv.classList.toggle("funopen"); sfx.click(); };
-  let ht = null; hb.addEventListener("pointerdown", () => { funHeld = false; ht = setTimeout(() => { funHeld = true; fill(); drv.classList.add("funopen"); sfx.toc(); }, 450); });
-  ["pointerup", "pointerleave", "pointercancel"].forEach(ev => hb.addEventListener(ev, () => clearTimeout(ht)));
-}
 function drvAction(a) {
   const tr = drvSel;
-  if (a === "horn" && funHeld) { funHeld = false; return; }
-  if (a === "horn" && funKind !== "horn") { drv.classList.remove("funopen"); spit(); dailyProg("toot"); return; }
   if (a === "close") { drvSelect(null); sfx.click(); return; }
   if (!tr || !trains.includes(tr)) { drvSelect(null); return; }
   if (tr.thr == null) { tr.thr = 1; tr.vm = 1; tr.tm = 1; }
@@ -11441,6 +11461,58 @@ function spit() {
   btn.onclick = e => { e.stopPropagation(); if (held) return; if (box.classList.contains("open")) { box.classList.remove("open"); return; } spit(); };
   const pk = document.createElement("button"); pk.className = "b spitMore"; pk.textContent = "▾"; pk.title = "Elegir qué lanza"; pk.onclick = e => { e.stopPropagation(); box.classList.toggle("open"); sfx.click(); }; box.appendChild(pk);
 }
+
+
+// =====================================================================
+//  🔨 THE TOOLBOX (while playing): a hammer in the corner opens one big button and,
+//  under it, a strip of things to choose (like the camera's PHOTO / VIDEO): the horn, things
+//  to throw, surprises and the weather. Choose one in the strip, press the big button.
+// =====================================================================
+const TOOLS = () => {
+  const t = [];
+  if (trains.some(x => !x.ambient)) t.push(["horn", "📣", LX("Bocina", "Horn", "Klaxon", "Hupe")], ["agua", "💧", LX("Agua", "Water", "Eau", "Wasser")], ["burbujas", "🫧", LX("Burbujas", "Bubbles", "Bulles", "Blasen")],
+    ["musica", "🎵", LX("Música", "Music", "Musique", "Musik")], ["letras", "🔤", LX("Letras", "Letters", "Lettres", "Buchstaben")], ["pelotas", "🔴", LX("Pelotas", "Balls", "Balles", "Bälle")], ["confeti", "🎉", LX("Confeti", "Confetti", "Confettis", "Konfetti")]);
+  if (hzOn && !lvl) t.push(["hz_fuego", "🔥", LX("Fuego", "Fire", "Feu", "Feuer")], ["hz_vaca", "🐄", LX("Vaca", "Cow", "Vache", "Kuh")], ["hz_rocas", "🪨", LX("Rocas", "Rocks", "Rochers", "Felsen")],
+    ["hz_sol", "☀️", LX("Sol", "Sun", "Soleil", "Sonne")], ["hz_lluvia", "🌧️", LX("Lluvia", "Rain", "Pluie", "Regen")], ["hz_nevada", "❄️", LX("Nieve", "Snow", "Neige", "Schnee")], ["hz_viento", "💨", LX("Viento", "Wind", "Vent", "Wind")], ["hz_noche", "🌙", LX("Noche", "Night", "Nuit", "Nacht")]);
+  return t;
+};
+let toolSel = "horn";
+const tbBtn = document.createElement("button"); tbBtn.id = "tbBtn"; tbBtn.className = "b"; tbBtn.textContent = "🔨"; tbBtn.title = "🔨"; document.body.appendChild(tbBtn);
+const tbDeck = document.createElement("div"); tbDeck.id = "tbDeck"; tbDeck.innerHTML = `<button class="tbGo"></button><div class="tbOval"><div class="tbStrip"><div class="tbRow"></div></div></div>`; document.body.appendChild(tbDeck);
+const tbGo = tbDeck.querySelector(".tbGo"), tbRow = tbDeck.querySelector(".tbRow"), tbStrip = tbDeck.querySelector(".tbStrip");
+function tbRender(scroll) {
+  const T = TOOLS(); if (!T.find(t => t[0] === toolSel) && T.length) toolSel = T[0][0];
+  const cur = T.find(t => t[0] === toolSel);
+  tbGo.textContent = cur ? cur[1] : "🔨"; tbGo.classList.toggle("armed", !!playHz && playHz === toolSel);
+  tbRow.innerHTML = "";
+  T.forEach(([id, em, nm], i) => {
+    if (i && (id === "hz_fuego" || id === "hz_sol")) tbRow.appendChild(Object.assign(document.createElement("i"), { className: "tbDot" }));
+    const b = document.createElement("button"); b.className = "tbChip" + (id === toolSel ? " on" : "") + ((id === "hz_noche" && night) || (WX[id] && WX[id] === weather && id !== "hz_sol") ? " lit" : "");
+    b.innerHTML = `<span>${em}</span>${nm}`; b.dataset.id = id;
+    b.onclick = e => { e.stopPropagation(); unlockAudio(); toolSel = id; if (playHz && playHz !== id) playHz = null; tbRender(true); sfx.click(); };
+    tbRow.appendChild(b);
+  });
+  const on = tbRow.querySelector(".tbChip.on");
+  if (on && scroll) tbStrip.scrollTo({ left: on.offsetLeft + on.offsetWidth / 2 - tbStrip.clientWidth / 2, behavior: "smooth" });
+}
+function tbOpen(open) {
+  document.body.classList.toggle("tbOpen", open); tbBtn.classList.toggle("on", open);
+  if (!open) { playHz = null; return; }
+  tbRender(false); const on = tbRow.querySelector(".tbChip.on"); if (on) tbStrip.scrollLeft = on.offsetLeft + on.offsetWidth / 2 - tbStrip.clientWidth / 2;
+}
+tbBtn.onclick = e => { e.stopPropagation(); unlockAudio(); tbOpen(!document.body.classList.contains("tbOpen")); sfx.click(); };
+tbGo.onclick = e => {
+  e.stopPropagation(); unlockAudio(); const id = toolSel;
+  tbGo.classList.remove("pop"); void tbGo.offsetWidth; tbGo.classList.add("pop");
+  if (id === "horn") { const tr = spitTrain(); if (!tr) { sfx.no(); return; } if (drvSel === tr) drvAction("horn"); else hornOf(tr); dailyProg("toot"); return; }
+  if (SPITS.some(([k]) => k === id)) { spitKind = id; spit(); dailyProg("toot"); return; }
+  if (id === "hz_noche") { setNight(!night); refreshHzPlay(); tbRender(false); return; }
+  if (WX[id]) { setWeather(WX[id] === weather && id !== "hz_sol" ? WX.hz_sol : WX[id]); refreshHzPlay(); tbRender(false); return; }
+  playHz = playHz === id ? null : id; tbRender(false); sfx.click(); if (playHz) toast(tbGo.textContent + " 👉");
+};
+// after a surprise lands on the board, the big button stops waiting
+{ const p0 = playHzTap; playHzTap = function (wx, wy) { const r = p0(wx, wy); if (r) tbRender(false); return r; }; }
+{ const r0 = refreshHzPlay; refreshHzPlay = function () { r0(); tbBtn.style.display = TOOLS().length ? "" : "none"; if (!TOOLS().length) tbOpen(false); }; }
 
 
 // =====================================================================
