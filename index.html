@@ -243,10 +243,11 @@
   .it .lockb { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); background: #fff3b0; border: 2px solid #e0b000; border-radius: 10px; font-size: 12px; font-weight: 800; padding: 0 4px; white-space: nowrap; }
   .paints { display: grid; grid-template-columns: repeat(6, 26px); gap: 5px; align-content: center; }
   .paints .paint { width: 26px; height: 26px; border-radius: 50%; border: 3px solid #a8743d; cursor: pointer; padding: 0; }
-  .paintBox { display: flex; flex-direction: column; gap: 4px; flex: 0 0 auto; }
-  #palette .paintBox .it { flex: 0 0 auto; width: 44px; height: 36px; border-width: 3px; border-radius: 12px; font-size: 22px; }
-  .paintPick { width: 44px; height: 36px; border-radius: 12px; border: 3px solid #e6cfa6; background: #fff8e8; cursor: pointer; padding: 0; display: grid; place-items: center; box-shadow: 0 3px 0 rgba(0,0,0,.15); }
-  .paintPick span { width: 26px; height: 26px; border-radius: 50%; border: 3px solid #a8743d; }
+  .paints .paint.custom { position: relative; display: grid; place-items: center; overflow: hidden; background: conic-gradient(from 90deg, #ff5a5a, #ffd23f, #4fd06b, #4aa8ff, #b06bff, #ff5a5a); }
+  .paints .paint.custom span { width: 16px; height: 16px; border-radius: 50%; background: #fff; color: #3b2a18; font: 900 14px/16px sans-serif; text-align: center; }
+  .paints .paint.custom input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; border: 0; padding: 0; }
+  #palette .it.paintPick { flex: 0 0 44px; width: 44px; min-width: 0; padding: 0; box-sizing: border-box; border-width: 3px; overflow: hidden; }
+  #palette .it.paintPick svg { width: 38px; height: 60px; flex: none; }
   .paintPop { position: fixed; z-index: 40; background: #fff8e8; border: 4px solid #a8743d; border-radius: 18px; padding: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.3); }
   .paints .paint.on { box-shadow: 0 0 0 3px #ffd400; transform: scale(1.12); }
   html, body, button, input { font-family: ui-rounded, "SF Pro Rounded", "Nunito", "Varela Round", "Arial Rounded MT Bold", system-ui, -apple-system, sans-serif; }
@@ -7431,7 +7432,7 @@ function handleTap0(wx, wy) {
   if (running && boardTap(wx, wy)) return;
   if (hzTapFix(wx, wy)) return;
   const tr = trainAt(wx, wy), car = carAt(wx, wy);
-  if (tool === "repaint") { if (tr && !tr.wreck) repaintTrain(tr); else { sfx.no(); toast("🪣 ➜ 🚂"); } return; }
+  if (tool === "repaint") { if (tr && !tr.wreck) repaintTrain(tr); else { sfx.no(); toast("🖌️ ➜ 🚂"); } return; }
   if (running) { // while playing: only switches, horns and honks
     if (tr && !tr.wreck) { hornOf(tr); dailyProg("toot"); drvSelect(tr); say(tr, "hi", true); return; }
     if (car) { sfx.beep(); return; }
@@ -7907,7 +7908,7 @@ function refreshSide() {
     carPoses(tr).forEach((q, i) => {
       const r = Math.floor(q.y / T); if (r < r0 || r > r1 || q.x < X0 || q.x > X0 + D) return;
       const cg = el("g", { transform: `translate(${X(q.x).toFixed(1)} ${Y(q.z).toFixed(1)}) scale(${sc.toFixed(3)})` }, g);
-      sideSprite(cg, tr.kind, i === (tr.flip ? tr.cars : 0), tr.c1, tr.c2, 62); drawn++;
+      sideSprite(cg, tr.kind, i === (tr.flip ? tr.cars : 0), carColor(KINDS[tr.kind], tr.flip ? tr.cars - i : i, tr.c1), tr.c2, 62); drawn++;
     });
   });
   if (!drawn && p.geo.routes.length) {
@@ -10715,7 +10716,7 @@ const SHOP = [
   { grp: "trenes", id: "arcoiris", price: 60, ic: null, nm: "Tren arcoíris", tx: "Cada vagón de un color, y deja una estela de colores." },
   { grp: "trenes", id: "dragonT", price: 80, ic: null, nm: "Tren dragón", tx: "Una locomotora con cara de dragón que ruge y echa fuego por la boca." },
   { grp: "trenes", id: "bomberosT", price: 100, ic: null, nm: "Tren de bomberos", tx: "Lleva un vagón de agua y apaga los fuegos que hay junto a la vía al pasar." },
-  { grp: "mejoras", id: "pintura", price: 20, ic: "🎨", nm: "Pintura", tx: "Elige el color de tus trenes en la pestaña 🚂 Trenes, y repinta cualquier tren con el bote 🪣." },
+  { grp: "mejoras", id: "pintura", price: 20, ic: "🎨", nm: "Pintura", tx: "Pinta tus trenes con el pincel 🖌️ de la pestaña 🚂 Trenes: de cualquier color, o de arcoíris." },
   { grp: "mejoras", id: "vagones", price: 30, ic: "🚃", nm: "Trenes largos", tx: "Hasta 9 vagones en cada tren (antes 6)." },
   { grp: "mejoras", id: "bocina", price: 15, ic: "📯", nm: "Súper bocina", tx: "El botón 📣 del conductor toca una fanfarria." },
   { grp: "mejoras", id: "turbo2", price: 35, ic: "⚡", nm: "Turbo rápido", tx: "El turbo 🚀 se recarga el doble de rápido." },
@@ -10934,7 +10935,7 @@ function openShop(focus) {
 function shopChoices(box, it, render) {
   let opts = null, cur = null, apply = null;
   if (TN_CHOICE[it.id]) { const C = TN_CHOICE[it.id]; opts = C.opts; cur = shopTry[it.id] || tnOpt(it.id); apply = o => { stStyle()[C.key] = o; const S = stStyle(); S.off = S.off.filter(x => x !== it.id); stSave(); tnRefresh(); }; }
-  if (it.id === "pintura") { opts = PAINTS; cur = shopTry.pintura || trainPaint; apply = o => { trainPaint = o; if (!lvl && curTab === "trenes") selectTab("trenes"); }; }
+  if (it.id === "pintura") { opts = [...PAINTS, "rainbow"]; cur = shopTry.pintura || trainPaint; apply = o => { trainPaint = o; if (!lvl && curTab === "trenes") selectTab("trenes"); }; }
   if (it.id === "stPintura") { opts = ST_COLS; cur = shopTry.stPintura || stStyle().col; apply = o => { stStyle().col = o; const S = stStyle(); S.off = S.off.filter(x => x !== "stPintura"); stSave(); }; }
   if (!opts) return;
   const row = addEl(box, "div", "stcols");
@@ -11737,7 +11738,8 @@ function lockItem(d, id) {
 let trainPaint = null;
 const PAINTS = ["#e74c3c", "#e67e22", "#f1c40f", "#2ecc71", "#1abc9c", "#3498db", "#9b59b6", "#ff6fb5", "#ffffff", "#222222"];
 const RAINBOW = ["#e74c3c", "#e67e22", "#f1c40f", "#2ecc71", "#3498db", "#4b3fc4", "#9b59b6"];
-const carColor = (K, i, c1) => K.rainbow && i > 0 ? RAINBOW[(i - 1) % RAINBOW.length] : c1;
+const carColor = (K, i, c1) => K.rainbow && i > 0 ? RAINBOW[(i - 1) % RAINBOW.length] : c1 === "rainbow" ? RAINBOW[i % RAINBOW.length] : c1;
+const solidC1 = c => c === "rainbow" ? RAINBOW[0] : c;
 // the fire train sprays the fires it passes
 function fireTrainTick(dt) {
   trains.forEach(tr => {
@@ -12155,7 +12157,7 @@ const INFO = {
   hz_nevada: ["❄️", "Nieve", "Nieva: los trenes van despacio y la nieve tapa la vía. Toca la nieve para quitarla."],
   hz_viento: ["💨", "Viento", "Mucho viento: los árboles junto a la vía pueden caerse encima. Toca el árbol y la grúa lo quita."],
   lapizCalle: ["🖍️", "Lápiz de calles", "Arrastra el dedo y la calle se dibuja sola, con curvas y cruces. Si cruzas una vía recta, pone un paso a nivel. Si empiezas junto a una calle, se une a ella."],
-  repaint: ["🪣", "Repintar", "Elige un color arriba y toca un tren para pintarlo (si no eliges color, cada toque prueba uno nuevo)."],
+  repaint: ["🖌️", "Pincel", "Elige un color y toca un tren para pintarlo. El arcoíris pinta cada vagón de un color, y ➕ te deja elegir cualquier color."],
   lapiz: ["✏️", "Lápiz de vías", "Arrastra el dedo por el tablero y la vía se dibuja sola, con rectas y curvas. Si empiezas junto a una vía suelta, se une a ella; si cruzas tu camino, pone un cruce. Vuelve atrás con el dedo para deshacer."],
   recta: [null, "Recta larga", "Vía recta de 2 casillas."],
   corta: [null, "Recta corta", "Vía recta de 1 casilla, para rellenar huecos."],
@@ -12467,23 +12469,33 @@ function selectTab(id) {
     const cs = document.createElement("div"); cs.id = "carsShow"; pal.appendChild(cs);
     pal.appendChild(mk("➕", "Más vagones", () => { const mx = owns("vagones") ? 9 : 6; if (trainCars >= mx && !owns("vagones")) { openShop("vagones"); return; } trainCars = Math.min(mx, trainCars + 1); updateCarsUI(); sfx.click(); }));
     if (owns("pintura")) {
-      // one round button with the chosen colour; tapping it opens the colours in a little bubble above
-      const RB = "conic-gradient(#e74c3c,#f1c40f,#2ecc71,#3498db,#9b59b6,#e74c3c)";
-      const pk = document.createElement("button"); pk.className = "paintPick"; pk.title = "🎨";
-      const dot = document.createElement("span"); pk.appendChild(dot); const showDot = () => { dot.style.background = trainPaint || RB; }; showDot();
+      // 🖌️ one brush, its tip dipped in the chosen colour: tap it to pick a colour, then tap a train to paint it
+      const pk = document.createElement("div"); pk.className = "it paintPick"; pk.dataset.id = "repaint"; pk.title = nameOf("repaint"); pal.appendChild(pk);
+      const tip = () => trainPaint === "rainbow" ? "url(#rbTip)" : trainPaint || "#e74c3c";
+      const drawBrush = () => { pk.innerHTML = `<svg viewBox="0 0 60 60"><defs><linearGradient id="rbTip" x1="0" y1="0" x2="1" y2="1">${RAINBOW.map((c, i) => `<stop offset="${(i / 6).toFixed(2)}" stop-color="${c}"/>`).join("")}</linearGradient></defs>
+        <g transform="rotate(35 30 30)"><rect x="25" y="30" width="10" height="26" rx="5" fill="#c98a4b" stroke="#8a5a2b" stroke-width="2"/><rect x="23.5" y="24" width="13" height="9" rx="2" fill="#cfd6df" stroke="#8b96a3" stroke-width="2"/>
+        <path d="M23.5 25 C 22 14, 27 6, 30 2 C 33 6, 38 14, 36.5 25 Z" fill="${tip()}" stroke="rgba(0,0,0,.35)" stroke-width="2"/><path d="M27 20 C 27 14, 29 9, 30.5 7" stroke="rgba(255,255,255,.6)" stroke-width="2.5" fill="none" stroke-linecap="round"/></g>
+        <circle cx="46" cy="49" r="5" fill="${tip()}" stroke="rgba(0,0,0,.25)" stroke-width="1.5"/></svg>`; };
+      drawBrush();
+      const RB = "linear-gradient(135deg," + RAINBOW.join(",") + ")";
       pk.onclick = e => {
-        e.stopPropagation(); const old = document.querySelector(".paintPop"); if (old) { old.remove(); return; }
+        e.stopPropagation(); unlockAudio(); selectTool("repaint");
+        const old = document.querySelector(".paintPop"); if (old) { old.remove(); return; }
         const pop = document.createElement("div"); pop.className = "paintPop paints"; document.body.appendChild(pop);
-        [null, ...PAINTS].forEach(c => { const b = document.createElement("button"); b.className = "paint" + (c === trainPaint ? " on" : ""); b.style.background = c || RB; b.title = c ? "🎨" : "↺";
-          b.onclick = ev => { ev.stopPropagation(); trainPaint = c; showDot(); pop.remove(); sfx.click(); }; pop.appendChild(b); });
+        const close = () => { pop.remove(); document.removeEventListener("pointerdown", off, true); };
+        const choose = c => { trainPaint = c; drawBrush(); close(); sfx.click(); toast("🖌️ ➜ 🚂"); };
+        [...PAINTS, "rainbow"].forEach(c => { const b = document.createElement("button"); b.className = "paint" + (c === trainPaint ? " on" : ""); b.style.background = c === "rainbow" ? RB : c; b.title = c === "rainbow" ? "🌈" : "🎨";
+          b.onclick = ev => { ev.stopPropagation(); choose(c); }; pop.appendChild(b); });
+        // ➕ any colour at all (the system colour picker)
+        const own = trainPaint && trainPaint !== "rainbow" && !PAINTS.includes(trainPaint);
+        const lb = document.createElement("label"); lb.className = "paint custom" + (own ? " on" : ""); lb.title = "➕ 🎨"; if (own) lb.style.background = trainPaint;
+        lb.innerHTML = `<span>＋</span><input type="color" value="${own ? trainPaint : "#ff8800"}">`; pop.appendChild(lb);
+        const inp = lb.querySelector("input"); inp.onclick = ev => ev.stopPropagation(); inp.onchange = () => choose(inp.value);
         const r = pk.getBoundingClientRect(), w = pop.offsetWidth;
         pop.style.left = Math.max(6, Math.min(innerWidth - w - 6, r.left + r.width / 2 - w / 2)) + "px"; pop.style.bottom = (innerHeight - r.top + 8) + "px";
-        const off = ev => { if (!pop.contains(ev.target)) { pop.remove(); document.removeEventListener("pointerdown", off, true); } };
-        setTimeout(() => document.addEventListener("pointerdown", off, true)); sfx.click();
+        const off = ev => { if (!pop.contains(ev.target) && ev.target !== pk && !pk.contains(ev.target)) close(); };
+        setTimeout(() => document.addEventListener("pointerdown", off, true));
       };
-      // colour on top, 🪣 below (repaints trains already on the board): one narrow column, so it fits at the end of the wagons row
-      const box = document.createElement("div"); box.className = "paintBox"; box.appendChild(pk);
-      box.appendChild(makeItem("repaint", () => selectTool("repaint"))); pal.appendChild(box);
     }
     selectTool("train");
     updateCarsUI();
@@ -12567,7 +12579,7 @@ function drawMini() {
   });
   trains.forEach(tr => {
     const q = (tr.wreck || carPoses(tr))[tr.flip ? tr.gs.length - 1 : 0];
-    mctx.fillStyle = tr.c1 === "#f4f6fb" ? tr.c2 : tr.c1; mctx.strokeStyle = "#fff"; mctx.lineWidth = 2;
+    mctx.fillStyle = tr.c1 === "#f4f6fb" ? tr.c2 : solidC1(tr.c1); mctx.strokeStyle = "#fff"; mctx.lineWidth = 2;
     mctx.beginPath(); mctx.arc(ox + q.x * s, oy + q.y * s, 5 * (devicePixelRatio || 1), 0, 7); mctx.fill(); mctx.stroke();
   });
   const [x0, y0] = toWorld(0, 0), [x1, y1] = toWorld(innerWidth, innerHeight);
@@ -14863,8 +14875,8 @@ I18N_ROWS.push(["🎨 Mi tren", "🎨 My train", "🎨 Mon train", "🎨 Mein Zu
   ["Humo de colores", "Coloured smoke", "Fumée colorée", "Bunter Rauch"], ["Humo rosa, azul, lila o arcoíris.", "Pink, blue, lilac or rainbow smoke.", "De la fumée rose, bleue, lilas ou arc-en-ciel.", "Rosa, blauer, lila oder Regenbogen-Rauch."],
   ["Banderín", "Flag", "Fanion", "Fähnchen"], ["Un banderín que ondea encima de la locomotora.", "A little flag waving on top of the engine.", "Un fanion qui flotte sur la locomotive.", "Ein Fähnchen, das auf der Lok flattert."],
   ["Placa con el nombre", "Name plate", "Plaque avec le nom", "Namensschild"], ["Cada tren lleva su nombre en una placa dorada.", "Every train shows its name on a golden plate.", "Chaque train porte son nom sur une plaque dorée.", "Jeder Zug trägt seinen Namen auf einem goldenen Schild."],
-  ["Repintar", "Repaint", "Repeindre", "Umlackieren"], ["Elige un color arriba y toca un tren para pintarlo (si no eliges color, cada toque prueba uno nuevo).", "Pick a colour above and tap a train to paint it (with no colour picked, each tap tries a new one).", "Choisis une couleur en haut et touche un train pour le peindre (sans couleur choisie, chaque toucher en essaie une nouvelle).", "Wähle oben eine Farbe und tippe einen Zug an, um ihn anzumalen (ohne gewählte Farbe probiert jeder Tipp eine neue)."],
-  ["Elige el color de tus trenes en la pestaña 🚂 Trenes, y repinta cualquier tren con el bote 🪣.", "Choose your trains' colour in the 🚂 Trains tab, and repaint any train with the 🪣 pot.", "Choisis la couleur de tes trains dans l'onglet 🚂 Trains, et repeins n'importe quel train avec le pot 🪣.", "Wähle die Farbe deiner Züge im Tab 🚂 Züge und lackiere jeden Zug mit dem Topf 🪣 um."]);
+  ["Pincel", "Paintbrush", "Pinceau", "Pinsel"], ["Elige un color y toca un tren para pintarlo. El arcoíris pinta cada vagón de un color, y ➕ te deja elegir cualquier color.", "Pick a colour and tap a train to paint it. The rainbow paints every wagon a different colour, and ➕ lets you choose any colour.", "Choisis une couleur et touche un train pour le peindre. L'arc-en-ciel peint chaque wagon d'une couleur, et ➕ te laisse choisir n'importe quelle couleur.", "Wähle eine Farbe und tippe einen Zug an, um ihn anzumalen. Der Regenbogen malt jeden Wagen anders an, und mit ➕ wählst du jede Farbe."],
+  ["Pinta tus trenes con el pincel 🖌️ de la pestaña 🚂 Trenes: de cualquier color, o de arcoíris.", "Paint your trains with the 🖌️ brush in the 🚂 Trains tab: any colour, or rainbow.", "Peins tes trains avec le pinceau 🖌️ de l'onglet 🚂 Trains : de n'importe quelle couleur, ou arc-en-ciel.", "Male deine Züge mit dem Pinsel 🖌️ im Tab 🚂 Züge an: in jeder Farbe oder als Regenbogen."]);
 I18N_ROWS.push(["Desvío de dos curvas", "Double-curve switch", "Aiguillage à deux courbes", "Doppelkurven-Weiche"],
   ["Dos curvas en una casilla: si el tren viene del oeste sale por el norte, y si viene del este sale por el sur. Tócalo con ✋ para darle la vuelta (oeste→sur, este→norte), o ponle un 🧠 para que cambie solo.",
    "Two curves in one square: a train coming from the west leaves to the north, and one from the east leaves to the south. Tap it with ✋ to swap them (west→south, east→north), or give it a 🧠 so it changes by itself.",
