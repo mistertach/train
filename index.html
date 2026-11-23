@@ -892,6 +892,63 @@ body.cab.boardable #cabBoard { display: flex; }
 #bottom #palette.onerow { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; overscroll-behavior-x: contain; }
 #bottom #palette.onerow > * { flex-shrink: 0; }
 @media (max-height: 500px) { .wkey { height: 40px; font-size: 20px; } .wshow { min-height: 60px; } .wshow .wtile svg { height: 50px; } }
+/* 🛍️ the shop */
+.card.shop2 { max-width: 860px; width: min(96vw, 860px); padding: 14px 16px 18px; background: linear-gradient(180deg, #fff9ec, #fff); --tc: #e8576f; }
+.shop2 .shd { display: flex; align-items: center; gap: 12px; }
+.shop2 .sttl { font-size: 30px; font-weight: 900; color: #3b2a18; flex: 1; }
+.shop2 .spurse { font-size: 28px; font-weight: 900; background: linear-gradient(180deg, #fff3b0, #ffd54a); border: 4px solid #e0b000; border-radius: 999px; padding: 2px 18px; box-shadow: 0 4px 0 #c79600; }
+.shop2 .sx { width: 48px !important; height: 48px; border-radius: 50%; }
+.shop2 .searn { font-size: 14px; color: #7a5a2a; margin: 4px 0 10px; }
+.shop2 .stabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; }
+.shop2 .stab2 { flex: 1 0 auto; display: flex; align-items: center; gap: 6px; border: 0; border-radius: 18px; padding: 10px 14px; background: color-mix(in srgb, var(--c) 14%, #fff); color: color-mix(in srgb, var(--c) 80%, #000); font-weight: 900; font-size: 17px; cursor: pointer; box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--c) 30%, #fff); }
+.shop2 .stab2.on { background: var(--c); color: #fff; box-shadow: 0 4px 0 color-mix(in srgb, var(--c) 65%, #000); transform: translateY(-2px); }
+.shop2 .stab2 .ti { font-size: 24px; }
+.shop2 .stab2 .tc { font-size: 12px; opacity: .8; background: rgba(255,255,255,.35); border-radius: 999px; padding: 1px 7px; }
+.shop2 .sstage { display: flex; gap: 14px; align-items: stretch; margin: 10px 0 12px; flex-wrap: wrap; }
+.shop2 .sview { position: relative; flex: 1 1 340px; min-height: 190px; border-radius: 22px; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, #8fd0ff 0%, #c9ecff 55%, #7cc36a 55%, #5fae4f 100%); box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--tc) 55%, #fff); }
+.shop2 .sview svg { width: 92%; height: 180px; animation: sbob 2.4s ease-in-out infinite; overflow: visible; filter: drop-shadow(0 8px 6px rgba(0,0,0,.18)); }
+.shop2 .sview.station { background: linear-gradient(180deg, #8fd0ff 0%, #c9ecff 40%, #7cc36a 40%, #5fae4f 100%); }
+.shop2 .sview.station svg { height: 200px; }
+@keyframes sbob { 50% { transform: translateY(-6px); } }
+.shop2 .sview::before { content: ""; position: absolute; left: 8%; top: 12%; width: 70px; height: 22px; background: #fff; border-radius: 20px; opacity: .85; box-shadow: 40px 6px 0 -4px #fff, 240px -4px 0 -2px #fff, 280px 4px 0 -6px #fff; animation: scloud 14s linear infinite; }
+@keyframes scloud { from { transform: translateX(-40px); } to { transform: translateX(60px); } }
+.shop2 .strying { position: absolute; top: 10px; right: 12px; background: rgba(255,255,255,.9); border-radius: 999px; padding: 3px 12px; font-weight: 800; font-size: 14px; color: #7a3a8a; }
+.shop2 .sspark { position: absolute; top: 14px; left: 18px; font-size: 30px; animation: sbob 1.2s ease-in-out infinite; }
+.shop2 .sbadge { position: absolute; bottom: 12px; left: 14px; background: #fff; border-radius: 14px; padding: 4px 12px; font-size: 22px; font-weight: 900; }
+.shop2 .pvpuff { animation: pvpuff 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes pvpuff { 0% { transform: translate(0, 0) scale(.5); opacity: .9; } 100% { transform: translate(-30px, -60px) scale(2.2); opacity: 0; } }
+.shop2 .pvhat { animation: sbob 1.4s ease-in-out infinite; }
+.shop2 .sinfo { flex: 1 1 260px; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+.shop2 .snm { font-size: 26px; font-weight: 900; color: #3b2a18; }
+.shop2 .sds { font-size: 16px; color: #5a4a35; }
+.shop2 .stcols { justify-content: flex-start; }
+.shop2 .scta { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.shop2 .sbtn { width: auto !important; height: 56px; padding: 0 26px; font-size: 21px; font-weight: 900; border-radius: 999px; }
+.shop2 .sbtn.buy { background: linear-gradient(165deg, #6fd36f, #2e9d4f); color: #fff; box-shadow: 0 5px 0 #1f6e35; animation: hglow 1.8s ease-in-out infinite; }
+.shop2 .sbtn.buy.no { background: #eee; color: #888; box-shadow: 0 4px 0 #ccc; animation: none; }
+.shop2 .sbtn.full { background: linear-gradient(165deg, #ffd54a, #f5a623); color: #3b2a18; box-shadow: 0 5px 0 #c77d00; }
+.shop2 .sbtn.on { background: #d8f3d0; } .shop2 .sbtn.off { background: #f2f2f2; }
+.shop2 .sown { font-size: 20px; font-weight: 900; color: #2e9d4f; }
+.shop2 .sneed { position: relative; width: 220px; height: 22px; border-radius: 999px; background: #f1e6cf; overflow: hidden; font-size: 13px; font-weight: 800; color: #6b4a1a; display: flex; align-items: center; justify-content: center; }
+.shop2 .sneed .sfill { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, #ffd54a, #f5b301); }
+.shop2 .sneed span { position: relative; }
+.shop2 .sgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.shop2 .sgrid.wide { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.shop2 .scard { position: relative; background: #fff; border-radius: 18px; padding: 10px 8px 12px; text-align: center; cursor: pointer; box-shadow: 0 3px 0 #e8dcc4, 0 4px 12px rgba(0,0,0,.06); display: flex; flex-direction: column; align-items: center; gap: 4px; transition: transform .12s; }
+.shop2 .scard:hover { transform: translateY(-2px); }
+.shop2 .scard.sel { box-shadow: 0 0 0 4px var(--tc), 0 6px 14px rgba(0,0,0,.12); transform: translateY(-3px); }
+.shop2 .scard .sic { height: 54px; display: flex; align-items: center; justify-content: center; }
+.shop2 .scard .sic svg { height: 44px; width: 120px; }
+.shop2 .scard .sic span { font-size: 40px !important; }
+.shop2 .scard .nm { font-weight: 900; font-size: 14px; color: #3b2a18; line-height: 1.15; }
+.shop2 .scard .ds { font-size: 13px; color: #6b5a40; }
+.shop2 .chip { font-size: 14px; font-weight: 900; padding: 2px 10px; border-radius: 999px; background: #f1e6cf; color: #8a6a3a; }
+.shop2 .chip.ok { background: #fff3b0; color: #7a5800; box-shadow: inset 0 0 0 2px #e0b000; }
+.shop2 .chip.own { background: #d8f3d0; color: #2e7d32; }
+.shop2 .chip.full { background: #ffe9a8; }
+.shop2 .scard.owned { background: linear-gradient(180deg, #f3fff0, #fff); }
+@media (max-height: 500px) { .shop2 .sview { min-height: 140px; } .shop2 .sview svg { height: 130px; } .shop2 .sttl { font-size: 22px; } .shop2 .stab2 { padding: 6px 10px; font-size: 14px; } }
 </style>
 </head>
 <body>
@@ -10565,8 +10622,8 @@ const SHOP = [
 ];
 // how the stations look: what you bought from the 🎨 shelf, the roof colour and what you switched off
 var ST_COLS = ["#d9483b", "#2b6cb0", "#2e8b57", "#8e44ad", "#ff8c1a", "#f06292", "#3a3a3a"], stStyleV = null;
-function stStyle() { return stStyleV || (stStyleV = Object.assign({ col: "#d9483b", off: [] }, sget(KEY + "-stl") || {})); }
-function stHas(id) { try { return owns(id) && !stStyle().off.includes(id); } catch (e) { return false; } }
+function stStyle() { const s = stStyleV || (stStyleV = Object.assign({ col: "#d9483b", off: [] }, sget(KEY + "-stl") || {})); return typeof stPrev !== "undefined" && stPrev ? Object.assign({}, s, stPrev.vals) : s; }
+function stHas(id) { if (typeof stPrev !== "undefined" && stPrev && stPrev.on && id in stPrev.on) return stPrev.on[id]; try { return owns(id) && !stStyle().off.includes(id); } catch (e) { return false; } }
 function stRoof() { return stHas("stOro") ? "#e3b000" : stHas("stPintura") ? stStyle().col : "#d9483b"; }
 function stSave() { sset(KEY + "-stl", stStyle()); pieces.forEach(p => { if (p.type === "estacion") redrawPiece(p); }); }
 const SHOP_GRP = { trenes: "🚂 Trenes especiales", mejoras: "🔧 Mejoras", estaciones: "🚉 Estaciones", trenEstilo: "🎨 Mi tren", estilo: "🎨 Mi estación" };
@@ -10597,16 +10654,23 @@ function repaintTrain(tr) {
   slide(300, 900, .25, "sine", .08); autosave();
 }
 // what is drawn on the cars themselves (turns with them): patterns on wagons, fairy lights along the sides
-function tnCarDeco(tr) {
+function tnCarDeco(tr) { tr.gs.forEach((g, i) => carDecoInto(g, i)); }
+function glassesInto(fg, loco) {
+  if (!stHas("tnGafas") || !FACE_AT[loco]) return;
+  const ex = FACE_AT[loco][0], sg = el("g", {}, fg); // 😎
+  [-7.5, 7.5].forEach(y => el("ellipse", { cx: ex, cy: y, rx: 5.5, ry: 6.5, fill: "#1d1d1d", stroke: "#000", "stroke-width": 1 }, sg));
+  el("path", { d: `M${ex} -1.5V1.5`, stroke: "#1d1d1d", "stroke-width": 2.5 }, sg); [-7.5, 7.5].forEach(y => el("ellipse", { cx: ex - 2, cy: y - 2.5, rx: 1.6, ry: 1.2, fill: "#fff", opacity: .7 }, sg));
+}
+function carDecoInto(g, i) {
   const pat = stHas("tnDibujos") ? tnOpt("tnDibujos") : null, lights = stHas("tnLuces");
-  tr.gs.forEach((g, i) => {
+  {
     g.querySelectorAll(".tdeco").forEach(e => e.remove());
     if (!pat && !lights) return;
     const d = el("g", { class: "tdeco", "pointer-events": "none" }, g);
     if (pat && i > 0) [-13, 13].forEach(x => { const t = el("text", { x, y: 1, "font-size": 15, "text-anchor": "middle", "dominant-baseline": "central" }, d); t.textContent = pat; });
     if (lights) { const C = ["#ff5a5a", "#ffd23f", "#4fd06b", "#4aa8ff", "#ff7ae0"]; let k = 0;
       [-15, 15].forEach(y => { for (let x = -24; x <= 24; x += 12) { const col = C[(k + i) % C.length]; el("circle", { cx: x, cy: y, r: 5.5, fill: col, opacity: .28, class: "fairy f" + (k % 3) }, d); el("circle", { cx: x, cy: y, r: 2.6, fill: col, stroke: "#fff", "stroke-width": .8, class: "fairy f" + (k % 3) }, d); k++; } }); }
-  });
+  }
 }
 // what stands upright above the train (does not turn): hat, flag and name plate
 function trainDecoTick() {
@@ -10650,45 +10714,134 @@ function shopIcon(item) {
   if (KINDS[item.id]) { const K = KINDS[item.id]; return trainIcon(item.id, 3, K.c1[0], K.c2[0]); }
   const s = document.createElement("span"); s.textContent = item.ic; s.style.fontSize = "44px"; return s;
 }
+// =====================================================================
+//  🛍️ THE SHOP: tabs (most exciting first), a stage that shows what you'd get, and try-on before you buy
+// =====================================================================
+const SHOP_TABS = [
+  { id: "tren", ic: "🚂", nm: ["Mi tren", "My train", "Mon train", "Mein Zug"], col: "#e8576f", stage: "train", items: ["pintura", "tnSombrero", "tnGafas", "tnDibujos", "tnLuces", "tnHumo", "tnBandera", "tnNombre"] },
+  { id: "especiales", ic: "✨", nm: ["Trenes especiales", "Special trains", "Trains spéciaux", "Spezialzüge"], col: "#8e44ad", stage: "kind", items: ["oro", "arcoiris", "dragonT", "bomberosT"] },
+  { id: "estacion", ic: "🏡", nm: ["Mi estación", "My station", "Ma gare", "Mein Bahnhof"], col: "#2a9d55", stage: "station", items: ["stPintura", "stOro", "stFlores", "stFarolas", "stBancos", "stBanderas", "stReloj", "stFuente", "stPerro", "andenG", "cafe"] },
+  { id: "mejoras", ic: "🔧", nm: ["Mejoras", "Upgrades", "Améliorations", "Extras"], col: "#2f6fd1", stage: null, items: ["vagones", "bocina", "turbo2"] },
+];
+let shopTab = "tren";
+const shopSel = {}, shopTry = {};
+const shopItem = id => SHOP.find(x => x.id === id);
+const shopDeco = it => it.grp === "trenEstilo" || it.grp === "estilo";
+const shopFullOnly = it => shopDeco(it) && !isFull(); // the makeovers come with the full version (try-on is free)
+// try-on: the shop paints its previews with these on top of what you own
+var stPrev = null;
+const withPrev = (pv, fn) => { const o = stPrev; stPrev = pv; try { return fn(); } finally { stPrev = o; } };
+function trainLook(kind, c1) {
+  const K = KINDS[kind], cars = 3, types = carTypes(kind, cars - 1), s = el("svg", { xmlns: NS, viewBox: `${-50 - (cars - 1) * SP} -78 ${110 + (cars - 1) * SP} 128` });
+  if (stHas("tnHumo")) { const o = tnOpt("tnHumo"), x = K.loco === "steam" ? 22 : -6; [0, 1, 2].forEach(k => el("circle", { cx: x, cy: -6, r: 9, fill: o === "rainbow" ? ["#ff8fc8", "#ffd23f", "#8fd3ff"][k] : o, class: "pvpuff", style: `animation-delay:${k * .55}s` }, s)); }
+  types.forEach((type, i) => {
+    const g = el("g", { transform: `translate(${-i * SP} 0)` }, s); drawCar(g, type, carColor(K, i, c1), K.c2[0]);
+    if (i === 0) { const fg = el("g", {}, g); drawFace(fg, K.loco, "happy", false); glassesInto(fg, K.loco); }
+    carDecoInto(g, i);
+  });
+  if (stHas("tnSombrero")) { const t = el("text", { x: -10, y: -30, "font-size": 30, "text-anchor": "middle", "dominant-baseline": "central", class: "pvhat" }, s); t.textContent = tnOpt("tnSombrero"); }
+  if (stHas("tnBandera")) { const t = el("text", { x: -26, y: -26, "font-size": 24, "text-anchor": "middle", "dominant-baseline": "central" }, s); t.textContent = tnOpt("tnBandera"); }
+  if (stHas("tnNombre")) { const nm = LX("Rayo", "Flash", "Éclair", "Blitz"), w = nm.length * 11 + 20, pg = el("g", { transform: "translate(4 36)" }, s);
+    el("rect", { x: -w / 2, y: -13, width: w, height: 26, rx: 8, fill: "#2b3a55", stroke: "#e3b000", "stroke-width": 3 }, pg);
+    const t = el("text", { y: 1, "font-size": 15, "font-weight": 900, fill: "#ffe9a8", "text-anchor": "middle", "dominant-baseline": "central" }, pg); t.textContent = nm; }
+  return s;
+}
+function stationLook() {
+  const s = pieceIcon("estacion"); s.setAttribute("viewBox", "-14 -78 232 162"); s.style.overflow = "visible"; return s;
+}
 function openShop(focus) {
   if (running) setRunning(false);
+  if (focus) { const T = SHOP_TABS.find(t => t.items.includes(focus)); if (T) { shopTab = T.id; shopSel[T.id] = focus; } }
   openModal(card => {
-    h2(card, "🛍️ Tienda");
-    const top = addEl(card, "div", "shoptop");
-    addEl(top, "div", "purse", "🪙 " + wallet());
-    addEl(top, "p", "", LX("Gana monedas llevando pasajeros 🧍 y cajas 📦 de una estación a otra: cuando el tren para, toca a la gente o las cajas para subirlas.",
-      "Earn coins by carrying passengers 🧍 and boxes 📦 from one station to another: when the train stops, tap the people or boxes to load them.",
-      "Gagne des pièces en transportant des voyageurs 🧍 et des caisses 📦 d'une gare à l'autre : quand le train s'arrête, touche les gens ou les caisses pour les faire monter."));
-    Object.entries(SHOP_GRP).forEach(([g, title]) => {
-      addEl(card, "h3", "", title);
-      const grid = addEl(card, "div", "grid");
-      SHOP.filter(x => x.grp === g).forEach(item => {
-        const c = addEl(grid, "div", "proj shopit" + (owns(item.id) ? " owned" : "") + (focus === item.id ? " focus" : ""));
-        const ic = addEl(c, "div", "sic"); ic.appendChild(shopIcon(item));
-        addEl(c, "div", "nm", item.nm); addEl(c, "div", "ds", item.tx);
-        const deco = (g === "estilo" || g === "trenEstilo") && owns(item.id), on = deco && stHas(item.id);
-        const b = mkBtn(deco ? (on ? LX("✅ Puesto", "✅ On", "✅ Mis", "✅ An") : LX("⬜ Quitado", "⬜ Off", "⬜ Enlevé", "⬜ Aus")) : owns(item.id) ? LX("✅ Es tuyo", "✅ Yours", "✅ À toi") : "🪙 " + item.price, item.nm, e => {
-          e.stopPropagation();
-          if (deco) { const S = stStyle(); S.off = on ? [...S.off, item.id] : S.off.filter(x => x !== item.id); stSave(); tnRefresh(); sfx.click(); openShop(item.id); return; }
-          buy(item); if (g === "estilo" || g === "trenEstilo") { stSave(); tnRefresh(); }
-        });
-        b.className = "b buy"; if (!owns(item.id) && wallet() < item.price) { b.classList.add("off"); b.title = LX(`Te faltan ${item.price - wallet()} monedas`, `${item.price - wallet()} more coins needed`, `Il te manque ${item.price - wallet()} pièces`, `Dir fehlen noch ${item.price - wallet()} Münzen`); }
-        c.appendChild(b);
-        if (TN_CHOICE[item.id] && owns(item.id)) { // which hat, pattern, flag or smoke colour
-          const C = TN_CHOICE[item.id], row = addEl(c, "div", "stcols");
-          C.opts.forEach(o => { const s = addEl(row, "button", "stcol" + (tnOpt(item.id) === o ? " on" : "")); if (o[0] === "#" || o === "rainbow") s.style.background = o === "rainbow" ? "conic-gradient(#e74c3c,#f1c40f,#2ecc71,#3498db,#9b59b6,#e74c3c)" : o; else { s.textContent = o; s.classList.add("stemo"); }
-            s.onclick = e => { e.stopPropagation(); stStyle()[C.key] = o; const S = stStyle(); S.off = S.off.filter(x => x !== item.id); stSave(); tnRefresh(); sfx.click(); openShop(item.id); }; });
-        }
-        if (item.id === "stPintura" && owns(item.id)) { // the colours to choose from
-          const row = addEl(c, "div", "stcols");
-          ST_COLS.forEach(col => { const s = addEl(row, "button", "stcol" + (stStyle().col === col ? " on" : "")); s.style.background = col; s.onclick = e => { e.stopPropagation(); stStyle().col = col; const S = stStyle(); S.off = S.off.filter(x => x !== "stPintura"); stSave(); sfx.click(); openShop(item.id); }; });
-        }
-        if (!owns(item.id) && wallet() < item.price) addEl(c, "div", "need", LX(`Te faltan 🪙 ${item.price - wallet()}`, `🪙 ${item.price - wallet()} to go`, `Encore 🪙 ${item.price - wallet()}`, `Noch 🪙 ${item.price - wallet()}`));
+    card.classList.add("shop2");
+    const render = () => {
+      card.innerHTML = "";
+      const tab = SHOP_TABS.find(t => t.id === shopTab) || SHOP_TABS[0];
+      card.style.setProperty("--tc", tab.col);
+      // header: title, purse, how to earn
+      const hd = addEl(card, "div", "shd");
+      addEl(hd, "div", "sttl", "🛍️ " + LX("Tienda", "Shop", "Boutique", "Laden"));
+      addEl(hd, "div", "spurse", "🪙 " + wallet());
+      const x = mkBtn("✖️", "Cerrar", closeModal); x.className = "b sx"; hd.appendChild(x);
+      addEl(card, "div", "searn", LX("Gana monedas llevando pasajeros 🧍 y pedidos 🚚 de una estación a otra.", "Earn coins by carrying passengers 🧍 and delivery orders 🚚 between stations.", "Gagne des pièces en transportant des voyageurs 🧍 et des commandes 🚚 entre les gares.", "Verdiene Münzen mit Fahrgästen 🧍 und Lieferaufträgen 🚚 zwischen Bahnhöfen."));
+      // tabs
+      const tabs = addEl(card, "div", "stabs");
+      SHOP_TABS.forEach(T => {
+        const own = T.items.filter(owns).length, b = addEl(tabs, "button", "stab2" + (T.id === tab.id ? " on" : ""));
+        b.style.setProperty("--c", T.col);
+        addEl(b, "span", "ti", T.ic); addEl(b, "span", "tn", LX(...T.nm)); addEl(b, "span", "tc", own + "/" + T.items.length);
+        b.onclick = e => { e.stopPropagation(); shopTab = T.id; sfx.click(); render(); };
       });
-    });
-    const close = mkBtn("✖️ Cerrar", "Cerrar", closeModal); close.style.width = "auto"; close.style.padding = "0 20px"; close.style.fontSize = "18px"; close.style.marginTop = "12px"; card.appendChild(close);
-    if (focus) setTimeout(() => { const f = card.querySelector(".focus"); if (f) f.scrollIntoView({ block: "center" }); }, 30);
+      const items = tab.items.map(shopItem).filter(Boolean);
+      const sel = shopItem(shopSel[tab.id]) || items[0];
+      // the stage: a big look at what you're choosing
+      if (tab.stage && sel) {
+        const st = addEl(card, "div", "sstage");
+        const view = addEl(st, "div", "sview " + tab.stage);
+        const pv = { on: {}, vals: {} };
+        if (TN_CHOICE[sel.id]) { pv.on[sel.id] = true; pv.vals[TN_CHOICE[sel.id].key] = shopTry[sel.id] || tnOpt(sel.id); }
+        else if (sel.id === "stPintura") { pv.on.stPintura = true; pv.on.stOro = false; pv.vals.col = shopTry.stPintura || stStyle().col; }
+        else if (shopDeco(sel)) pv.on[sel.id] = true;
+        if (tab.stage === "train") view.appendChild(withPrev(pv, () => trainLook("vapor", shopTry.pintura || trainPaint || KINDS.vapor.c1[0])));
+        else if (tab.stage === "kind") { const K = KINDS[sel.id]; view.appendChild(trainIcon(sel.id, 3, K.c1[0], K.c2[0])); addEl(view, "div", "sspark", "✨"); }
+        else { view.appendChild(withPrev(pv, stationLook)); if (sel.id === "cafe") addEl(view, "div", "sbadge", "☕"); if (sel.id === "andenG") addEl(view, "div", "sbadge", "🧍🧍🧍🧍 ✖️2"); }
+        if (!owns(sel.id)) addEl(view, "div", "strying", LX("👀 Probando", "👀 Trying on", "👀 Essayage", "👀 Anprobe"));
+        const info = addEl(st, "div", "sinfo");
+        addEl(info, "div", "snm", sel.ic && !KINDS[sel.id] ? sel.ic + " " + trn(sel.nm) : trn(sel.nm));
+        addEl(info, "div", "sds", trn(sel.tx));
+        shopChoices(info, sel, render);
+        shopCta(info, sel, render);
+      }
+      // the shelf
+      const grid = addEl(card, "div", "sgrid" + (tab.stage ? "" : " wide"));
+      items.forEach(it => {
+        const c = addEl(grid, "div", "scard" + (it === sel && tab.stage ? " sel" : "") + (owns(it.id) ? " owned" : ""));
+        const ic = addEl(c, "div", "sic"); ic.appendChild(shopIcon(it));
+        addEl(c, "div", "nm", trn(it.nm));
+        if (owns(it.id)) addEl(c, "div", "chip own", shopDeco(it) ? (stHas(it.id) ? "✅" : "⬜") : "✅");
+        else if (shopFullOnly(it)) addEl(c, "div", "chip full", "⭐");
+        else addEl(c, "div", "chip" + (wallet() >= it.price ? " ok" : ""), "🪙 " + it.price);
+        if (tab.stage) c.onclick = e => { e.stopPropagation(); shopSel[tab.id] = it.id; sfx.click(); render(); };
+        else { addEl(c, "div", "ds", trn(it.tx)); shopCta(c, it, render); }
+      });
+    };
+    render();
   });
+}
+// colours, hats, patterns… tap to try them on; if it's yours, it changes your trains or stations too
+function shopChoices(box, it, render) {
+  let opts = null, cur = null, apply = null;
+  if (TN_CHOICE[it.id]) { const C = TN_CHOICE[it.id]; opts = C.opts; cur = shopTry[it.id] || tnOpt(it.id); apply = o => { stStyle()[C.key] = o; const S = stStyle(); S.off = S.off.filter(x => x !== it.id); stSave(); tnRefresh(); }; }
+  if (it.id === "pintura") { opts = PAINTS; cur = shopTry.pintura || trainPaint; apply = o => { trainPaint = o; if (!lvl && curTab === "trenes") selectTab("trenes"); }; }
+  if (it.id === "stPintura") { opts = ST_COLS; cur = shopTry.stPintura || stStyle().col; apply = o => { stStyle().col = o; const S = stStyle(); S.off = S.off.filter(x => x !== "stPintura"); stSave(); }; }
+  if (!opts) return;
+  const row = addEl(box, "div", "stcols");
+  opts.forEach(o => {
+    const s = addEl(row, "button", "stcol" + (cur === o ? " on" : ""));
+    if (o[0] === "#" || o === "rainbow") s.style.background = o === "rainbow" ? "conic-gradient(#e74c3c,#f1c40f,#2ecc71,#3498db,#9b59b6,#e74c3c)" : o; else { s.textContent = o; s.classList.add("stemo"); }
+    s.onclick = e => { e.stopPropagation(); shopTry[it.id] = o; if (owns(it.id)) apply(o); tone([660 + opts.indexOf(o) * 60], "triangle", 0, .08, .07); render(); };
+  });
+}
+// the big button: buy / ask a grown-up / on-off / yours
+function shopCta(box, it, render) {
+  const row = addEl(box, "div", "scta");
+  if (owns(it.id)) {
+    if (shopDeco(it)) { const on = stHas(it.id), b = addEl(row, "button", "b sbtn " + (on ? "on" : "off"), on ? LX("✅ Puesto", "✅ On", "✅ Mis", "✅ An") : LX("⬜ Quitado", "⬜ Off", "⬜ Enlevé", "⬜ Aus"));
+      b.onclick = e => { e.stopPropagation(); const S = stStyle(); S.off = on ? [...S.off, it.id] : S.off.filter(x => x !== it.id); stSave(); tnRefresh(); sfx.click(); render(); }; }
+    else addEl(row, "div", "sown", LX("✅ ¡Es tuyo!", "✅ It's yours!", "✅ C'est à toi !", "✅ Gehört dir!"));
+    return;
+  }
+  if (shopFullOnly(it)) { const b = addEl(row, "button", "b sbtn full", "⭐ " + LX("Con la versión completa", "With the full version", "Avec la version complète", "Mit der Vollversion")); b.onclick = e => { e.stopPropagation(); askGrownUp(); }; return; }
+  const can = wallet() >= it.price, b = addEl(row, "button", "b sbtn buy" + (can ? "" : " no"), (can ? LX("¡Lo quiero! ", "I want it! ", "Je le veux ! ", "Will ich! ") : "") + "🪙 " + it.price);
+  b.onclick = e => { e.stopPropagation(); if (!can) { sfx.no(); return; }
+    if (shopTry[it.id] != null) shopChoicesApply(it, shopTry[it.id]); // keep what was tried on
+    if (it.id === "pintura" && shopTry.pintura) trainPaint = shopTry.pintura;
+    buy(it); if (shopDeco(it)) { stSave(); tnRefresh(); } };
+  if (!can) { const need = it.price - wallet(), bar = addEl(row, "div", "sneed"); const f = addEl(bar, "div", "sfill"); f.style.width = Math.round(100 * wallet() / it.price) + "%"; addEl(bar, "span", "", LX(`Te faltan 🪙 ${need}`, `🪙 ${need} to go`, `Encore 🪙 ${need}`, `Noch 🪙 ${need}`)); }
+}
+function shopChoicesApply(it, o) { // keep what was tried on when it's bought
+  if (TN_CHOICE[it.id]) stStyle()[TN_CHOICE[it.id].key] = o;
+  if (it.id === "stPintura") stStyle().col = o;
 }
 // =====================================================================
 //  ⭐ FULL VERSION: the free game is flat track, country scenery, three trains, the village
@@ -11533,9 +11686,7 @@ function faceTick(dt) {
     if (tr.faceG) tr.faceG.remove();
     tr.faceG = el("g", { "pointer-events": "none" }, tr.gs[0]);
     drawFace(tr.faceG, loco, mood, blink);
-    if (stHas("tnGafas") && mood !== "dizzy" && mood !== "sleep") { const ex = FACE_AT[loco][0], sg = el("g", {}, tr.faceG); // 😎
-      [-7.5, 7.5].forEach(y => el("ellipse", { cx: ex, cy: y, rx: 5.5, ry: 6.5, fill: "#1d1d1d", stroke: "#000", "stroke-width": 1 }, sg));
-      el("path", { d: `M${ex} -1.5V1.5`, stroke: "#1d1d1d", "stroke-width": 2.5 }, sg); [-7.5, 7.5].forEach(y => el("ellipse", { cx: ex - 2, cy: y - 2.5, rx: 1.6, ry: 1.2, fill: "#fff", opacity: .7 }, sg)); }
+    if (mood !== "dizzy" && mood !== "sleep") glassesInto(tr.faceG, loco);
   });
 }
 
