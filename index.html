@@ -840,6 +840,9 @@ body.playing.driving #hzPlay { bottom: calc(190px + env(safe-area-inset-bottom))
 #intro .itap { position: absolute; right: calc(22px + env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom)); font-size: 34px; opacity: 0; animation: itap 1.2s ease-in-out 3.4s infinite; }
 @keyframes iword { 0% { transform: translateX(-50%) translateY(-140%) scale(.6) rotate(-6deg); opacity: 0; } 60% { transform: translateX(-50%) translateY(6%) scale(1.06, .94); opacity: 1; } 80% { transform: translateX(-50%) translateY(-3%) scale(.98, 1.03); } 100% { transform: translateX(-50%); opacity: 1; } }
 @media (max-aspect-ratio: 5/4) { #intro .iword { top: 17vh; width: min(84vw, 640px); } }
+#intro .ipre { position: absolute; inset: 0; background: #4fb0ee; display: grid; place-items: center; pointer-events: none; animation: ipre .55s ease-in .3s both; }
+#intro .ipre > svg { width: 300px; height: 300px; }
+@keyframes ipre { to { opacity: 0; visibility: hidden; } }
 @keyframes itap { 0%, 100% { opacity: .0; transform: translateY(0); } 40% { opacity: .85; transform: translateY(-8px); } }
 /* sky */
 #intro .sRays { animation: sRays 14s linear infinite; }
@@ -11748,6 +11751,28 @@ function introSceneSVG() {
   ${[[640, 150], [960, 140], [560, 260], [1040, 250], [800, 60]].map(([x, y], i) => `<path class="sSpark" style="--i:${i}" d="M${x} ${y - 22}Q${x + 3} ${y - 3} ${x + 22} ${y}Q${x + 3} ${y + 3} ${x} ${y + 22}Q${x - 3} ${y + 3} ${x - 22} ${y}Q${x - 3} ${y - 3} ${x} ${y - 22}Z" fill="#fff6a0" stroke="#e0b000" stroke-width="3"/>`).join("")}
 </svg>`;
 }
+// the app's launch picture (and the first moment of the intro): the name, Coco on a bit of track, a soft rainbow.
+// The same drawing is exported as train-app/assets/splash-icon.png, so the native splash turns into the intro seamlessly.
+function introBadgeSVG() {
+  const tmp = document.createElement("div"); tmp.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg">${introCocoSVG()}</svg>`;
+  tmp.querySelectorAll(".cP, .cTootP, .cNote, .cO, .cWink, .cLamp").forEach(e => e.remove());
+  const coco = tmp.firstChild.innerHTML.replace(/url\(#cRed\)/g, "url(#bRed)").replace(/url\(#cFace\)/g, "url(#bFace)");
+  const w = document.querySelector(".hlogo .hword"), word = w ? w.outerHTML.replace('class="hword"', 'x="70" y="40" width="860" height="228"').replace(/<svg /, '<svg xmlns="http://www.w3.org/2000/svg" ') : "";
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1200" height="1200">
+  <defs><linearGradient id="bRed" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c0392b"/><stop offset=".45" stop-color="#e74c3c"/><stop offset="1" stop-color="#b03224"/></linearGradient>
+    <radialGradient id="bFace" cx=".42" cy=".38" r=".7"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#f3dfb8"/></radialGradient>
+    <radialGradient id="bGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+  <circle cx="500" cy="640" r="440" fill="url(#bGlow)"/>
+  <g opacity=".42" fill="none" stroke-width="30">${["#ff5a4f", "#ffb340", "#ffe066", "#6cc04a", "#4aa8ff", "#a57bff"].map((c, i) => `<path d="M${90 + i * 30} 880A${410 - i * 30} ${410 - i * 30} 0 0 1 ${910 - i * 30} 880" stroke="${c}"/>`).join("")}</g>
+  ${[[150, 520, .9], [850, 470, .75]].map(([x, y, k]) => `<g transform="translate(${x} ${y}) scale(${k})"><path d="M-90 30a40 40 0 0 1 20-62 55 55 0 0 1 100-16 42 42 0 0 1 64 40 30 30 0 0 1-6 38Z" fill="#fff"/></g>`).join("")}
+  <path d="M230 940L330 880H670L770 940Z" fill="#6cb850"/><path d="M200 950Q500 900 800 950V960H200Z" fill="#4f9e3a"/>
+  ${[0, 1, 2, 3, 4].map(i => `<rect x="${300 - i * 8}" y="${884 + i * 13}" width="${400 + i * 16}" height="${8 + i * 2}" rx="4" fill="#a8743d" stroke="#7a4a2a" stroke-width="2"/>`).join("")}
+  <path d="M400 882L360 952M600 882L640 952" stroke="#8a8f96" stroke-width="7" stroke-linecap="round"/>
+  <g transform="translate(500 925) scale(.8)">${coco}</g>
+  <circle cx="528" cy="455" r="22" fill="#fff"/><circle cx="560" cy="412" r="30" fill="#fff" opacity=".92"/><circle cx="610" cy="372" r="38" fill="#fff" opacity=".8"/>
+  ${word}
+</svg>`;
+}
 // Coco's trip down the hill (the same perspective as the track)
 function introKeyframes() {
   const Y0 = 505, steps = [[0, 0], [20, .3], [42, .55], [62, .78], [76, .93], [84, 1]];
@@ -11757,7 +11782,7 @@ function introKeyframes() {
 function playIntro() {
   if (window.__introDone) return; window.__introDone = true;
   const d = document.createElement("div"); d.id = "intro";
-  d.innerHTML = `<style>${introKeyframes()}</style>${introSceneSVG()}<div class="iword"></div><div class="itap">👆</div>`;
+  d.innerHTML = `<style>${introKeyframes()}</style>${introSceneSVG()}<div class="iword"></div><div class="itap">👆</div><div class="ipre noart">${introBadgeSVG()}</div>`;
   const w = document.querySelector(".hlogo .hword"); if (w) d.querySelector(".iword").appendChild(w.cloneNode(true));
   document.body.appendChild(d);
   // tall screens (an iPad held upright) see more of the meadow, with extra sky above
