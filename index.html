@@ -55,6 +55,14 @@
   .fullsec { background: #fff3b0; border: 4px solid #e0b000; border-radius: 20px; padding: 6px 16px 10px; margin: 8px 0 14px; }
   .fullsec h3 { margin: 8px 0 4px; } .fulllist { margin: 6px 0; padding-left: 4px; list-style: none; font-size: 17px; line-height: 1.6; }
   .buyfull { background: #2e9d4f !important; color: #fff !important; border-color: #1d6b33 !important; font-weight: 900; }
+  .rm.walking .lg { animation: lgA .36s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 0; }
+  .rm.walking .lg.lb { animation-name: lgB; }
+  .rm.walking .bob4 { animation: bob4 .36s ease-in-out infinite alternate; }
+  .rm.walking .wadl { animation: wadl .42s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+  @keyframes lgA { from { transform: rotate(-22deg); } to { transform: rotate(22deg); } }
+  @keyframes lgB { from { transform: rotate(22deg); } to { transform: rotate(-22deg); } }
+  @keyframes bob4 { from { transform: translateY(0); } to { transform: translateY(-2.5px); } }
+  @keyframes wadl { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
   .roam { animation: roam 12s ease-in-out infinite; } .roamf { animation: roamf 12s step-end infinite; transform-box: fill-box; transform-origin: center; }
   @keyframes roam { 0%, 12% { transform: translate(0, 0); } 40%, 52% { transform: translate(26px, 6px); } 80%, 100% { transform: translate(0, 0); } }
   @keyframes roamf { 0% { transform: scaleX(-1); } 46% { transform: scaleX(1); } 100% { transform: scaleX(-1); } }
@@ -404,7 +412,7 @@
     .dcard { padding: 10px 20px; gap: 6px; } .dtro { font-size: 50px; } .dwin { height: 60px; width: 150px; } .dcoins { font-size: 28px; }
     .djump { width: 76px; height: 76px; } .djump .je { font-size: 32px; } .djump .jl { font-size: 12px; } .dprog { height: 26px; } .dpdot { width: 40px; height: 22px; } .dtop { min-height: 44px; } .dname { font-size: 18px; } .dname svg { width: 50px; height: 30px; } .dpush { width: 96px; height: 96px; } .dhorn { width: 56px; height: 56px; font-size: 28px; } .dmid { font-size: 13px; } }
   @media (max-width: 1400px) { .mode { width: min(250px, 80vw); padding: 14px; } .mode .big { font-size: 64px; } .mode b { font-size: 24px; } }
-  @media (prefers-reduced-motion: reduce) { .lvring, .mboat, .mcloud, .roam, .roamf, .drift, .driftsh, .bob, .monok, .mudb, .dpush svg, .dconf, .dban, .dhorn.ready, .sway, .popin, .slidein, #card, #menuPop, .wv, .glint, .fall, .foam, .mist { animation: none !important; } }
+  @media (prefers-reduced-motion: reduce) { .lvring, .mboat, .mcloud, .roam, .roamf, .lg, .bob4, .wadl, .drift, .driftsh, .bob, .monok, .mudb, .dpush svg, .dconf, .dban, .dhorn.ready, .sway, .popin, .slidein, #card, #menuPop, .wv, .glint, .fall, .foam, .mist { animation: none !important; } }
   #toast { position: fixed; left: 50%; top: 24%; transform: translate(-50%, -50%) scale(.5); font-size: 84px; opacity: 0; pointer-events: none; z-index: 40;
     transition: opacity .25s, transform .25s; text-shadow: 0 4px 10px rgba(0,0,0,.3); white-space: nowrap; }
   #toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
@@ -982,6 +990,8 @@ body.playing #catRow.open { display: flex; }
 #catRow button:active { transform: scale(.88); }
 #catRow button.lit { background: #ffe39a; box-shadow: 0 0 0 3px #ffb340, 0 4px 12px rgba(30,60,90,.22); }
 #catRow button.off { opacity: .4; }
+#catRow button.lock { filter: grayscale(.8); opacity: .75; }
+#catRow button.lock::after { content: "🔒"; position: absolute; right: -4px; bottom: -4px; font-size: 14px; }
 #catRow button.ready { box-shadow: 0 0 0 3px #ffb300, 0 4px 12px rgba(30,60,90,.22); }
 @keyframes catIn { from { opacity: 0; transform: translateX(-14px) scale(.6); } }
 body.playing.catOpen #playHint { display: none !important; }
@@ -5655,6 +5665,58 @@ function drawRails(g, routes, p, act) {
   });
 }
 const ROAM = new Set(["vaca", "oveja", "pato", "elefante", "llama", "pinguino"]);
+// 🐑 animals wander about while the trains run: they pick a free patch of grass nearby (no track,
+// water or buildings in the way), walk there with their legs stepping, graze a while, and pick
+// another. When you go back to building they walk home to their own square.
+const ROAM_SPD = { vaca: 20, oveja: 24, pato: 30, elefante: 16, llama: 26, pinguino: 18 }, ROAM_R = 3;
+function roamApply(p) {
+  if (!p.rmEl) return; const x = p.rmx || 0, y = p.rmy || 0;
+  p.rmEl.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+  // the drawings face left or right at random; turn them to face where they walk
+  const base = ((p.c * 7 + p.r * 13) % 2 ? -1 : 1) * (p.faceL ? -1 : 1), want = p.rmDir || base;
+  p.rmF.setAttribute("transform", want === base ? "" : `translate(${(2 * p.rmCx).toFixed(1)} 0) scale(-1 1)`);
+  p.rmEl.classList.toggle("walking", !!p.walk);
+}
+function roamFree(p, c, r) {
+  if (c < 0 || r < 0 || c >= COLS || r >= ROWS) return false;
+  if (Math.hypot(c - p.c, r - p.r) > ROAM_R + .5) return false;
+  return piecesIn(c, r).every(q => q === p || (DEFS[q.type].gtile && !DEFS[q.type].water) || (ROAM.has(q.type) && q !== p));
+}
+function roamPick(p) {
+  const hx = (p.c + .5) * T, hy = (p.r + .5) * T, x0 = hx + (p.rmx || 0), y0 = hy + (p.rmy || 0);
+  for (let k = 0; k < 12; k++) {
+    const c = p.c + Math.round(rnd(-ROAM_R, ROAM_R)), r = p.r + Math.round(rnd(-ROAM_R, ROAM_R));
+    if (!roamFree(p, c, r)) continue;
+    const tx = (c + .5) * T + rnd(-28, 28), ty = (r + .5) * T + rnd(-28, 28), L = Math.hypot(tx - x0, ty - y0);
+    if (L < 30) continue;
+    let ok = true; for (let d = 20; d < L; d += 20) { const x = x0 + (tx - x0) * d / L, y = y0 + (ty - y0) * d / L; if (!roamFree(p, Math.floor(x / T), Math.floor(y / T))) { ok = false; break; } }
+    if (ok) return [tx - hx, ty - hy];
+  }
+  return null;
+}
+function roamTick(dt) {
+  dt = Math.min(dt, .1);
+  pieces.forEach(p => {
+    if (!p.rmEl || !p.rmEl.isConnected) return;
+    if (p.rmx == null) { p.rmx = 0; p.rmy = 0; p.rmT = rnd(0, 4); }
+    let tgt = p.rmTgt;
+    if (!running) tgt = (p.rmx || p.rmy) ? [0, 0] : null; // building: everyone goes home
+    else if (!tgt && (p.rmT -= dt) <= 0) tgt = p.rmTgt = roamPick(p), p.rmT = rnd(1, 3);
+    if (!tgt) { if (p.walk) { p.walk = false; roamApply(p); } return; }
+    const dx = tgt[0] - p.rmx, dy = tgt[1] - p.rmy, L = Math.hypot(dx, dy), sp = (ROAM_SPD[p.type] || 20) * (running ? 1 : 3) * dt;
+    if (L <= sp) { p.rmx = tgt[0]; p.rmy = tgt[1]; p.rmTgt = null; p.walk = false; p.rmT = rnd(2.5, 7); roamApply(p); return; } // graze a while
+    p.rmx += dx / L * sp; p.rmy += dy / L * sp; p.walk = true;
+    if (Math.abs(dx) > 2) p.rmDir = dx > 0 ? 1 : -1;
+    roamApply(p);
+    // keep it in front of / behind the right things as it moves up and down
+    const sg = p.rmSg; if (sg && sg.parentNode && Math.abs((p.rmY0 || 0) - p.rmy) > 12) {
+      p.rmY0 = p.rmy; const ov = sg.parentNode, fy = +sg.dataset.y0 + p.rmy; if (sg.dataset.y0 == null) sg.dataset.y0 = sg.dataset.y;
+      sg.dataset.y = (+sg.dataset.y0 + p.rmy).toFixed(1);
+      const nx = [...ov.children].find(ch => ch !== sg && ch.dataset.y != null && +ch.dataset.y > +sg.dataset.y);
+      if (nx) { if (sg.nextSibling !== nx) ov.insertBefore(sg, nx); } else if (ov.lastChild !== sg) ov.appendChild(sg);
+    }
+  });
+}
 function drawPiece(p, lay) {
   const d = DEFS[p.type], els = [];
   lay = lay || (k => k === "shadow" ? L.shadow : k === "paint" ? L.paint : k === "mon" ? L.lv[d.mon.layer].over : lvL(p.h)[k]);
@@ -5682,7 +5744,8 @@ function drawPiece(p, lay) {
       // boats sitting on water rock gently (and have no grass shadow under them)
       const onWater = d.float && piecesIn(p.c, p.r).some(q => DEFS[q.type].water);
       let dg = bk > 1 ? el("g", { transform: `translate(${cx} ${cy}) scale(${bk}) translate(${-cx} ${-cy})` }, sg) : sg;
-      if (ROAM.has(p.type) && !onWater) { const st = `animation-duration:${(9 + seeded(p.c, p.r, 3) * 6).toFixed(1)}s;animation-delay:${(-seeded(p.c, p.r, 4) * 12).toFixed(1)}s`; dg = el("g", { class: "roamf", style: st }, el("g", { class: "roam", style: st }, dg)); }
+      if (ROAM.has(p.type) && !onWater) { const rm = el("g", { class: "rm" + (p.walk ? " walking" : "") }, dg), rf = el("g", { class: "rmf" }, rm); dg = el("g", { class: "rmb " + (p.type === "pato" || p.type === "pinguino" ? "wadl" : "bob4") }, rf);
+        p.rmEl = rm; p.rmF = rf; p.rmSg = ov ? sg : null; p.rmCx = cx; p.rmFace = 0; roamApply(p); }
       if (onWater) dg = el("g", { class: "bob", style: `animation-delay:${(-(p.c * .53 + p.r * .31) % 3).toFixed(2)}s` }, dg);
       if (p.faceL) dg = el("g", { transform: `translate(${cx} 0) scale(-1 1) translate(${-cx} 0)` }, dg);
       spr(dg, cx - 50, cy - 50, p.c * 7 + p.r * 13);
@@ -6105,7 +6168,7 @@ const SPRITES = {
   vaca(g, X, Y, k) {
     const cx = X + 50, cy = Y + 58, f = k % 2 ? -1 : 1, t = el("g", { transform: `translate(${cx} ${cy}) scale(${f} 1)` }, g);
     el("ellipse", { cx: 2, cy: 18, rx: 24, ry: 6, fill: "rgba(30,50,20,.22)" }, t);
-    [-14, -6, 8, 15].forEach(x => el("rect", { x, y: 4, width: 4.5, height: 13, rx: 2, fill: "#555" }, t));
+    [-14, -6, 8, 15].forEach((x, i) => el("rect", { x, y: 4, width: 4.5, height: 13, rx: 2, fill: "#555", class: "lg l" + "abba"[i] }, t));
     el("rect", { x: -20, y: -12, width: 40, height: 22, rx: 11, fill: "#fff", stroke: "rgba(0,0,0,.4)", "stroke-width": 2 }, t);
     [[-8, -6, 7, 5], [6, 0, 6, 6], [-14, 3, 4, 3]].forEach(([x, y, rx, ry]) => el("ellipse", { cx: x, cy: y, rx, ry, fill: "#2b2b2b" }, t));
     el("ellipse", { cx: 0, cy: 9, rx: 5, ry: 3, fill: "#f6a6c8" }, t);
@@ -6118,7 +6181,7 @@ const SPRITES = {
   oveja(g, X, Y, k) {
     const cx = X + 50, cy = Y + 60, f = k % 2 ? -1 : 1, t = el("g", { transform: `translate(${cx} ${cy}) scale(${f} 1)` }, g);
     el("ellipse", { cx: 2, cy: 16, rx: 20, ry: 5, fill: "rgba(30,50,20,.22)" }, t);
-    [-10, -3, 6, 12].forEach(x => el("rect", { x, y: 4, width: 4, height: 11, rx: 2, fill: "#333" }, t));
+    [-10, -3, 6, 12].forEach((x, i) => el("rect", { x, y: 4, width: 4, height: 11, rx: 2, fill: "#333", class: "lg l" + "abba"[i] }, t));
     [[-10, -6], [0, -9], [10, -6], [-6, 2], [6, 2], [0, -2]].forEach(([x, y]) => el("circle", { cx: x, cy: y, r: 9, fill: "#fbfbf6", stroke: "rgba(0,0,0,.18)", "stroke-width": 1.5 }, t));
     el("ellipse", { cx: 19, cy: -8, rx: 7, ry: 8.5, fill: "#333" }, t);
     el("circle", { cx: 21, cy: -10, r: 1.6, fill: "#fff" }, t);
@@ -6351,6 +6414,7 @@ Object.assign(SPRITES, {
   pato(g, X, Y, k) {
     const cx = X + 50, cy = Y + 62, f = k % 2 ? -1 : 1, t = el("g", { transform: `translate(${cx} ${cy}) scale(${f} 1)` }, g);
     el("ellipse", { cx: 0, cy: 12, rx: 18, ry: 4, fill: "rgba(30,50,20,.2)" }, t);
+    [-5, 3].forEach((x, i) => el("path", { d: `M${x} 6 v5 h5`, stroke: "#ff9f1a", "stroke-width": 2.5, fill: "none", "stroke-linecap": "round", class: "lg l" + "ab"[i] }, t));
     el("ellipse", { cx: -2, cy: 0, rx: 16, ry: 10, fill: "#fff", stroke: "rgba(0,0,0,.3)", "stroke-width": 1.5 }, t);
     el("path", { d: "M-16 -2 l-6 -5 l2 8z", fill: "#fff", stroke: "rgba(0,0,0,.3)", "stroke-width": 1.2 }, t);
     el("path", { d: "M-8 -2 q6 -6 12 0 q-6 4 -12 0", fill: "#e8e8e8" }, t);
@@ -6362,7 +6426,7 @@ Object.assign(SPRITES, {
   elefante(g, X, Y, k) {
     const cx = X + 48, cy = Y + 56, f = k % 2 ? -1 : 1, t = el("g", { transform: `translate(${cx} ${cy}) scale(${f} 1)` }, g), C = "#9aa4b1";
     el("ellipse", { cx: 2, cy: 24, rx: 34, ry: 7, fill: "rgba(30,50,20,.22)" }, t);
-    [-22, -10, 8, 20].forEach(x => el("rect", { x, y: 6, width: 9, height: 18, rx: 3, fill: "#8a94a1" }, t));
+    [-22, -10, 8, 20].forEach((x, i) => el("rect", { x, y: 6, width: 9, height: 18, rx: 3, fill: "#8a94a1", class: "lg l" + "abba"[i] }, t));
     el("ellipse", { cx: 0, cy: 0, rx: 30, ry: 18, fill: C, stroke: "rgba(0,0,0,.35)", "stroke-width": 2 }, t);
     el("path", { d: "M-30 -2 q-6 4 -4 12", stroke: C, "stroke-width": 3, fill: "none" }, t);
     el("circle", { cx: 28, cy: -8, r: 14, fill: C, stroke: "rgba(0,0,0,.35)", "stroke-width": 2 }, t);
@@ -6374,7 +6438,7 @@ Object.assign(SPRITES, {
   llama(g, X, Y, k) {
     const cx = X + 48, cy = Y + 60, f = k % 2 ? -1 : 1, t = el("g", { transform: `translate(${cx} ${cy}) scale(${f} 1)` }, g), C = "#f3e3c3";
     el("ellipse", { cx: 0, cy: 20, rx: 22, ry: 5, fill: "rgba(30,50,20,.22)" }, t);
-    [-14, -6, 6, 13].forEach(x => el("rect", { x, y: 2, width: 5, height: 18, rx: 2.5, fill: "#d9c39b" }, t));
+    [-14, -6, 6, 13].forEach((x, i) => el("rect", { x, y: 2, width: 5, height: 18, rx: 2.5, fill: "#d9c39b", class: "lg l" + "abba"[i] }, t));
     el("ellipse", { cx: 0, cy: 0, rx: 20, ry: 11, fill: C, stroke: "rgba(0,0,0,.3)", "stroke-width": 1.5 }, t);
     el("path", { d: "M-8 -4 h16 v6 h-16z", fill: "#e74c3c" }, t); el("path", { d: "M-8 -1 h16", stroke: "#f1c40f", "stroke-width": 2 }, t);
     el("rect", { x: 12, y: -34, width: 9, height: 30, rx: 4.5, fill: C, stroke: "rgba(0,0,0,.3)", "stroke-width": 1.5 }, t);
@@ -10755,6 +10819,11 @@ const SHOP = [
   { grp: "estilo", id: "stReloj", price: 25, ic: "🕰️", nm: "Torre del reloj", tx: "Un gran reloj en lo alto de la estación." },
   { grp: "estilo", id: "stFuente", price: 35, ic: "⛲", nm: "Fuente", tx: "Una fuente junto a la estación." },
   { grp: "estilo", id: "stPerro", price: 12, ic: "🐕", nm: "Perro de la estación", tx: "Un perrito que espera los trenes en el andén." },
+  { grp: "diversion", id: "fBurbujas", price: 10, ic: "🫧", nm: "Burbujas", tx: "Tu tren echa pompas de jabón con el botón ✨." },
+  { grp: "diversion", id: "fMusica", price: 12, ic: "🎵", nm: "Notas musicales", tx: "Tu tren echa notas que suenan, con el botón ✨." },
+  { grp: "diversion", id: "fLetras", price: 15, ic: "🔤", nm: "Cubos de letras", tx: "Tu tren lanza cubos con letras que rebotan, con el botón ✨." },
+  { grp: "diversion", id: "fPelotas", price: 12, ic: "🔴", nm: "Pelotas", tx: "Tu tren lanza pelotas de colores que botan, con el botón ✨." },
+  { grp: "diversion", id: "fConfeti", price: 15, ic: "🎉", nm: "Confeti", tx: "¡Fiesta! Tu tren lanza confeti con el botón ✨." },
   { grp: "estilo", id: "stOro", price: 60, ic: "👑", nm: "Tejado de oro", tx: "¡El tejado más brillante de la ciudad!" },
 ];
 // how the stations look: what you bought from the 🎨 shelf, the roof colour and what you switched off
@@ -10763,7 +10832,7 @@ function stStyle() { const s = stStyleV || (stStyleV = Object.assign({ col: "#d9
 function stHas(id) { if (typeof stPrev !== "undefined" && stPrev && stPrev.on && id in stPrev.on) return stPrev.on[id]; try { return owns(id) && !stStyle().off.includes(id); } catch (e) { return false; } }
 function stRoof() { return stHas("stOro") ? "#e3b000" : stHas("stPintura") ? stStyle().col : "#d9483b"; }
 function stSave() { sset(KEY + "-stl", stStyle()); pieces.forEach(p => { if (p.type === "estacion") redrawPiece(p); }); }
-const SHOP_GRP = { trenes: "🚂 Trenes especiales", mejoras: "🔧 Mejoras", estaciones: "🚉 Estaciones", trenEstilo: "🎨 Mi tren", estilo: "🎨 Mi estación" };
+const SHOP_GRP = { trenes: "🚂 Trenes especiales", mejoras: "🔧 Mejoras", estaciones: "🚉 Estaciones", trenEstilo: "🎨 Mi tren", estilo: "🎨 Mi estación", diversion: "✨ Diversión" };
 const shopLocked = id => !lvl && SHOP.some(x => x.id === id) && !owns(id);
 
 // =====================================================================
@@ -10862,6 +10931,7 @@ const SHOP_TABS = [
   { id: "tren", ic: "🚂", nm: ["Mi tren", "My train", "Mon train", "Mein Zug"], col: "#e8576f", stage: "train", items: ["pintura", "tnSombrero", "tnGafas", "tnDibujos", "tnLuces", "tnHumo", "tnBandera", "tnNombre"] },
   { id: "especiales", ic: "✨", nm: ["Trenes especiales", "Special trains", "Trains spéciaux", "Spezialzüge"], col: "#8e44ad", stage: "kind", items: ["oro", "arcoiris", "dragonT", "bomberosT"] },
   { id: "estacion", ic: "🏡", nm: ["Mi estación", "My station", "Ma gare", "Mein Bahnhof"], col: "#2a9d55", stage: "station", items: ["stPintura", "stOro", "stFlores", "stFarolas", "stBancos", "stBanderas", "stReloj", "stFuente", "stPerro", "andenG", "cafe"] },
+  { id: "diversion", ic: "✨", nm: ["Diversión", "Fun", "Amusement", "Spaß"], col: "#f39c12", stage: null, items: ["fBurbujas", "fMusica", "fLetras", "fPelotas", "fConfeti"] },
   { id: "mejoras", ic: "🔧", nm: ["Mejoras", "Upgrades", "Améliorations", "Extras"], col: "#2f6fd1", stage: null, items: ["vagones", "bocina", "turbo2"] },
 ];
 let shopTab = "tren";
@@ -11472,6 +11542,7 @@ const CATS = {
   wx: { em: "⛅", items: () => [["hz_lluvia", "🌧️"], ["hz_nevada", "❄️"], ["hz_viento", "💨"], ["hz_noche", "🌙"]] },
 };
 let catSel = null;
+const FUN_SHOP = { burbujas: "fBurbujas", musica: "fMusica", letras: "fLetras", pelotas: "fPelotas", confeti: "fConfeti" }; // 💧 water is free
 const catsEl = document.createElement("div"); catsEl.id = "cats"; document.body.appendChild(catsEl);
 const catRow = document.createElement("div"); catRow.id = "catRow"; document.body.appendChild(catRow);
 Object.entries(CATS).forEach(([k, C]) => { const b = document.createElement("button"); b.className = "cat"; b.dataset.k = k; b.textContent = C.em; b.onclick = e => { e.stopPropagation(); unlockAudio(); catTap(k); }; catsEl.appendChild(b); });
@@ -11497,6 +11568,7 @@ function catRender() {
   CATS[catSel].items().forEach(([id, em]) => {
     const b = document.createElement("button"); b.textContent = em; b.dataset.id = id; b.title = (INFO[id] && INFO[id][1]) || id;
     if (catSel === "wx") b.classList.toggle("lit", id === "hz_noche" ? night : WX[id] === weather);
+    if (catSel === "fun" && FUN_SHOP[id] && shopLocked(FUN_SHOP[id])) { b.classList.add("lock"); b.title = "🔒 🛍️"; }
     b.onclick = e => { e.stopPropagation(); unlockAudio(); catDo(id, b); };
     catRow.appendChild(b);
   });
@@ -11516,7 +11588,7 @@ function catTap(k) {
 function catDo(id, b) {
   b.animate && b.animate([{ transform: "scale(.8)" }, { transform: "scale(1.1)" }, { transform: "scale(1)" }], { duration: 260 });
   if (catSel === "train") { if (!drvSel) { const tr = spitTrain(); if (tr && !tr.ambient) drvSelect(tr); } if (!drvSel) { sfx.no(); return; } drvAction(id); if (id === "horn") dailyProg("toot"); catRefresh(); return; }
-  if (catSel === "fun") { spitKind = id; spit(); dailyProg("toot"); return; }
+  if (catSel === "fun") { if (FUN_SHOP[id] && shopLocked(FUN_SHOP[id])) { sfx.click(); catClose(); openShop(FUN_SHOP[id]); return; } spitKind = id; spit(); dailyProg("toot"); return; }
   if (id === "hz_noche") setNight(!night);
   else setWeather(WX[id] === weather ? WX.hz_sol : WX[id]);
   refreshHzPlay(); catRender();
@@ -12226,7 +12298,7 @@ function frame(now) {
 function step(dt) {
   if (running && crashTimer <= 0) { computeOcc(); trains.forEach(tr => updateTrain(tr, dt)); checkCollisions(); updateCars(dt); }
   else if (lvl && crashTimer <= 0) trains.forEach(tr => { if (tr.ambient) updateTrain(tr, dt); });
-  cowTick(dt); hzTick(dt);
+  cowTick(dt); hzTick(dt); try { roamTick(dt); } catch (e) {}
   updateWrecks(dt); updateCrossings(dt); updateFx(dt); renderTrains(); renderCars(); renderSlopeBtn(); renderContBtn(); trainDecoTick(); drawMini(); tutTick(dt); guideTick(); lvlTick(); camTick(dt);
 }
 
@@ -14969,6 +15041,12 @@ I18N_ROWS.push(["🎨 Mi tren", "🎨 My train", "🎨 Mon train", "🎨 Mein Zu
   ["Humo de colores", "Coloured smoke", "Fumée colorée", "Bunter Rauch"], ["Humo rosa, azul, lila o arcoíris.", "Pink, blue, lilac or rainbow smoke.", "De la fumée rose, bleue, lilas ou arc-en-ciel.", "Rosa, blauer, lila oder Regenbogen-Rauch."],
   ["Banderín", "Flag", "Fanion", "Fähnchen"], ["Un banderín que ondea encima de la locomotora.", "A little flag waving on top of the engine.", "Un fanion qui flotte sur la locomotive.", "Ein Fähnchen, das auf der Lok flattert."],
   ["Placa con el nombre", "Name plate", "Plaque avec le nom", "Namensschild"], ["Cada tren lleva su nombre en una placa dorada.", "Every train shows its name on a golden plate.", "Chaque train porte son nom sur une plaque dorée.", "Jeder Zug trägt seinen Namen auf einem goldenen Schild."],
+  ["Burbujas", "Bubbles", "Bulles", "Seifenblasen"], ["Tu tren echa pompas de jabón con el botón ✨.", "Your train blows soap bubbles with the ✨ button.", "Ton train souffle des bulles de savon avec le bouton ✨.", "Dein Zug macht Seifenblasen mit dem ✨-Knopf."],
+  ["Notas musicales", "Music notes", "Notes de musique", "Musiknoten"], ["Tu tren echa notas que suenan, con el botón ✨.", "Your train sends out singing notes with the ✨ button.", "Ton train lance des notes qui chantent avec le bouton ✨.", "Dein Zug schickt klingende Noten mit dem ✨-Knopf."],
+  ["Cubos de letras", "Letter blocks", "Cubes de lettres", "Buchstabenwürfel"], ["Tu tren lanza cubos con letras que rebotan, con el botón ✨.", "Your train throws bouncing letter blocks with the ✨ button.", "Ton train lance des cubes de lettres qui rebondissent avec le bouton ✨.", "Dein Zug wirft hüpfende Buchstabenwürfel mit dem ✨-Knopf."],
+  ["Pelotas", "Balls", "Balles", "Bälle"], ["Tu tren lanza pelotas de colores que botan, con el botón ✨.", "Your train throws bouncy coloured balls with the ✨ button.", "Ton train lance des balles de couleur qui rebondissent avec le bouton ✨.", "Dein Zug wirft bunte Hüpfbälle mit dem ✨-Knopf."],
+  ["Confeti", "Confetti", "Confettis", "Konfetti"], ["¡Fiesta! Tu tren lanza confeti con el botón ✨.", "Party time! Your train throws confetti with the ✨ button.", "C'est la fête ! Ton train lance des confettis avec le bouton ✨.", "Party! Dein Zug wirft Konfetti mit dem ✨-Knopf."],
+  ["✨ Diversión", "✨ Fun", "✨ Amusement", "✨ Spaß"],
   ["Pincel", "Paintbrush", "Pinceau", "Pinsel"], ["Elige un color y toca un tren para pintarlo. El arcoíris pinta cada vagón de un color, y ➕ te deja elegir cualquier color.", "Pick a colour and tap a train to paint it. The rainbow paints every wagon a different colour, and ➕ lets you choose any colour.", "Choisis une couleur et touche un train pour le peindre. L'arc-en-ciel peint chaque wagon d'une couleur, et ➕ te laisse choisir n'importe quelle couleur.", "Wähle eine Farbe und tippe einen Zug an, um ihn anzumalen. Der Regenbogen malt jeden Wagen anders an, und mit ➕ wählst du jede Farbe."],
   ["Pinta tus trenes con el pincel 🖌️ de la pestaña 🚂 Trenes: de cualquier color, o de arcoíris.", "Paint your trains with the 🖌️ brush in the 🚂 Trains tab: any colour, or rainbow.", "Peins tes trains avec le pinceau 🖌️ de l'onglet 🚂 Trains : de n'importe quelle couleur, ou arc-en-ciel.", "Male deine Züge mit dem Pinsel 🖌️ im Tab 🚂 Züge an: in jeder Farbe oder als Regenbogen."]);
 I18N_ROWS.push(["Desvío de dos curvas", "Double-curve switch", "Aiguillage à deux courbes", "Doppelkurven-Weiche"],
