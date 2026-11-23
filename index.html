@@ -9546,7 +9546,18 @@ function g3CarSync() {
       if (big) add(new THREE.BoxGeometry(len * .9, 8, K.w - 1), "#9fd3f2", 0, 22, 0);
       const wg = new THREE.CylinderGeometry(5, 5, 3, 10).rotateX(Math.PI / 2);
       [-len * .32, len * .32].forEach(u => [-1, 1].forEach(v => add(wg, "#222222", u, 5, v * (K.w / 2 - 1))));
+      if (car.kind === "bomberos") { // 🚒 a proper fire engine: white stripe, ladder on the roof, blue lights that flash
+        add(new THREE.BoxGeometry(len + .4, 3, K.w - 1.6), "#ffffff", 0, 13, 0);
+        add(new THREE.BoxGeometry(len * .22, 6, K.w - 3), "#c62828", len * .3, 31, 0);
+        [-1, 1].forEach(v => add(new THREE.BoxGeometry(len * .7, 1.6, 1.6), "#d9dde2", -len * .08, 32, v * 4));
+        for (let k = 0; k < 7; k++) add(new THREE.BoxGeometry(1.2, 1.4, 9), "#d9dde2", -len * .4 + k * len * .1, 32, 0);
+        const lm = [new THREE.MeshBasicMaterial({ color: 0x2b7bff }), new THREE.MeshBasicMaterial({ color: 0xff3030 })];
+        [-1, 1].forEach((v, i) => { const m = new THREE.Mesh(new THREE.BoxGeometry(4, 3.5, 4), lm[i]); m.position.set(len * .36, 36, v * 4.5); g.add(m); });
+        g.userData.lights = lm;
+      }
     }
+    if (g.userData.lights) { const on = Math.floor(G3.t * 6) % 2; g.userData.lights[0].color.set(on ? 0x2b7bff : 0x0a1f55); g.userData.lights[1].color.set(on ? 0x550a0a : 0xff3030); }
+    if (car.hose) { const x2 = +car.hose.getAttribute("x2"), y2 = +car.hose.getAttribute("y2") + 10; g3Jet(q.x, 34, q.y, x2, y2, 50); }
     g.visible = true; g.position.set(q.x, 0, q.y); g.rotation.set(0, -Math.atan2(q.ty, q.tx), 0);
   });
 }
@@ -9683,7 +9694,7 @@ function render3GL(dt) {
   G3.trains.forEach(r => { r.seen = false; });
   trains.forEach(t2 => { if (t2.trail && t2.trail.length > 1) g3TrainSync(t2, t2 === tr); });
   G3.trains.forEach((r, id) => { if (!r.seen) { G3.dyn.remove(r.g); G3.trains.delete(id); } });
-  g3CarSync(); g3Waiting(); g3OrderSigns(); g3LightsTick(); g3SpitTick(dt, g3Z(P0.z));
+  g3CarSync(); trains.forEach(t2 => { if (t2.hose) { const h = t2.hose; g3Jet(+h.getAttribute("x1"), 40, +h.getAttribute("y1"), +h.getAttribute("x2"), +h.getAttribute("y2") + 10, 50); } }); g3Waiting(); g3OrderSigns(); g3LightsTick(); g3SpitTick(dt, g3Z(P0.z));
   // smoke from the chimney ahead
   if (fr.userData.chim && spd && Math.random() < dt * (steam ? 9 : 4)) { g3Tmp.copy(fr.userData.chim); fr.localToWorld(g3Tmp); g3Puff(g3Tmp, !steam); }
   G3.smoke.forEach(s => { if (!s.visible) return; const u = s.userData; u.life += dt; s.position.addScaledVector(u.v, dt); s.position.x -= hx * 60 * dt * spd; s.position.z -= hy * 60 * dt * spd; u.v.y *= Math.pow(.5, dt); s.scale.setScalar(3 + u.life * 9); const dc = s.position.distanceTo(G3.cam.position); s.material.opacity = Math.max(0, .7 - u.life * .55) * clamp((dc - 30) / 70, 0, 1); if (u.life > 1.3) s.visible = false; });
@@ -9833,7 +9844,45 @@ function g3Hz(dt) {
     g.children.forEach(c => { if (c.userData.ph != null) { const k = 1 + Math.sin(G3.t * 11 + c.userData.ph) * .18; c.scale.set(1 / Math.sqrt(k), k, 1 / Math.sqrt(k)); } });
     if (g.userData.lt) g.userData.lt.intensity = 5000 + Math.sin(G3.t * 17) * 1500;
     if (g.userData.smokeAt && Math.random() < dt * 5) g3Puff(g.userData.smokeAt.clone().add(new THREE.Vector3(rnd(-15, 15), 0, rnd(-15, 15))), true, true); });
-  M.forEach((g, k) => { if (!live.has(k)) { G3.dyn.remove(g); M.delete(k); } });
+  M.forEach((g, k) => { if (!live.has(k)) { M.delete(k); g3HzGone(k, g); } });
+  // what is leaving: the cow trots off, the crane lifts the rocks, the fire turns to steam
+  G3.out = (G3.out || []).filter(o => {
+    o.t += dt; const k = Math.min(1, o.t / o.dur), g = o.g;
+    if (o.kind === "vaca") { g.position.set(o.x + o.side * 160 * k, o.z + 20 * Math.abs(Math.sin(k * 9)) * (1 - k), o.y); const f = g.userData.face; if (f) { f.rotation.y = Math.atan2(G3.cam.position.x - g.position.x, G3.cam.position.z - g.position.z); const a = f.rotation.y, d = o.side * Math.cos(a); f.scale.x = Math.abs(f.scale.x) * (d >= 0 ? 1 : -1); } g3Fade(g, k > .7 ? (1 - k) / .3 : 1); }
+    else if (o.kind === "fire") { g.scale.setScalar(o.s0 * Math.max(.01, 1 - k)); if (Math.random() < dt * 14) g3Puff(new THREE.Vector3(o.x + rnd(-20, 20), o.z + 20, o.y + rnd(-20, 20)), false, true); }
+    else if (o.kind === "nieve-tap") { g.scale.set(1 + k, Math.max(.01, 1 - k), 1 + k); g3Fade(g, 1 - k); }
+    else { const up = k < .3 ? 0 : (k - .3) / .7; g.position.y = o.z + 140 * up; g3Fade(g, 1 - up * up);
+      const cr = o.crane; if (cr) { cr.userData.hook.position.y = 150 - (150 - (o.z + 30 + 140 * up)) + 0; cr.userData.cable.scale.y = Math.max(.01, 165 - (o.z + 30 + 140 * up)); cr.userData.cable.position.y = (165 + o.z + 30 + 140 * up) / 2; g3Fade(cr, k > .8 ? (1 - k) * 5 : 1); } }
+    if (k >= 1) { G3.dyn.remove(g); if (o.crane) G3.dyn.remove(o.crane); return false; }
+    return true;
+  });
+  G3.jets = (G3.jets || []).filter(d => { d.t += dt; const u = d.t / d.dur; if (u >= 1) { G3.dyn.remove(d.m); return false; }
+    d.m.position.set(d.a.x + (d.b.x - d.a.x) * u, d.a.y + (d.b.y - d.a.y) * u + Math.sin(Math.PI * u) * d.arc, d.a.z + (d.b.z - d.a.z) * u); return true; });
+}
+function g3Fade(g, a) {
+  g.traverse(m => { if (!m.material || m.material === G3.blobMat) return; if (!m.userData.own) { m.material = m.material.clone(); m.userData.own = 1; } m.material.transparent = true; m.material.opacity = a; });
+}
+function g3HzGone(k, g) {
+  const o = { g, t: 0, x: g.position.x, y: g.position.z, z: g.position.y };
+  if (fires.includes(k) || k.pid != null) Object.assign(o, { kind: "fire", dur: .7, s0: g.scale.x });
+  else if (k.kind === "vaca") Object.assign(o, { kind: "vaca", dur: 1.4, side: Math.random() < .5 ? -1 : 1 });
+  else if (k.kind === "nieve" && k.how === "tap") Object.assign(o, { kind: "nieve-tap", dur: .45 });
+  else { Object.assign(o, { kind: k.kind, dur: 1.3 });
+    // a yellow crane on the side of the track, with its hook coming down
+    const cr = new THREE.Group(), Y = g3Mat("#f2b705"), add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; cr.add(m); return m; };
+    add(new THREE.BoxGeometry(26, 12, 22), g3Mat("#3b3b3b"), -70, 6, 0); add(new THREE.BoxGeometry(8, 150, 8), Y, -70, 87, 0); add(new THREE.BoxGeometry(100, 7, 7), Y, -30, 165, 0);
+    cr.userData.cable = add(new THREE.BoxGeometry(1.4, 1, 1.4), g3Mat("#222222"), 0, 150, 0); cr.userData.hook = add(new THREE.TorusGeometry(4, 1.4, 6, 10, Math.PI * 1.4), g3Mat("#555555"), 0, 150, 0);
+    cr.position.set(o.x, 0, o.y); cr.rotation.y = Math.random() * 6.28; o.crane = cr; G3.dyn.add(cr);
+    // the crane stands on the ground beside the load: keep the load under the boom tip
+  }
+  G3.out = G3.out || []; G3.out.push(o);
+}
+// 💦 water from a fire engine (or the fire train) arcing onto the fire
+const G3_DROP = new THREE.MeshBasicMaterial({ color: 0x7fd3ff, transparent: true, opacity: .85 });
+function g3Jet(x1, z1, y1, x2, y2, z2) {
+  if (!isFinite(x1 + x2 + y1 + y2)) return; G3.jets = G3.jets || []; if (G3.jets.length > 80 || Math.random() < .35) return;
+  const m = new THREE.Mesh(G3.dropGeo || (G3.dropGeo = new THREE.SphereGeometry(2.6, 6, 4)), G3_DROP); G3.dyn.add(m);
+  G3.jets.push({ m, t: 0, dur: .55 + Math.random() * .15, arc: 40 + Math.random() * 10, a: new THREE.Vector3(x1, z1, y1), b: new THREE.Vector3(x2 + rnd(-10, 10), z2, y2 + rnd(-10, 10)) });
 }
 function g3Weather(dt, ex, ey, ez, off) {
   const want = off ? "" : weather === "lluvia" ? "rain" : weather === "nevada" ? "snow" : weather === "viento" ? "wind" : "";
@@ -10009,6 +10058,7 @@ function removeObstacle(o, how) {
   addFx(cr, 1.3, (k, e) => e.setAttribute("opacity", k > .75 ? (1 - k) * 4 : 1));
   addFx(o.g, 1.3, (k, e) => { const up = k < .3 ? 0 : (k - .3) / .7; e.setAttribute("transform", `translate(${x.toFixed(1)} ${(y - 140 * up).toFixed(1)})`); e.setAttribute("opacity", 1 - up); });
 }
+{ const r0 = removeObstacle; removeObstacle = function (o, how) { o.how = how; return r0(o, how); }; } // the 3D view wants to know how it left
 // something in front of the train: it brakes and whistles
 function hzBlocked(tr) {
   if (tr.ambient || tr.jumpT >= 0) return false;
