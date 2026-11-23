@@ -11763,7 +11763,7 @@ function introBadgeSVG() {
     <radialGradient id="bFace" cx=".42" cy=".38" r=".7"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#f3dfb8"/></radialGradient>
     <radialGradient id="bGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
   <circle cx="500" cy="640" r="440" fill="url(#bGlow)"/>
-  <g opacity=".42" fill="none" stroke-width="30">${["#ff5a4f", "#ffb340", "#ffe066", "#6cc04a", "#4aa8ff", "#a57bff"].map((c, i) => `<path d="M${90 + i * 30} 880A${410 - i * 30} ${410 - i * 30} 0 0 1 ${910 - i * 30} 880" stroke="${c}"/>`).join("")}</g>
+  <g opacity=".92" fill="none" stroke-width="30">${["#ff5a4f", "#ffb340", "#ffe066", "#6cc04a", "#4aa8ff", "#a57bff"].map((c, i) => `<path d="M${90 + i * 30} 880A${410 - i * 30} ${410 - i * 30} 0 0 1 ${910 - i * 30} 880" stroke="${c}"/>`).join("")}</g>
   ${[[150, 520, .9], [850, 470, .75]].map(([x, y, k]) => `<g transform="translate(${x} ${y}) scale(${k})"><path d="M-90 30a40 40 0 0 1 20-62 55 55 0 0 1 100-16 42 42 0 0 1 64 40 30 30 0 0 1-6 38Z" fill="#fff"/></g>`).join("")}
   <path d="M230 940L330 880H670L770 940Z" fill="#6cb850"/><path d="M200 950Q500 900 800 950V960H200Z" fill="#4f9e3a"/>
   ${[0, 1, 2, 3, 4].map(i => `<rect x="${300 - i * 8}" y="${884 + i * 13}" width="${400 + i * 16}" height="${8 + i * 2}" rx="4" fill="#a8743d" stroke="#7a4a2a" stroke-width="2"/>`).join("")}
@@ -11786,11 +11786,15 @@ function playIntro() {
   const w = document.querySelector(".hlogo .hword"); if (w) d.querySelector(".iword").appendChild(w.cloneNode(true));
   document.body.appendChild(d);
   // tall screens (an iPad held upright) see more of the meadow, with extra sky above
-  const sv = d.querySelector(".isvg"), fit = () => { const k = innerWidth / innerHeight;
+  // (measured from the overlay itself, and re-checked every frame: a phone turned while the app opens reports its new size late)
+  const sv = d.querySelector(".isvg"); let lastK = 0;
+  const fit = () => { const W0 = d.clientWidth || innerWidth, H0 = d.clientHeight || innerHeight, k = W0 / H0; if (Math.abs(k - lastK) < .002) return; lastK = k;
     if (k < 1.25) { const W = 1180, H = W / k; sv.setAttribute("viewBox", `${800 - W / 2} ${900 - H} ${W} ${H}`); sv.setAttribute("preserveAspectRatio", "xMidYMax meet"); }
     else { sv.setAttribute("viewBox", "0 0 1600 900"); sv.setAttribute("preserveAspectRatio", "xMidYMax slice"); } };
-  fit(); addEventListener("resize", fit);
-  const fin = () => { if (!d.isConnected || d.classList.contains("out")) return; d.classList.add("out"); removeEventListener("resize", fit); setTimeout(() => d.remove(), 600); };
+  fit(); addEventListener("resize", fit); addEventListener("orientationchange", fit);
+  const ro = window.ResizeObserver ? new ResizeObserver(fit) : null; if (ro) ro.observe(d);
+  const fitLoop = () => { if (!d.isConnected) return; fit(); requestAnimationFrame(fitLoop); }; requestAnimationFrame(fitLoop);
+  const fin = () => { if (!d.isConnected || d.classList.contains("out")) return; d.classList.add("out"); removeEventListener("resize", fit); removeEventListener("orientationchange", fit); if (ro) ro.disconnect(); setTimeout(() => d.remove(), 600); };
   d.addEventListener("pointerdown", () => { unlockAudio(); fin(); });
   // chuffs on the way down, the toot when Coco stops (only once the browser allows sound)
   const can = () => { try { return actx && actx.state === "running"; } catch (e) { return false; } };
