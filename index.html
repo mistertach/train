@@ -996,6 +996,10 @@ body.playing #catRow.open { display: flex; }
 @keyframes catIn { from { opacity: 0; transform: translateX(-14px) scale(.6); } }
 body.playing.catOpen #playHint { display: none !important; }
 @media (max-height: 500px) { #cats { transform: scale(.75); } #catRow button { width: 40px; height: 40px; font-size: 20px; } }
+/* 🎨 premium icons in place of emoji */
+.emo { display: inline-block; width: 1.2em; height: 1.2em; vertical-align: -.24em; line-height: 1; flex: none; }
+.emo > svg { width: 100% !important; height: 100% !important; display: block; overflow: visible; }
+.emo > i { display: none; }
 </style>
 </head>
 <body>
@@ -6972,6 +6976,7 @@ function burst(x, y, emojis, n) {
     const em = emojis[i % emojis.length], art = typeof BURST_ART !== "undefined" && BURST_ART[em];
     const t = el("g", { transform: `translate(${x} ${y})` }, L.fx);
     if (art) { const sc = el("g", { transform: `scale(${rnd(1.1, 1.7).toFixed(2)})` }, t); art(sc); }
+    else if (typeof EMO_ART !== "undefined" && EMO_ART[em.replace(/\uFE0F/g, "")]) { const sc = el("g", { transform: `scale(${rnd(.8, 1.15).toFixed(2)}) translate(-24 -24)` }, t); sc.innerHTML = EMO_ART[em.replace(/\uFE0F/g, "")]; }
     else { const tx = el("text", { x: 0, y: 0, "font-size": 40, "text-anchor": "middle", "dominant-baseline": "central" }, t); tx.textContent = em; }
     const a = rnd(0, Math.PI * 2), r = rnd(80, 170), spin = rnd(-180, 180);
     addFx(t, rnd(.9, 1.4), (k, e) => {
@@ -8396,6 +8401,11 @@ async function speechCatalog(langs) {
     LEVELS.forEach(d => add(NARR_VOICE, speechFinal(trn(d.name) + ". " + trn(d.intro), false)));
     ["Tres estrellas", "Dos estrellas", "Una estrella"].forEach(x => add(NARR_VOICE, speechFinal(trn("¡Conseguido!") + " " + trn(x), false)));
     add(NARR_VOICE, speechFinal("Hola. Así suena la voz.", false));
+    // lines with names and numbers in them
+    const nms = new Set([""]); Object.values(CHAR).forEach(C => C.names.forEach(n => nms.add(n)));
+    nms.forEach(n => ODO_SAY_KM.forEach(k => add(NARR_VOICE, speechFinal(odoSay(n, k), true))));
+    for (let T = 10; T <= 300; T += 10) add(NARR_VOICE, speechFinal(delivSay(T), true));
+    GOODS.forEach(G => { [2, 3, 4].forEach(n => add(NARR_VOICE, speechFinal(ordNewSay(G, n), true))); add(NARR_VOICE, speechFinal(ordNeedSay(G), true)); add(NARR_VOICE, speechFinal(ordDoneSay(G), true)); });
     Object.entries(CHAR).forEach(([kind, C]) => C.names.forEach(name => {
       const v = voiceOf(name), say = t => add(v, speechFinal(t, true));
       say(LX(`¡Hola! Soy ${name}. `, `Hi! I'm ${name}. `, `Salut ! Je suis ${name}. `, `Hallo! Ich bin ${name}. `) + L3(femin(C.hi, name)));
@@ -10473,13 +10483,21 @@ function drvSelect(tr) {
 }
 // 🛤️ how far each train has travelled
 const odoKm = tr => (tr.odo || 0) / 10000;
+// spoken lines with a name or a number are written by these, so the recording script can list every one of them
+const ODO_SAY_KM = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+function odoSay(name, k) {
+  const n = String(name || "").replace(/\s+\d+$/, "");
+  if (k === 1) return LX(`¡${n || "El tren"} ya ha recorrido un kilómetro!`, `${n || "The train"} has travelled one kilometre!`, `${n || "Le train"} a déjà roulé un kilomètre !`, `${n || "Der Zug"} ist schon einen Kilometer gefahren!`);
+  return LX(`¡${n || "El tren"} ya ha recorrido ${k} kilómetros!`, `${n || "The train"} has travelled ${k} kilometres!`, `${n || "Le train"} a déjà roulé ${k} kilomètres !`, `${n || "Der Zug"} ist schon ${k} Kilometer gefahren!`);
+}
+const delivSay = T => LX(`¡Ya has hecho ${T} viajes con pasajeros y cajas! ¡Muy bien, maquinista!`, `You've made ${T} deliveries of passengers and boxes! Well done, driver!`, `Tu as déjà fait ${T} livraisons de voyageurs et de caisses ! Bravo, conducteur !`, `Du hast schon ${T} Fahrgäste und Kisten gebracht! Super, Lokführer!`);
 const odoTxt = tr => { const k = odoKm(tr); return "🛤️ " + (k < 10 ? k.toFixed(1) : Math.round(k)) + " km"; };
 function odoMilestone(tr) {
   const k = Math.round(odoKm(tr));
   if (!(k <= 5 || k % 5 === 0)) return;
   if (tr !== drvSel && !(camMode !== "free" && camTrains()[camIdx % Math.max(1, camTrains().length)] === tr)) return;
   toast(`🎉 ${tr.name || ""} ${k} km!`); tone([784, 988, 1175, 1568], "triangle", .08, .2, .08);
-  if (k === 1 || k % 10 === 0) speak(LX(`¡${tr.name || "El tren"} ya ha recorrido ${k} kilómetros!`, `${tr.name || "The train"} has travelled ${k} kilometres!`, `${tr.name || "Le train"} a déjà roulé ${k} kilomètres !`, `${tr.name || "Der Zug"} ist schon ${k} Kilometer gefahren!`));
+  if (k === 1 || k % 10 === 0) speak(odoSay(tr.name, k));
 }
 function drvRefresh() {
   const tr = drvSel; if (!tr) return;
@@ -10549,7 +10567,7 @@ function stationStop(tr, p) {
     if (!stationStop.told) { stationStop.told = true; speak(fr ? LX("¡Toca las cajas para cargarlas en el tren!", "Tap the boxes to load them onto the train!", "Touche les caisses pour les charger dans le train !") : LX("¡Toca a los pasajeros para que suban al tren!", "Tap the passengers so they get on the train!", "Touche les voyageurs pour qu'ils montent dans le train !")); }
   }
   const tot = delivered.pax + delivered.box;
-  if (off && tot && Math.floor(tot / 10) !== Math.floor((tot - off) / 10)) speak(LX(`¡Ya has llevado ${delivered.pax} pasajeros y ${delivered.box} cajas! Tienes ${wallet()} monedas.`, `You've carried ${delivered.pax} passengers and ${delivered.box} boxes! You have ${wallet()} coins.`, `Tu as transporté ${delivered.pax} voyageurs et ${delivered.box} caisses ! Tu as ${wallet()} pièces.`, `Du hast schon ${delivered.pax} Fahrgäste und ${delivered.box} Kisten gebracht! Du hast ${wallet()} Münzen.`));
+  if (off && tot && Math.floor(tot / 10) !== Math.floor((tot - off) / 10)) { const T = Math.floor(tot / 10) * 10; if (T <= 300) speak(delivSay(T)); }
 }
 // a bouncing finger over the people (or boxes) while a train is waiting to be loaded
 function showTapHint(p, fr) {
@@ -10649,14 +10667,17 @@ function stationTick(dt) {
 //  loads them, no tapping) and brings them over. One order at a time, with a fanfare at the end.
 // =====================================================================
 const GOODS = [
-  { g: "fruta", em: "🍎", wag: "crate", b: "🥐", bn: ["la panadería", "the bakery", "la boulangerie", "die Bäckerei"], wn: ["el vagón de cajas", "the crate wagon", "le wagon à caisses", "den Kistenwagen"] },
-  { g: "troncos", em: "🪵", wag: "logs", b: "🪚", bn: ["el aserradero", "the sawmill", "la scierie", "das Sägewerk"], wn: ["el vagón de troncos", "the log wagon", "le wagon à troncs", "den Holzwagen"] },
-  { g: "leche", em: "🥛", wag: "tank", b: "🧀", bn: ["la quesería", "the cheese dairy", "la fromagerie", "die Käserei"], wn: ["el vagón cisterna", "the tank wagon", "le wagon-citerne", "den Kesselwagen"] },
-  { g: "carbon", em: "🪨", wag: "coal", b: "🏭", bn: ["la fábrica", "the factory", "l'usine", "die Fabrik"], wn: ["el vagón de carbón", "the coal wagon", "le wagon à charbon", "den Kohlewagen"] },
+  { g: "fruta", gw: ["manzanas", "apples", "pommes", "Äpfel"], em: "🍎", wag: "crate", b: "🥐", bn: ["la panadería", "the bakery", "la boulangerie", "die Bäckerei"], wn: ["el vagón de cajas", "the crate wagon", "le wagon à caisses", "den Kistenwagen"] },
+  { g: "troncos", gw: ["troncos", "logs", "rondins", "Baumstämme"], em: "🪵", wag: "logs", b: "🪚", bn: ["el aserradero", "the sawmill", "la scierie", "das Sägewerk"], wn: ["el vagón de troncos", "the log wagon", "le wagon à troncs", "den Holzwagen"] },
+  { g: "leche", gw: ["botellas de leche", "bottles of milk", "bouteilles de lait", "Flaschen Milch"], em: "🥛", wag: "tank", b: "🧀", bn: ["la quesería", "the cheese dairy", "la fromagerie", "die Käserei"], wn: ["el vagón cisterna", "the tank wagon", "le wagon-citerne", "den Kesselwagen"] },
+  { g: "carbon", gw: ["sacos de carbón", "sacks of coal", "sacs de charbon", "Säcke Kohle"], em: "🪨", wag: "coal", b: "🏭", bn: ["la fábrica", "the factory", "l'usine", "die Fabrik"], wn: ["el vagón de carbón", "the coal wagon", "le wagon à charbon", "den Kohlewagen"] },
 ];
 let order = null, orderCool = 2, orderEl = null;
 const goodsOf = g => GOODS.find(x => x.g === g);
 const gName = (G, k) => LX(G[k][0], G[k][1], G[k][2], G[k][3]);
+const ordNewSay = (G, n) => LX(`¡Pedido nuevo! ${cap1(gName(G, "bn"))} necesita ${n} ${gName(G, "gw")}. Llévalos en tren de mercancías.`, `New order! ${cap1(gName(G, "bn"))} needs ${n} ${gName(G, "gw")}. Bring them with a goods train.`, `Nouvelle commande ! ${cap1(gName(G, "bn"))} a besoin de ${n} ${gName(G, "gw")}. Apporte-les avec un train de marchandises.`, `Neuer Auftrag! ${cap1(gName(G, "bn"))} braucht ${n} ${gName(G, "gw")}. Bring sie mit einem Güterzug.`);
+const ordNeedSay = G => LX(`Para llevar ${gName(G, "gw")} hace falta ${gName(G, "wn")}.`, `To carry ${gName(G, "gw")} you need ${gName(G, "wn")}.`, `Pour transporter des ${gName(G, "gw")} il faut ${gName(G, "wn")}.`, `Für ${gName(G, "gw")} brauchst du ${gName(G, "wn")}.`);
+const ordDoneSay = G => LX(`¡Pedido entregado! ${cap1(gName(G, "bn"))} ya tiene sus ${gName(G, "gw")}. ¡Gracias, maquinista!`, `Order delivered! ${cap1(gName(G, "bn"))} has its ${gName(G, "gw")}. Thank you, driver!`, `Commande livrée ! ${cap1(gName(G, "bn"))} a ses ${gName(G, "gw")}. Merci, conducteur !`, `Auftrag geliefert! ${cap1(gName(G, "bn"))} hat ${gName(G, "gw")}. Danke, Lokführer!`);
 const wagonsOf = tr => carTypes(tr.kind, tr.cars).slice(1);
 const capFor = (tr, G) => 2 * wagonsOf(tr).filter(w => w === G.wag).length;
 const goodsTrains = () => trains.filter(t => isFreight(t) && !t.ambient && !t.trial);
@@ -10671,7 +10692,7 @@ function newOrder() {
   st.forEach(p => { if (p.box) { p.box = 0; drawWaiting(p); } });
   from.box = n; drawWaiting(from); drawOrder();
   tone([660, 880], "triangle", .1, .2, .08);
-  speak(LX(`¡Pedido nuevo! ${cap1(gName(G, "bn"))} necesita ${n} ${G.em}. Llévalos en tren de mercancías.`, `New order! ${cap1(gName(G, "bn"))} needs ${n} ${G.em}. Bring them with a goods train.`, `Nouvelle commande ! ${cap1(gName(G, "bn"))} a besoin de ${n} ${G.em}. Apporte-les avec un train de marchandises.`, `Neuer Auftrag! ${cap1(gName(G, "bn"))} braucht ${n} ${G.em}. Bring sie mit einem Güterzug.`));
+  speak(ordNewSay(G, n));
 }
 const cap1 = s => s.charAt(0).toUpperCase() + s.slice(1);
 function cancelOrder() {
@@ -10729,7 +10750,7 @@ function freightStop(tr, p) {
     if (tr.cargo && tr.cargo.g !== order.g) return;
     const cap = capFor(tr, G) - (tr.cargo ? tr.cargo.k : 0);
     if (cap <= 0) {
-      if (!capFor(tr, G) && !freightStop.told) { freightStop.told = 1; speak(LX(`Para llevar ${G.em} hace falta ${gName(G, "wn")}.`, `To carry ${G.em} you need ${gName(G, "wn")}.`, `Pour transporter ${G.em} il faut ${gName(G, "wn")}.`, `Für ${G.em} brauchst du ${gName(G, "wn")}.`)); }
+      if (!capFor(tr, G) && !freightStop.told) { freightStop.told = 1; speak(ordNeedSay(G)); }
       return;
     }
     const k = Math.min(cap, order.waiting);
@@ -10745,7 +10766,7 @@ function orderDone(p, G) {
   tone([523, 659, 784, 1047, 1319], "triangle", .09, .3, .1);
   try { burst(s.x - s.nx * 70, s.y - s.ny * 70 - 60, [G.b, G.em, "🎉", "⭐"], 14); } catch (e) {}
   pay(6, s.x, s.y - 40);
-  speak(LX(`¡Pedido entregado! ${cap1(gName(G, "bn"))} ya tiene sus ${G.em}. ¡Gracias, maquinista!`, `Order delivered! ${cap1(gName(G, "bn"))} has its ${G.em}. Thank you, driver!`, `Commande livrée ! ${cap1(gName(G, "bn"))} a ses ${G.em}. Merci, conducteur !`, `Auftrag geliefert! ${cap1(gName(G, "bn"))} hat ${G.em}. Danke, Lokführer!`));
+  speak(ordDoneSay(G));
   try { earnSticker("s_order"); } catch (e) {}
   try { happyMoment(); } catch (e) {}
   order = null; orderCool = 5; drawOrder();
@@ -12239,6 +12260,141 @@ const ICONS = {
   h_alto: _s("M2 42 L18 12 L26 26 L32 18 L46 42 Z", "#8d9aa6") + _s("M18 12 L23 21 L18 19 L14 21 Z", "#fff") + _s("M4 40 Q20 38 26 30 T46 24", "none", 'stroke-width="3.5" stroke="#c98a4b"'),
 };
 const ic = name => ICONS[name] ? `<svg class="ic" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">${ICONS[name]}</svg>` : "";
+// =====================================================================
+//  🎨 PREMIUM ICONS: emoji in the interface are swapped for hand-drawn icons in the game's own style
+//  (brown outline, flat colours, a soft shine). The emoji stays in the text, hidden, so nothing that
+//  reads a button's text changes. Board pictures drawn in SVG are left alone.
+// =====================================================================
+const _sh = (d, o) => `<path d="${d}" fill="#fff" opacity="${o || .55}"/>`; // a shine
+const _t = (x, y, s, f, txt, col) => `<text x="${x}" y="${y}" font-size="${s}" font-weight="900" font-family="system-ui,sans-serif" text-anchor="middle" dominant-baseline="central" fill="${col || "#fff"}" stroke="${IK}" stroke-width="${f}" paint-order="stroke">${txt}</text>`;
+const STAR = "M24 4l5.6 11.6 12.8 1.8-9.3 9 2.3 12.7L24 33.1l-11.4 6 2.3-12.7-9.3-9 12.8-1.8Z";
+const DROP = "M24 5C31 16 36 22 36 29a12 12 0 0 1-24 0c0-7 5-13 12-24Z";
+const CLOUD = "M13 34a8 8 0 0 1 0-16 11 11 0 0 1 21-3 9 9 0 0 1 3 19Z";
+const EMO_ART = {
+  "⭐": _s(STAR, "#ffd34d") + _sh("M24 9l3 6.5-3 .5Z"),
+  "🌟": _s(STAR, "#ffe066") + _sh("M24 9l3 6.5-3 .5Z"),
+  "🪙": _c(24, 24, 18, "#ffcf3a") + _c(24, 24, 12.5, "#ffe27a") + _s("M24 15l2.6 5.4 5.9.8-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.8Z", "#f2b705") + _sh("M11 18a14 14 0 0 1 9-9l1 3a11 11 0 0 0-7 7Z", .7),
+  "🏆": _s("M14 6H34V18a10 10 0 0 1-20 0Z", "#ffd34d") + _s("M14 10H7v3a8 8 0 0 0 8 8M34 10h7v3a8 8 0 0 1-8 8", "none", 'stroke-width="3"') + _r(21, 27, 6, 7, 1, "#f2b705") + _r(14, 34, 20, 8, 2, "#a8743d") + _r(18, 36, 12, 3, 1, "#ffe7b8", 'stroke-width="1.5"') + _sh("M18 9h3v10a5 5 0 0 1-3-4Z", .7),
+  "💪": _s("M9 43V31c0-8 4-12 9-14l-2-7c-1-4 5-6 8-3l3 6c0 4-2 6-4 7 5-3 13-4 18 1 5 6 2 16-6 19-7 3-17 3-26 3Z", "#ffc994") + _s("M22 20c2 5 6 7 11 6", "none", 'stroke-width="2.2"') + _sh("M30 22c4-1 8 1 9 5-3-2-6-3-9-5Z", .6) + _s("M16 9c2-1 5-1 6 1", "none", 'stroke-width="2"'),
+  "🐄": _s("M12 13c-4-1-8 1-8 4 3 1 6 0 9-2M36 13c4-1 8 1 8 4-3 1-6 0-9-2", "#fff") + _s("M14 10l-3-6M34 10l3-6", "none", 'stroke-width="3.2" stroke="#d9c07a"') + _s("M12 14c0-6 6-9 12-9s12 3 12 9v12c0 4-2 7-5 8H17c-3-1-5-4-5-8Z", "#fff") + `<path d="M15 10c3-2 7-2 8 1s-2 7-6 6-4-5-2-7ZM31 18c3 0 5 2 4 5s-4 2-5 0 0-5 1-5Z" fill="${IK}"/>` + _r(13, 27, 22, 15, 7.5, "#f6a6c8") + `<circle cx="19" cy="34.5" r="2" fill="${IK}"/><circle cx="29" cy="34.5" r="2" fill="${IK}"/><circle cx="19" cy="21" r="2.4" fill="${IK}"/><circle cx="29" cy="21" r="2.4" fill="${IK}"/>`,
+  "🔥": _s("M24 44c-9 0-14-6-14-13 0-8 6-12 7-19 3 3 4 6 4 9 2-5 6-12 4-18 9 5 15 14 15 25 0 9-6 16-16 16Z", "#ff7a1a") + _s("M24 44c-5 0-8-3-8-8 0-5 4-7 5-11 3 3 4 5 4 7 1-2 3-4 3-6 3 3 5 6 5 10 0 5-4 8-9 8Z", "#ffd34d"),
+  "🚒": _r(3, 20, 40, 16, 3, "#d63a2f") + _s("M29 20V12h8l6 8", "#d63a2f") + _s("M31 14h5l3 5h-8Z", "#9fd3f2", 'stroke-width="2"') + _s("M5 15h21M7 12v6M12 12v6M17 12v6M22 12v6", "none", 'stroke="#d9dde2" stroke-width="2.6"') + _r(31, 7, 6, 4, 1.5, "#2b7bff", 'stroke-width="2"') + _r(3, 27, 40, 3, 0, "#fff", 'stroke-width="1.5"') + _c(12, 37, 5, "#444") + _c(34, 37, 5, "#444"),
+  "💧": _s(DROP, "#7fd3ff") + _sh("M18 27c0-4 2-7 4-10 0 4-1 7-2 10Z", .75),
+  "💦": _s("M17 6c5 8 9 12 9 17a9 9 0 0 1-18 0c0-5 4-9 9-17Z", "#7fd3ff") + _s("M34 20c4 6 7 9 7 13a7 7 0 0 1-14 0c0-4 3-7 7-13Z", "#7fd3ff") + _sh("M12 22c0-3 2-5 3-7 0 3-1 5-2 7Z", .75),
+  "🫧": _c(19, 27, 13, "#d6f1ff", 'fill-opacity=".85"') + _c(35, 14, 8, "#d6f1ff", 'fill-opacity=".85"') + _c(37, 34, 5, "#d6f1ff") + _s("M11 23a9 9 0 0 1 6-6", "none", 'stroke="#fff" stroke-width="3"') + _s("M31 11a4 4 0 0 1 3-3", "none", 'stroke="#fff" stroke-width="2.4"'),
+  "🎵": _s("M16 36V12l22-5v24", "none", 'stroke-width="3.4"') + _s("M16 13l22-5v6l-22 5Z", "#9b59b6") + `<ellipse cx="11" cy="37" rx="6.5" ry="5" fill="#9b59b6" stroke="${IK}" stroke-width="2.6" transform="rotate(-20 11 37)"/><ellipse cx="33" cy="32" rx="6.5" ry="5" fill="#9b59b6" stroke="${IK}" stroke-width="2.6" transform="rotate(-20 33 32)"/>`,
+  "🔤": _r(3, 22, 15, 15, 3, "#e74c3c") + _r(17, 10, 15, 15, 3, "#3a8de0") + _r(30, 24, 15, 15, 3, "#34b366") + _t(10.5, 30, 11, 2.2, "A") + _t(24.5, 18, 11, 2.2, "B") + _t(37.5, 32, 11, 2.2, "C"),
+  "🔴": _c(24, 24, 18, "#e74c3c") + _s("M7 21c10 4 24 4 34 0", "none", 'stroke="#ffd34d" stroke-width="4"') + _sh("M13 14a13 13 0 0 1 9-6l1 3a10 10 0 0 0-7 5Z", .8),
+  "🎉": _s("M6 43l9-26 17 17Z", "#ffd34d") + _s("M10 32l6 6M13 24l10 10", "none", 'stroke="#e74c3c" stroke-width="3"') + _c(30, 8, 2.6, "#3a8de0") + _c(40, 18, 2.6, "#e74c3c") + _c(36, 30, 2.6, "#34b366") + _s("M24 12l3-6M33 22l7-3M22 5l-3 2M42 9l-4 3", "none", 'stroke="#ff6fb5" stroke-width="3"'),
+  "🌧": _s(CLOUD, "#dfe8f0") + _s("M15 38l-2 6M24 38l-2 6M33 38l-2 6", "none", 'stroke="#3a8de0" stroke-width="3.4"') + _sh("M14 22a7 7 0 0 1 6-5", .9),
+  "🌦": _c(32, 15, 8, "#ffd34d") + _s(CLOUD, "#dfe8f0") + _s("M17 38l-2 6M27 38l-2 6", "none", 'stroke="#3a8de0" stroke-width="3.4"'),
+  "⛅": _c(30, 16, 10, "#ffd34d") + _s("M30 2v4M42 6l-3 3M46 16h-4", "none", 'stroke="#f2b705" stroke-width="3"') + _s("M11 40a7 7 0 0 1 0-14 9 9 0 0 1 17-2 7 7 0 0 1 3 16Z", "#f4f8fb") + _sh("M12 30a6 6 0 0 1 5-4", .9),
+  "❄": _s("M24 4v40M7 14l34 20M7 34l34-20", "none", 'stroke="#3a8de0" stroke-width="4"') + _s("M19 7l5 4 5-4M19 41l5-4 5 4M5 20l6-1 1-6M43 28l-6 1-1 6M5 28l6 1 1 6M43 20l-6-1-1-6", "none", 'stroke="#3a8de0" stroke-width="3"') + _c(24, 24, 4, "#d6f1ff"),
+  "💨": _s("M4 18h24a6 6 0 1 0-6-6M4 26h32a6 6 0 1 1-6 6M8 34h12", "none", 'stroke="#8fb6d8" stroke-width="4"'),
+  "🌙": _s("M30 6a18 18 0 1 0 12 28A15 15 0 0 1 30 6Z", "#ffe27a") + `<circle cx="24" cy="25" r="1.8" fill="${IK}"/>` + _s("M22 31c2 2 5 2 7 0", "none", 'stroke-width="2"') + _s("M39 10l1.5 3 3 .5-2.2 2 .5 3-2.8-1.5-2.8 1.5.5-3-2.2-2 3-.5Z", "#fff6a0", 'stroke-width="1.5"'),
+  "☀": _s("M24 3v6M24 39v6M3 24h6M39 24h6M9 9l4 4M35 35l4 4M9 39l4-4M35 13l4-4", "none", 'stroke="#f2b705" stroke-width="4"') + _c(24, 24, 11, "#ffd34d") + `<circle cx="20.5" cy="22" r="1.6" fill="${IK}"/><circle cx="27.5" cy="22" r="1.6" fill="${IK}"/>` + _s("M20 27c2.5 2.5 5.5 2.5 8 0", "none", 'stroke-width="2"'),
+  "🌈": _s("M4 38a20 20 0 0 1 40 0", "none", 'stroke="#e74c3c" stroke-width="5"') + _s("M9 38a15 15 0 0 1 30 0", "none", 'stroke="#ffd34d" stroke-width="5"') + _s("M14 38a10 10 0 0 1 20 0", "none", 'stroke="#34b366" stroke-width="5"') + _s("M19 38a5 5 0 0 1 10 0", "none", 'stroke="#3a8de0" stroke-width="5"'),
+  "🚂": _r(5, 20, 28, 16, 3, "#d9483b") + _r(25, 10, 14, 26, 3, "#d9483b") + _r(28, 13, 8, 7, 1.5, "#9fd3f2", 'stroke-width="2"') + _r(9, 11, 7, 10, 1.5, "#333") + _s("M3 36h40", "none", 'stroke-width="3"') + _c(13, 37, 5, "#ffd34d") + _c(31, 37, 5, "#ffd34d") + _c(12, 6, 3.5, "#f4f8fb", 'stroke-width="1.5"') + _r(5, 26, 28, 3, 0, "#ffd34d", 'stroke-width="1.5"'),
+  "✨": _s("M20 6Q22 18 34 20Q22 22 20 34Q18 22 6 20Q18 18 20 6Z", "#ffe066") + _s("M36 28Q37 34 42 35Q37 36 36 42Q35 36 30 35Q35 34 36 28Z", "#ffe066", 'stroke-width="2"') + _s("M37 5Q38 9 41 10Q38 11 37 15Q36 11 33 10Q36 9 37 5Z", "#fff6a0", 'stroke-width="2"'),
+  "📣": _s("M6 20v9h6l20 10V10L12 20Z", "#ff8c1a") + _r(32, 8, 6, 33, 3, "#ffd34d") + _s("M10 29l3 10h5l-2-9", "#ffd34d") + _s("M41 18c2 3 2 9 0 12", "none", 'stroke-width="2.6"'),
+  "📢": _s("M6 20v9h6l20 10V10L12 20Z", "#ff8c1a") + _r(32, 8, 6, 33, 3, "#ffd34d") + _s("M10 29l3 10h5l-2-9", "#ffd34d") + _s("M41 18c2 3 2 9 0 12", "none", 'stroke-width="2.6"'),
+  "🚀": _s("M24 3c9 7 11 18 8 29H16C13 21 15 10 24 3Z", "#f4f8fb") + _c(24, 17, 4.5, "#3a8de0") + _s("M16 26l-7 8 1 6 7-6M32 26l7 8-1 6-7-6", "#e74c3c") + _s("M18 32c0 5 3 9 6 12 3-3 6-7 6-12Z", "#ff9f1a"),
+  "🦘": _s("M10 34c4-12 18-14 24-6", "none", 'stroke="#ffb340" stroke-width="3" stroke-dasharray="3 4"') + _s("M30 26l8-14", "none", 'stroke-width="3"') + _s("M33 10l6 1-1 6Z", IK) + _r(20, 32, 16, 6, 3, "#9aa7b5") + _s("M20 38c-3 2-3 4 0 5h16c3-1 3-3 0-5", "none", 'stroke="#9aa7b5" stroke-width="3"'),
+  "⏪": _r(3, 8, 42, 32, 9, "#3a8de0") + _s("M22 15L11 24l11 9ZM36 15L25 24l11 9Z", "#fff"),
+  "🐢": _s("M8 33c0-11 7-18 16-18s16 7 16 18Z", "#4caf50") + _s("M16 33l3-9h10l3 9M19 24l5-6 5 6", "none", 'stroke="#2e7d32" stroke-width="2"') + _c(42, 27, 5, "#9ccc65") + _r(10, 32, 6, 7, 2, "#9ccc65") + _r(30, 32, 6, 7, 2, "#9ccc65") + `<circle cx="43" cy="26" r="1.4" fill="${IK}"/>`,
+  "🐇": _s("M17 22c-3-9-3-17 1-18s5 9 4 17M31 22c3-9 3-17-1-18s-5 9-4 17", "#f4f2ee") + _s("M19 18c-1-5-1-9 0-10M29 18c1-5 1-9 0-10", "none", 'stroke="#f6a6c8" stroke-width="2.4"') + _c(24, 31, 13, "#f4f2ee") + `<circle cx="19" cy="29" r="2" fill="${IK}"/><circle cx="29" cy="29" r="2" fill="${IK}"/>` + _s("M22 34h4l-2 2Z", "#f6a6c8", 'stroke-width="1.6"'),
+  "✖": _s("M12 8L24 20 36 8 40 12 28 24 40 36 36 40 24 28 12 40 8 36 20 24 8 12Z", "#ff6b5e"),
+  "❌": _s("M12 8L24 20 36 8 40 12 28 24 40 36 36 40 24 28 12 40 8 36 20 24 8 12Z", "#ff6b5e"),
+  "✅": _r(5, 5, 38, 38, 10, "#4fc36b") + _s("M13 24l8 8 15-16", "none", 'stroke="#fff" stroke-width="5.5"'),
+  "✔": _s("M7 25l10 10L41 11", "none", 'stroke="#34b366" stroke-width="7"') + _s("M7 25l10 10L41 11", "none", 'stroke="#4fc36b" stroke-width="3"'),
+  "🔒": _s("M15 21v-6a9 9 0 0 1 18 0v6", "none", 'stroke="#9aa7b5" stroke-width="5"') + _s("M15 21v-6a9 9 0 0 1 18 0v6", "none", 'stroke-width="1.6"') + _r(9, 20, 30, 23, 5, "#ffcf3a") + `<circle cx="24" cy="30" r="3" fill="${IK}"/><path d="M23 31h2v6h-2Z" fill="${IK}"/>` + _sh("M12 23h4v17h-2a3 3 0 0 1-2-3Z", .55),
+  "🔓": _s("M15 21v-8a9 9 0 0 1 17-3", "none", 'stroke="#9aa7b5" stroke-width="5"') + _r(9, 20, 30, 23, 5, "#ffcf3a") + `<circle cx="24" cy="30" r="3" fill="${IK}"/><path d="M23 31h2v6h-2Z" fill="${IK}"/>`,
+  "🛑": _s("M17 4h14l13 13v14L31 44H17L4 31V17Z", "#e53935") + _s("M18 7h12l11 11v12L30 41H18L7 30V18Z", "none", 'stroke="#fff" stroke-width="2"') + _r(12, 21, 24, 6, 2, "#fff", 'stroke-width="1.5"'),
+  "⚠": _s("M24 5L45 41H3Z", "#ffd34d") + _r(21.5, 16, 5, 14, 2.5, IK, 'stroke="none"') + `<circle cx="24" cy="35" r="2.8" fill="${IK}"/>`,
+  "🚫": _c(24, 24, 18, "#fff") + _c(24, 24, 18, "none", 'stroke="#e53935" stroke-width="6"') + _s("M11 11L37 37", "none", 'stroke="#e53935" stroke-width="6"'),
+  "👉": _s("M4 18h22c3 0 3 5 0 5h12c3 0 3 5 0 5h-2c3 0 3 5 0 5h-2c3 0 3 5 0 5H14C8 38 4 34 4 28Z", "#ffc994") + _s("M26 23h15c3 0 3-5 0-5H22", "#ffc994"),
+  "👆": _s("M18 26V8c0-4 6-4 6 0v14c0-3 5-3 5 0v2c0-3 5-3 5 0v2c0-3 5-3 5 0v8c0 7-5 12-12 12h-2c-5 0-8-2-11-6l-6-8c-2-3 2-6 4-4l6 5Z", "#ffc994"),
+  "🏁": _s("M9 44V5", "none", 'stroke-width="3.4"') + _s("M10 6h30v22H10Z", "#fff") + `<path d="M10 6h7.5v5.5H10ZM25 6h7.5v5.5H25ZM17.5 11.5H25V17h-7.5ZM32.5 11.5H40V17h-7.5ZM10 17h7.5v5.5H10ZM25 17h7.5v5.5H25ZM17.5 22.5H25V28h-7.5ZM32.5 22.5H40V28h-7.5Z" fill="${IK}"/>` + _s("M10 6h30v22H10Z", "none"),
+  "🧠": _s("M24 9c-3-4-10-4-12 1-5 0-8 5-6 9-3 3-2 9 2 11 0 5 5 8 9 6 2 3 5 3 7 1Z", "#f8a5c2") + _s("M24 9c3-4 10-4 12 1 5 0 8 5 6 9 3 3 2 9-2 11 0 5-5 8-9 6-2 3-5 3-7 1Z", "#f8a5c2") + _s("M24 9v28M13 18c3 0 5 2 5 5M35 18c-3 0-5 2-5 5M12 29c3-1 6 0 7 3M36 29c-3-1-6 0-7 3", "none", 'stroke-width="2"'),
+  "🪨": _s("M5 38l4-14 10-8 12 3 9 8 3 11Z", "#a2a9b1") + _s("M19 16l3 10-13 0M31 19l-2 10 14 0M22 26l7 3", "none", 'stroke-width="2"') + _sh("M11 25l8-7 2 5-9 4Z", .45),
+  "🪢": _s("M6 30c8-12 14 4 22-8s14-8 14-8", "none", 'stroke="#c98a4b" stroke-width="6"') + _s("M6 30c8-12 14 4 22-8s14-8 14-8", "none", 'stroke="#e3b77a" stroke-width="2.4" stroke-dasharray="3 3"') + _c(24, 25, 6, "#c98a4b"),
+  "⚡": _s("M27 3L9 27h13l-3 18 20-26H26Z", "#ffd34d") + _sh("M25 8l-8 13h4Z", .6),
+  "♨": _r(8, 30, 32, 12, 5, "#9aa7b5") + _s("M15 26c-4-4 4-6 0-11s3-7 0-10M24 26c-4-4 4-6 0-11s3-7 0-10M33 26c-4-4 4-6 0-11s3-7 0-10", "none", 'stroke="#e57373" stroke-width="3.2"'),
+  "📦": _s("M6 15l18-9 18 9v20l-18 9-18-9Z", "#d9a066") + _s("M6 15l18 9 18-9M24 24v20", "none") + _s("M15 10.5l18 9v6", "none", 'stroke="#f3e0b5" stroke-width="3"'),
+  "🧍": _c(24, 9, 6, "#ffc994") + _r(16, 17, 16, 15, 6, "#3a8de0") + _r(17, 30, 6, 14, 3, "#34495e") + _r(25, 30, 6, 14, 3, "#34495e"),
+  "🍎": _s("M24 14c-4-4-16-3-16 10 0 11 8 19 16 15 8 4 16-4 16-15 0-13-12-14-16-10Z", "#e53935") + _s("M24 14c0-4 1-7 3-9", "none", 'stroke-width="3"') + _s("M26 9c4-4 9-3 10-1-3 3-7 3-10 1Z", "#4caf50", 'stroke-width="2"') + _sh("M13 22c1-4 4-6 7-6-3 2-5 4-6 7Z", .6),
+  "🪵": _s("M8 16h28a7 9 0 0 1 0 18H8Z", "#a86f3c") + `<ellipse cx="9" cy="25" rx="7" ry="9" fill="#e3b77a" stroke="${IK}" stroke-width="2.6"/><ellipse cx="9" cy="25" rx="3" ry="4" fill="none" stroke="#a86f3c" stroke-width="2"/>` + _s("M20 21h12M18 29h16", "none", 'stroke="#7a4a2a" stroke-width="2"'),
+  "🥛": _s("M16 6h16l-2 6 4 6v24H14V18l4-6Z", "#fff") + _s("M14 26h20v16H14Z", "#d6ecff", 'stroke-width="0"') + _s("M16 6h16l-2 6 4 6v24H14V18l4-6Z", "none") + _r(16, 4, 16, 4, 1.5, "#3a8de0", 'stroke-width="2"'),
+  "🏗": _s("M14 44V8M14 8h28M14 8l-8 6h8", "none", 'stroke="#f2b705" stroke-width="5"') + _s("M14 44V8M14 8h28", "none", 'stroke-width="1.4"') + _s("M36 8v14", "none", 'stroke-width="2"') + _s("M32 22h8v7h-8Z", "#d9a066") + _r(6, 40, 16, 5, 2, "#555"),
+  "🎨": _s("M24 5C12 5 5 14 5 23c0 10 8 18 17 18 4 0 4-4 2-6s-1-6 3-6h6c6 0 10-4 10-9C43 12 35 5 24 5Z", "#f3d9a8") + _c(14, 21, 3.5, "#e74c3c") + _c(21, 13, 3.5, "#ffd34d") + _c(31, 13, 3.5, "#34b366") + _c(36, 22, 3.5, "#3a8de0"),
+  "🖌": _s("M30 4l8 8-14 14-6-2-2-6Z", "#c98a4b") + _s("M16 18l14 14", "none") + _s("M15 25c-6 0-9 4-9 9 0 4-2 6-3 7 7 1 15-1 17-7 1-3-1-8-5-9Z", "#e53935"),
+  "🌊": _s("M3 26c5-6 9-6 13 0s9 6 13 0 9-6 13 0v16H3Z", "#3a8de0") + _s("M3 34c5-5 9-5 13 0s9 5 13 0 9-5 13 0", "none", 'stroke="#d6f1ff" stroke-width="2.6"') + _s("M16 22c0-10 10-14 16-10-6 0-9 4-8 9", "#7fd3ff"),
+  "🍃": _s("M8 40C8 20 22 8 42 8c0 20-12 32-34 32Z", "#6cc04a") + _s("M8 40L32 16", "none", 'stroke="#3f8a33" stroke-width="2.4"'),
+  "👏": _s("M14 18l10-10c2-2 5 1 3 3l-3 3 8-8c2-2 5 1 3 3l-7 7 6-6c2-2 5 1 3 3l-6 6 4-4c2-2 5 1 3 3l-9 9c-6 6-15 6-20-1-3-4-2-9 1-12l5-5c2-2 5 0 3 3Z", "#ffc994") + _s("M6 8l-3-3M11 5l-1-4M4 14l-4-1", "none", 'stroke="#ffb340" stroke-width="2.4"'),
+  "👍": _s("M8 20h7v22H8Z", "#3a8de0") + _s("M15 22l7-12c1-4 7-3 7 1l-1 7h11c3 0 5 3 4 6l-3 14c-1 3-3 4-6 4H15Z", "#ffc994"),
+  "🥐": _s("M5 30c2-12 13-20 19-20s17 8 19 20c-3 2-7 1-9-1l-3 4c-4 2-10 2-14 0l-3-4c-2 2-6 3-9 1Z", "#f2b25c") + _s("M17 14l3 16M31 14l-3 16M24 11v20", "none", 'stroke="#c47a24" stroke-width="2.2"'),
+  "🪚": _s("M4 22h30l8-8v14l-8 8H4Z", "#c9d3dc") + _s("M4 36l3-3 3 3 3-3 3 3 3-3 3 3 3-3 3 3 3-3 3 3", "none", 'stroke-width="2"') + _r(34, 10, 10, 20, 4, "#c98a4b"),
+  "🧀": _s("M4 30L36 12l8 10v14H4Z", "#ffd34d") + _s("M4 30h40", "none") + _c(16, 36, 3, "#f2b705") + _c(30, 34, 2.4, "#f2b705") + _c(30, 23, 2.4, "#f2b705"),
+  "🏭": _s("M4 44V22l10 6v-6l10 6v-6l10 6V8h8v36Z", "#c9d3dc") + _r(9, 34, 6, 6, 1, "#ffd34d", 'stroke-width="2"') + _r(20, 34, 6, 6, 1, "#ffd34d", 'stroke-width="2"') + _c(40, 5, 3, "#eee", 'stroke-width="1.5"'),
+  "🛤": _s("M16 44L22 4M32 44L26 4", "none", 'stroke="#8a8f96" stroke-width="3"') + _s("M10 40h28M12 31h24M14 22h20M16 14h16M18 7h12", "none", 'stroke="#a8743d" stroke-width="3.4"'),
+  "🎈": _s("M24 4c-9 0-14 7-14 14 0 9 8 15 14 18 6-3 14-9 14-18 0-7-5-14-14-14Z", "#ff6fb5") + _s("M24 36l-2 3h4Z M24 39c-3 3 3 5 0 8", "none", 'stroke-width="2"') + _sh("M16 13c1-3 4-5 7-5-3 2-5 4-6 7Z", .7),
+  "📯": _s("M6 30c0-10 8-18 18-18h8", "none", 'stroke="#f2b705" stroke-width="6"') + _s("M30 6l12 6v14l-12 6Z", "#ffd34d") + _c(14, 32, 6, "#ffd34d") + _s("M6 30c0-10 8-18 18-18h8", "none", 'stroke-width="1.4"'),
+  "🎺": _s("M4 22h22l14-10v24L26 26H4Z", "#ffd34d") + _r(10, 14, 4, 8, 1.5, "#f2b705", 'stroke-width="2"') + _r(16, 14, 4, 8, 1.5, "#f2b705", 'stroke-width="2"') + _sh("M28 20l10-6v4l-10 5Z", .6),
+  "🎲": _r(6, 6, 36, 36, 9, "#fff") + `<circle cx="16" cy="16" r="3.4" fill="#e53935"/><circle cx="32" cy="16" r="3.4" fill="${IK}"/><circle cx="24" cy="24" r="3.4" fill="${IK}"/><circle cx="16" cy="32" r="3.4" fill="${IK}"/><circle cx="32" cy="32" r="3.4" fill="${IK}"/>`,
+  "🤖": _s("M24 4v6", "none") + _c(24, 4, 2.6, "#ff6b5e") + _r(8, 10, 32, 24, 8, "#b8c4cf") + _r(13, 15, 22, 13, 5, "#2b3a55") + _c(19, 21.5, 3, "#7fe3ff", 'stroke="none"') + _c(29, 21.5, 3, "#7fe3ff", 'stroke="none"') + _r(4, 18, 4, 9, 2, "#9aa7b5") + _r(40, 18, 4, 9, 2, "#9aa7b5") + _r(14, 34, 20, 10, 3, "#9aa7b5"),
+  "👫": _c(15, 11, 6, "#ffc994") + _c(33, 11, 6, "#ffc994") + _r(8, 19, 14, 14, 6, "#3a8de0") + _s("M26 33l3-14h8l3 14Z", "#ff6fb5") + _r(10, 31, 4, 13, 2, "#34495e") + _r(16, 31, 4, 13, 2, "#34495e") + _r(28, 32, 4, 12, 2, "#ffc994") + _r(34, 32, 4, 12, 2, "#ffc994"),
+  "🎟": _s("M4 14h40v6a4 4 0 0 0 0 8v6H4v-6a4 4 0 0 0 0-8Z", "#ff8c1a") + _s("M30 14v20", "none", 'stroke-dasharray="2 3" stroke-width="2"') + _s("M15 19l1.8 3.6 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.8 4-.6Z", "#ffd34d", 'stroke-width="1.6"'),
+  "🚉": _s("M3 18L24 6l21 12Z", "#d9483b") + _r(8, 18, 32, 18, 2, "#fff3d6") + _r(20, 24, 8, 12, 1, "#8fd0f5") + _r(11, 22, 6, 6, 1, "#8fd0f5", 'stroke-width="2"') + _r(31, 22, 6, 6, 1, "#8fd0f5", 'stroke-width="2"') + _r(3, 36, 42, 6, 2, "#b8c4cf"),
+  "🏙": ICONS.t_ciudad, "🌳": ICONS.t_campo, "🚗": ICONS.t_calles, "📸": ICONS.cam,
+  "🧱": _r(4, 8, 19, 10, 2, "#d9483b") + _r(25, 8, 19, 10, 2, "#e85a4b") + _r(4, 20, 9, 10, 2, "#e85a4b") + _r(15, 20, 19, 10, 2, "#d9483b") + _r(36, 20, 8, 10, 2, "#e85a4b") + _r(4, 32, 19, 10, 2, "#e85a4b") + _r(25, 32, 19, 10, 2, "#d9483b"),
+  "🧹": _s("M34 4L22 26", "none", 'stroke="#a8743d" stroke-width="5"') + _s("M34 4L22 26", "none", 'stroke-width="1.4"') + _s("M17 23l12 6-5 15c-6 0-14-4-18-9Z", "#ffd34d") + _s("M14 32l7 4M11 37l8 5", "none", 'stroke="#c98a00" stroke-width="2"'),
+  "🔁": _s("M8 22a12 12 0 0 1 12-12h14", "none", 'stroke="#3a8de0" stroke-width="5"') + _s("M32 4l8 6-8 6Z", "#3a8de0") + _s("M40 26a12 12 0 0 1-12 12H14", "none", 'stroke="#3a8de0" stroke-width="5"') + _s("M16 32l-8 6 8 6Z", "#3a8de0"),
+  "🔀": _s("M4 14h10l16 20h8M4 34h10l5-6M25 20l5-6h8", "none", 'stroke="#3a8de0" stroke-width="4.5"') + _s("M36 8l8 6-8 6ZM36 28l8 6-8 6Z", "#3a8de0"),
+  "🚚": _r(3, 12, 26, 22, 3, "#e67e22") + _s("M29 18h9l6 8v8H29Z", "#3a8de0") + _s("M32 20h5l4 6h-9Z", "#9fd3f2", 'stroke-width="2"') + _c(12, 36, 5, "#444") + _c(36, 36, 5, "#444"),
+  "🕹": _r(8, 32, 32, 10, 4, "#d9483b") + _s("M24 32V16", "none", 'stroke-width="4"') + _c(24, 12, 7, "#e53935") + _c(34, 37, 2.4, "#ffd34d", 'stroke-width="1.5"'),
+  "👋": _s("M14 26V12c0-3 5-3 5 0v10V8c0-3 5-3 5 0v14V9c0-3 5-3 5 0v14V13c0-3 5-3 5 0v17c0 8-6 14-14 14-5 0-9-3-11-7l-5-9c-2-3 2-5 4-3l6 6Z", "#ffc994") + _s("M40 6c2 2 3 4 3 7M8 8c-2 2-3 4-3 7", "none", 'stroke="#ffb340" stroke-width="2.4"'),
+  "☆": _s(STAR, "#fff", 'stroke="#d9c07a"'),
+  "🎯": ICONS.center, "🔧": ICONS.fix, "🏠": ICONS.home, "🛍": ICONS.shop, "⚙": ICONS.menu, "❓": ICONS.help, "💾": ICONS.save, "🔊": ICONS.sound, "🔇": ICONS.mute,
+  "🗑": ICONS.clear, "🎓": ICONS.tut, "➕": ICONS.zin, "➖": ICONS.zout, "🗺": ICONS.map, "📐": ICONS.side, "⬆": ICONS.fup, "⬇": ICONS.fdown, "🎥": ICONS.cam, "👀": ICONS.eyes,
+  "✋": ICONS.hand, "✏": ICONS.pencil, "🔄": ICONS.reset, "↩": ICONS.undo, "⏸": ICONS.pause, "▶": _r(4, 4, 40, 40, 12, "#4fc36b") + ICONS.play.replace('fill="#fff"', 'fill="#fff"'), "⛰": ICONS.h_alto,
+};
+// one regular expression for every emoji that has a drawing (with or without the emoji style selector)
+const EMO_RE = new RegExp("(" + Object.keys(EMO_ART).sort((a, b) => b.length - a.length).map(k => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")️?", "gu");
+const emoSvg = em => `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${EMO_ART[em]}</svg>`;
+// swap the emoji inside an element (text only; SVG drawings, inputs and our own icons are skipped)
+const EMO_SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "INPUT", "SELECT", "OPTION", "CANVAS"]);
+const emoNo = e => EMO_SKIP.has(e.nodeName) || e.namespaceURI === "http://www.w3.org/2000/svg" || (e.classList && (e.classList.contains("emo") || e.classList.contains("noart"))) || e.isContentEditable;
+function artify(root) {
+  if (!root || window.__noArt) return;
+  if (root.nodeType === 3) root = root.parentNode;
+  if (!root || root.nodeType !== 1) return;
+  for (let e = root; e && e !== document.body; e = e.parentNode) if (e.nodeType === 1 && emoNo(e)) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, { acceptNode: n => {
+    if (n.nodeType === 1) return emoNo(n) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP;
+    EMO_RE.lastIndex = 0; return EMO_RE.test(n.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT; } });
+  const list = []; while (w.nextNode()) list.push(w.currentNode);
+  list.forEach(n => {
+    const f = document.createDocumentFragment(), s = n.nodeValue; let last = 0; EMO_RE.lastIndex = 0; let m;
+    while ((m = EMO_RE.exec(s))) {
+      if (m.index > last) f.appendChild(document.createTextNode(s.slice(last, m.index)));
+      const sp = document.createElement("span"); sp.className = "emo"; sp.innerHTML = emoSvg(m[1]);
+      const hid = document.createElement("i"); hid.textContent = m[0]; sp.appendChild(hid); f.appendChild(sp);
+      last = m.index + m[0].length;
+    }
+    if (last < s.length) f.appendChild(document.createTextNode(s.slice(last)));
+    n.parentNode.replaceChild(f, n);
+  });
+}
+// keep doing it as the game changes its texts (before the screen is painted, so nothing flickers)
+{ const mo = new MutationObserver(ms => {
+    const todo = new Set();
+    ms.forEach(m => { if (m.type === "characterData") todo.add(m.target); else m.addedNodes.forEach(n => { if (n.nodeType === 1 || n.nodeType === 3) todo.add(n); }); });
+    todo.forEach(n => { if (n.isConnected) artify(n); });
+    mo.takeRecords();
+  });
+  mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+  artify(document.body);
+}
 const TAB_IC = { decor: "t_campo", vias: "t_vias", cruces: "t_cruces", subir: "t_subir", especial: "t_especial", campo: "t_campo", calles: "t_calles", suelos: "t_suelos", ciudad: "t_ciudad", monumentos: "t_monumentos", sorpresas: "t_sorpresas", trenes: "t_trenes" };
 const PAL_IC = { hand: "hand", erase: "erase", lapiz: "pencil", lapizCalle: "crayon" };
 function iconNode(name) { const d = document.createElement("span"); d.className = "icw"; d.innerHTML = ic(name); return d.firstChild; }
