@@ -12444,7 +12444,7 @@ const EMO_ART = {
   "🌟": _s(STAR, "#ffe066") + _sh("M24 9l3 6.5-3 .5Z"),
   "🪙": _c(24, 24, 18, "#ffcf3a") + _c(24, 24, 12.5, "#ffe27a") + _s("M24 15l2.6 5.4 5.9.8-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.8Z", "#f2b705") + _sh("M11 18a14 14 0 0 1 9-9l1 3a11 11 0 0 0-7 7Z", .7),
   "🏆": _s("M14 6H34V18a10 10 0 0 1-20 0Z", "#ffd34d") + _s("M14 10H7v3a8 8 0 0 0 8 8M34 10h7v3a8 8 0 0 1-8 8", "none", 'stroke-width="3"') + _r(21, 27, 6, 7, 1, "#f2b705") + _r(14, 34, 20, 8, 2, "#a8743d") + _r(18, 36, 12, 3, 1, "#ffe7b8", 'stroke-width="1.5"') + _sh("M18 9h3v10a5 5 0 0 1-3-4Z", .7),
-  "💪": _s("M9 43V31c0-8 4-12 9-14l-2-7c-1-4 5-6 8-3l3 6c0 4-2 6-4 7 5-3 13-4 18 1 5 6 2 16-6 19-7 3-17 3-26 3Z", "#ffc994") + _s("M22 20c2 5 6 7 11 6", "none", 'stroke-width="2.2"') + _sh("M30 22c4-1 8 1 9 5-3-2-6-3-9-5Z", .6) + _s("M16 9c2-1 5-1 6 1", "none", 'stroke-width="2"'),
+  "💪": _s("M8 9Q8 3 14 3H19Q25 3 25 9V13Q25 17 21.5 18V24Q25 18.5 31 18Q43 17.5 44.5 29V39.5Q44.5 44.5 39.5 44.5H14Q6 44.5 6 36.5L6.5 18Q5.5 14.5 8 13Z", "#ffc994") + `<path d="M7 34Q8 42 15 42.5H40Q43 42 43 38V36Q36 40 22 39Q12 38 7 34Z" fill="#f2a865"/>` + _s("M8 9Q8 3 14 3H19Q25 3 25 9V13Q25 17 21.5 18V24Q25 18.5 31 18Q43 17.5 44.5 29V39.5Q44.5 44.5 39.5 44.5H14Q6 44.5 6 36.5L6.5 18Q5.5 14.5 8 13Z", "none") + _s("M9 9H24M9 13.5H23", "none", 'stroke-width="2"') + _s("M21.5 25Q19 31 24 36", "none", 'stroke-width="2.2"') + `<ellipse cx="33" cy="24.5" rx="6" ry="3.2" fill="#fff" opacity=".7" transform="rotate(-12 33 24.5)"/><ellipse cx="11" cy="6.5" rx="3" ry="1.6" fill="#fff" opacity=".7"/>` + _s("M33 9l3-4M38.5 12.5l4.5-2M29 7.5l.5-4.5", "none", 'stroke="#ff9f1a" stroke-width="2.6"'),
   "🐄": _s("M12 13c-4-1-8 1-8 4 3 1 6 0 9-2M36 13c4-1 8 1 8 4-3 1-6 0-9-2", "#fff") + _s("M14 10l-3-6M34 10l3-6", "none", 'stroke-width="3.2" stroke="#d9c07a"') + _s("M12 14c0-6 6-9 12-9s12 3 12 9v12c0 4-2 7-5 8H17c-3-1-5-4-5-8Z", "#fff") + `<path d="M15 10c3-2 7-2 8 1s-2 7-6 6-4-5-2-7ZM31 18c3 0 5 2 4 5s-4 2-5 0 0-5 1-5Z" fill="${IK}"/>` + _r(13, 27, 22, 15, 7.5, "#f6a6c8") + `<circle cx="19" cy="34.5" r="2" fill="${IK}"/><circle cx="29" cy="34.5" r="2" fill="${IK}"/><circle cx="19" cy="21" r="2.4" fill="${IK}"/><circle cx="29" cy="21" r="2.4" fill="${IK}"/>`,
   "🔥": _s("M24 44c-9 0-14-6-14-13 0-8 6-12 7-19 3 3 4 6 4 9 2-5 6-12 4-18 9 5 15 14 15 25 0 9-6 16-16 16Z", "#ff7a1a") + _s("M24 44c-5 0-8-3-8-8 0-5 4-7 5-11 3 3 4 5 4 7 1-2 3-4 3-6 3 3 5 6 5 10 0 5-4 8-9 8Z", "#ffd34d"),
   "🚒": _r(3, 20, 40, 16, 3, "#d63a2f") + _s("M29 20V12h8l6 8", "#d63a2f") + _s("M31 14h5l3 5h-8Z", "#9fd3f2", 'stroke-width="2"') + _s("M5 15h21M7 12v6M12 12v6M17 12v6M22 12v6", "none", 'stroke="#d9dde2" stroke-width="2.6"') + _r(31, 7, 6, 4, 1.5, "#2b7bff", 'stroke-width="2"') + _r(3, 27, 40, 3, 0, "#fff", 'stroke-width="1.5"') + _c(12, 37, 5, "#444") + _c(34, 37, 5, "#444"),
@@ -12554,11 +12554,32 @@ function artify(root) {
     n.parentNode.replaceChild(f, n);
   });
 }
+// emoji written inside the interface's own SVG drawings (a <text> holding just one emoji, like the 💪 push button):
+// the text stays (hidden) and the drawing sits on top of it, in the same place and size; the board is left alone
+function svgEmo(t) {
+  if (!t || t.nodeName !== "text" || window.__noArt || t.closest("#world, .emo, .noart")) return;
+  const key = (t.textContent || "").replace(/\uFE0F/g, "").trim(), art = EMO_ART[key];
+  let g = t.__emoG;
+  if (!art) { if (g) { g.remove(); t.__emoG = null; t.style.opacity = ""; } return; }
+  let bb; try { t.style.opacity = ""; bb = t.getBBox(); } catch (e) { return; }
+  if (!bb || !bb.height) return;
+  if (!g || !g.isConnected) { g = t.__emoG = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.setAttribute("pointer-events", "none"); t.after(g); }
+  const k = Math.min(bb.height, bb.width * 1.3) * 1.02 / 48, cx = bb.x + bb.width / 2, cy = bb.y + bb.height / 2;
+  g.setAttribute("transform", `${t.getAttribute("transform") || ""} translate(${cx.toFixed(1)} ${cy.toFixed(1)}) scale(${k.toFixed(3)}) translate(-24 -24)`);
+  if (g.__art !== key) { g.innerHTML = art; g.__art = key; }
+  t.style.opacity = "0";
+}
+function svgEmoIn(n) { if (n.nodeType !== 1) return; if (n.nodeName === "text") svgEmo(n); else if (n.querySelectorAll && !(n.closest && n.closest("#world"))) n.querySelectorAll("text").forEach(svgEmo); }
 // keep doing it as the game changes its texts (before the screen is painted, so nothing flickers)
 { const mo = new MutationObserver(ms => {
-    const todo = new Set();
-    ms.forEach(m => { if (m.type === "characterData") todo.add(m.target); else m.addedNodes.forEach(n => { if (n.nodeType === 1 || n.nodeType === 3) todo.add(n); }); });
+    const todo = new Set(), svgs = new Set();
+    ms.forEach(m => {
+      const host = m.type === "characterData" ? m.target.parentNode : m.target;
+      if (host && host.nodeName === "text") svgs.add(host);
+      if (m.type === "characterData") todo.add(m.target); else m.addedNodes.forEach(n => { if (n.nodeType === 1 || n.nodeType === 3) todo.add(n); if (n.nodeType === 1) svgs.add(n); });
+    });
     todo.forEach(n => { if (n.isConnected) artify(n); });
+    svgs.forEach(n => { if (n.isConnected) svgEmoIn(n); });
     mo.takeRecords();
   });
   mo.observe(document.body, { childList: true, subtree: true, characterData: true });
