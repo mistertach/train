@@ -1050,6 +1050,87 @@ body.playing.catOpen #playHint { display: none !important; }
 .emo { display: inline-block; width: 1.2em; height: 1.2em; vertical-align: -.24em; line-height: 1; flex: none; }
 .emo > svg { width: 100% !important; height: 100% !important; display: block; overflow: visible; }
 .emo > i { display: none; }
+
+/* 🏁 CIRCUIT RACING (v1.1) */
+#raceBtn { background: linear-gradient(180deg, #fff5cc, #ffd34d); border-color: #c98a00; }
+body.lvlmode #raceBtn, body.racing #top, body.racing #bottom, body.racing #side, body.racing #playHint, body.racing #toolsShow, body.racing #daily, body.racing #mini, body.racing #raceBanner { display: none !important; }
+body.racebuild #raceBtn { background: linear-gradient(180deg, #7be895, #2fb858); border-color: #1c7c3a; color: #fff; box-shadow: 0 4px 14px rgba(47,184,88,.35); }
+#raceBanner {
+  position: fixed; top: calc(10px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+  z-index: 9; display: flex; align-items: center; gap: 10px;
+  background: rgba(255,250,235,.96); border: 4px solid #e09f1f; border-radius: 999px;
+  padding: 6px 10px 6px 16px; box-shadow: 0 8px 24px rgba(30,60,90,.22); font-weight: 900; color: #3b2a18;
+}
+#raceBanner[hidden] { display: none !important; }
+#raceBanner .rb-title { font-size: 16px; white-space: nowrap; }
+#raceBanner button { border: 0; border-radius: 999px; font-weight: 900; cursor: pointer; font-family: inherit; }
+#raceBanner .rb-go { background: #2fb858; color: #fff; padding: 7px 14px; font-size: 15px; box-shadow: 0 3px 0 #1c7c3a; }
+#raceBanner .rb-go:active { transform: translateY(2px); box-shadow: 0 1px 0 #1c7c3a; }
+#raceBanner .rb-x { background: #f2e5cf; color: #5b3a1a; width: 32px; height: 32px; font-size: 16px; }
+#raceHud { position: fixed; inset: 0; pointer-events: none; z-index: 12; display: flex; flex-direction: column; justify-content: space-between; padding: calc(10px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left)); }
+#raceHud[hidden] { display: none !important; }
+#raceHud .rh-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; pointer-events: auto; }
+#raceHud .rh-pill { background: rgba(255,250,238,.95); border: 4px solid #6b4219; border-radius: 999px; padding: 6px 16px; display: flex; align-items: center; gap: 12px; font-weight: 900; color: #3b2a18; font-size: 18px; box-shadow: 0 5px 16px rgba(0,0,0,.22); }
+#raceHud .rh-time { font-variant-numeric: tabular-nums; color: #1b65b8; min-width: 72px; text-align: center; }
+#raceHud .rh-btns { display: flex; gap: 8px; }
+#raceHud .rh-btns .b { width: 46px; height: 46px; font-size: 22px; pointer-events: auto; }
+#raceHud .rh-count { position: fixed; left: 50%; top: 44%; transform: translate(-50%,-50%); font-size: clamp(64px, 14vw, 130px); font-weight: 900; color: #fff; text-shadow: 0 8px 0 #6b4219, 0 14px 32px rgba(0,0,0,.38); pointer-events: none; transition: transform .18s ease-out; }
+#raceHud .rh-lights { position: fixed; left: 50%; top: 26%; transform: translateX(-50%); display: flex; gap: 14px; background: #262930; border: 5px solid #fff; border-radius: 24px; padding: 10px 18px; box-shadow: 0 10px 28px rgba(0,0,0,.38); }
+#raceHud .rh-lights i { width: 32px; height: 32px; border-radius: 50%; background: #464b56; display: block; transition: background .15s, box-shadow .15s; }
+#raceHud .rh-lights i.red { background: #ff3b30; box-shadow: 0 0 18px #ff3b30; }
+#raceHud .rh-lights i.go { background: #34c759; box-shadow: 0 0 22px #34c759; }
+#raceHud .rh-bot { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; width: 100%; }
+#raceHud .rh-bot.solo { justify-content: center; }
+#raceHud .rp-pad { pointer-events: auto; background: rgba(255,250,238,.92); border: 4px solid #6b4219; border-radius: 28px; padding: 10px 14px; box-shadow: 0 8px 24px rgba(0,0,0,.26); display: flex; flex-direction: column; gap: 8px; min-width: 224px; touch-action: none; user-select: none; -webkit-user-select: none; }
+#raceHud .rp-pad.p1 { border-color: #d63a2f; }
+#raceHud .rp-pad.p2 { border-color: #2b6cb0; }
+#raceHud .rp-hdr { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 900; font-size: 15px; color: #3b2a18; }
+#raceHud .rp-bars { display: flex; flex-direction: column; gap: 5px; }
+#raceHud .rp-bar { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 900; }
+#raceHud .rp-bar .tr { flex: 1; height: 12px; background: #e6dac3; border-radius: 999px; overflow: hidden; border: 2px solid #8a5a2b; }
+#raceHud .rp-bar .tr i { display: block; height: 100%; width: 100%; border-radius: 999px; transition: none; }
+#raceHud .rp-bar.steam .tr i { background: linear-gradient(90deg, #5bb8f5, #a9e4ff); }
+#raceHud .rp-bar.steam.low .tr i { background: #ff5e4d; }
+#raceHud .rp-bar.turbo .tr i { background: linear-gradient(90deg, #ff9500, #ffd34d); }
+#raceHud .rp-ctrls { display: flex; align-items: center; justify-content: center; gap: 10px; }
+#raceHud .rp-btn { border-radius: 50%; border: 5px solid #6b4219; background: #fff8e8; box-shadow: 0 5px 0 #6b4219; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-family: inherit; font-weight: 900; color: #3b2a18; touch-action: none; user-select: none; -webkit-user-select: none; padding: 0; }
+#raceHud .rp-btn:active, #raceHud .rp-btn.down { transform: translateY(4px); box-shadow: 0 1px 0 #6b4219; }
+#raceHud .rp-gas { width: 88px; height: 88px; font-size: 34px; background: linear-gradient(180deg, #fff6cf, #ffd34d); }
+#raceHud .rp-gas.down { background: linear-gradient(180deg, #ffdf6b, #ffae19); }
+#raceHud .rp-gas.hot { background: #ff9c8a; border-color: #b8291b; }
+#raceHud .rp-gas small, #raceHud .rp-horn small, #raceHud .rp-turbo small { font-size: 11px; line-height: 1; margin-top: 2px; }
+#raceHud .rp-horn { width: 68px; height: 68px; font-size: 26px; }
+#raceHud .rp-horn.soon { background: #ffe79a; }
+#raceHud .rp-horn.now { background: #34c759; border-color: #1c7c3a; color: #fff; box-shadow: 0 5px 0 #1c7c3a, 0 0 18px #6bff95; animation: tutPulse .45s ease-in-out infinite; }
+#raceHud .rp-turbo { width: 64px; height: 64px; font-size: 24px; opacity: .45; }
+#raceHud .rp-turbo.ready { opacity: 1; background: linear-gradient(180deg, #ffdf6b, #ff9500); border-color: #a85600; color: #fff; box-shadow: 0 5px 0 #a85600, 0 0 16px #ffb732; animation: tutPulse .65s ease-in-out infinite; }
+#raceHud .rp-msg { font-size: 13px; font-weight: 900; text-align: center; min-height: 18px; color: #c45f00; }
+.rc-pick-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 10px 0; }
+.rc-opt { border: 4px solid #d5bfa0; background: #fffaf0; border-radius: 20px; padding: 10px 14px; cursor: pointer; font-family: inherit; font-weight: 900; color: #3b2a18; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 112px; transition: transform .12s, border-color .12s, background .12s; }
+.rc-opt:active { transform: scale(.96); }
+.rc-opt.on { border-color: #2fb858; background: #e9fbed; box-shadow: 0 0 0 3px rgba(47,184,88,.22); }
+.rc-opt .big { font-size: 32px; line-height: 1.1; }
+.rc-opt small { font-size: 12px; font-weight: 700; opacity: .78; }
+.rc-laps { display: flex; gap: 8px; justify-content: center; margin: 8px 0; }
+.rc-laps button { border: 3px solid #c9ab81; background: #fff8e8; border-radius: 14px; padding: 6px 16px; font-weight: 900; font-size: 16px; color: #3b2a18; cursor: pointer; font-family: inherit; }
+.rc-laps button.on { background: #ffd34d; border-color: #b87a00; }
+.rc-trains { display: flex; gap: 8px; overflow-x: auto; padding: 6px 2px; justify-content: center; flex-wrap: wrap; }
+.rc-tr { border: 3px solid #d5bfa0; background: #fff; border-radius: 16px; padding: 6px 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 78px; }
+.rc-tr.on { border-color: #d63a2f; background: #fff1ee; box-shadow: 0 0 0 3px rgba(214,58,47,.18); }
+.rc-tr.on2 { border-color: #2b6cb0; background: #eef6ff; box-shadow: 0 0 0 3px rgba(43,108,176,.18); }
+.rc-tr svg { width: 62px; height: 34px; }
+.rc-tr small { font-size: 11px; font-weight: 800; color: #3b2a18; }
+.rc-best { display: inline-flex; align-items: center; gap: 6px; background: #fff3b0; border: 2px solid #e0a800; border-radius: 999px; padding: 3px 10px; font-size: 13px; font-weight: 900; color: #6b4219; margin-top: 4px; }
+.rc-go { width: 100%; margin-top: 12px; padding: 14px 20px; border-radius: 22px; border: 0; background: linear-gradient(180deg, #3fd068, #249e49); color: #fff; font-size: 22px; font-weight: 900; cursor: pointer; box-shadow: 0 5px 0 #176d31; font-family: inherit; }
+.rc-go:active { transform: translateY(3px); box-shadow: 0 2px 0 #176d31; }
+@media (max-height: 500px) {
+  #raceHud .rp-pad { padding: 6px 10px; min-width: 190px; gap: 4px; border-radius: 20px; }
+  #raceHud .rp-gas { width: 68px; height: 68px; font-size: 26px; }
+  #raceHud .rp-horn { width: 54px; height: 54px; font-size: 22px; }
+  #raceHud .rp-turbo { width: 50px; height: 50px; font-size: 20px; }
+  #raceHud .rh-pill { font-size: 15px; padding: 4px 12px; }
+  #raceBanner { top: calc(6px + env(safe-area-inset-top)); padding: 4px 8px 4px 12px; }
+}
 </style>
 </head>
 <body>
@@ -1084,6 +1165,7 @@ body.playing.catOpen #playHint { display: none !important; }
 <div id="top">
   <div class="grp">
     <button class="b" id="play" title="Arrancar / parar">▶️</button>
+    <button class="b" id="raceBtn" title="Carrera en circuito">🏁</button>
     <button class="b" id="spdBtn" title="Velocidad">🚂</button>
     <button class="b" id="resetAll" title="Volver a poner los trenes en su sitio">🔄</button>
     <button class="b off" id="undoBtn" title="Deshacer">↩️</button>
@@ -1132,6 +1214,12 @@ body.playing.catOpen #playHint { display: none !important; }
   <button class="b" id="toolsHide" title="Esconder las piezas">▾</button>
 </div>
 <div id="lvlbar"></div>
+<div id="raceBanner" hidden>
+  <span class="rb-title">🏁 <span id="rbLabel">Modo Circuito</span></span>
+  <button class="rb-go" id="rbStart">🏁 ¡A correr!</button>
+  <button class="rb-x" id="rbExit" title="Salir del modo circuito">✖️</button>
+</div>
+<div id="raceHud" hidden></div>
 <div id="home" class="screen">
   <div class="hsky" aria-hidden="true"><i class="hsun"></i><i class="hcloud c1"></i><i class="hcloud c2"></i><i class="hcloud c3"></i></div>
   <svg class="hhills" aria-hidden="true" viewBox="0 0 1600 420" preserveAspectRatio="xMidYMax slice">
@@ -12779,6 +12867,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 function step(dt) {
+  if (typeof RACE !== "undefined" && RACE.active) { raceTick(dt); updateFx(dt); return; }
   if (running && crashTimer <= 0) { computeOcc(); trains.forEach(tr => updateTrain(tr, dt)); checkCollisions(); updateCars(dt); }
   else if (lvl && crashTimer <= 0) trains.forEach(tr => { if (tr.ambient) updateTrain(tr, dt); });
   cowTick(dt); hzTick(dt); try { roamTick(dt); } catch (e) {}
@@ -13014,16 +13103,22 @@ function buildTabs() {
 }
 function renderSubtabs() {
   const ch = $("subtabs"); if (!ch) return;
-  const g = grpOf(curTab), subs = subsOf(g); ch.innerHTML = "";
+  const g = grpOf(curTab), subs = subsOf(g).filter(t => !(typeof raceBuildMode !== "undefined" && raceBuildMode) || t.items.some(allowedItem)); ch.innerHTML = "";
   if (subs.length < 2) return;
   subs.forEach(t => {
-    const b = document.createElement("div"); b.className = "stab" + (t.id === curTab ? " sel" : ""); b.dataset.tab = t.id; b.title = t.nm;
-    b.innerHTML = `${TAB_IC[t.id] ? ic(TAB_IC[t.id]) : t.ic}<span>${t.nm}</span>`;
+    const b = document.createElement("div"); b.className = "stab" + (t.id === curTab ? " sel" : ""); b.dataset.tab = t.id;
+    const rbNm = (typeof raceBuildMode !== "undefined" && raceBuildMode)
+      ? (t.id === "cruces" ? LX("Cruces", "Crossings", "Croisements", "Kreuzungen") : t.id === "especial" ? LX("Túneles", "Tunnels", "Tunnels", "Tunnel") : null)
+      : null;
+    const label = rbNm || t.nm;
+    b.title = label;
+    b.innerHTML = `${TAB_IC[t.id] ? ic(TAB_IC[t.id]) : t.ic}<span>${label}</span>`;
     b.onclick = () => { unlockAudio(); selectTab(t.id); sfx.click(); };
     ch.appendChild(b);
   });
 }
 function allowedItem(id) {
+  if (typeof raceBuildMode !== "undefined" && raceBuildMode) return id === "hand" || id === "erase" || RACE_ALLOWED.has(id);
   if (!lvl || id === "hand" || id === "erase") return true;
   if (id === "lapiz" || id === "lapizCalle") return false; // no pencils in the adventure: each piece is placed by hand
   return lvl.inv[id] != null;
@@ -13581,6 +13676,7 @@ function guideTick() {
 }
 // 📚 the library: folders of ready-made things to build and play
 const LIBRARY = [
+  { id: "circuitos", em: "🏁", nm: "Circuitos" },
   { id: "ciudades", em: "🏙️", nm: "Ciudades" },
   { id: "animales", em: "🐾", nm: "Animales", pics: ["elefante", "gato", "pez", "pato", "conejo", "tortuga"] },
   { id: "comida", em: "🍎", nm: "Comida", pics: ["manzana", "fresa", "helado", "pizza"] },
@@ -13591,14 +13687,16 @@ function openLibrary(fid) {
   if (running) setRunning(false);
   openModal(card => {
     const F = fid && LIBRARY.find(x => x.id === fid);
-    h2(card, F ? F.em + " " + F.nm : "📚 Biblioteca");
+    const libName = L => L.id === "circuitos" ? LX("Circuitos", "Race Circuits", "Circuits", "Rennstrecken") : trn(L.nm);
+    h2(card, F ? F.em + " " + libName(F) : "📚 Biblioteca");
     if (!F) {
       addEl(card, "p", "", "Elige una carpeta. Toca un dibujo y constrúyelo en el juego libre, o deja que lo haga yo.");
       const g = addEl(card, "div", "grid libfolders");
       LIBRARY.forEach(L => {
         const c = addEl(g, "div", "proj folder"); c.onclick = () => { sfx.click(); openLibrary(L.id); };
-        addEl(c, "div", "big", L.em); addEl(c, "div", "nm", L.nm);
-        addEl(c, "div", "ds", "📁 " + (L.pics ? L.pics.length : PROJECTS.length));
+        addEl(c, "div", "big", L.em); addEl(c, "div", "nm", libName(L));
+        const cnt = L.id === "circuitos" ? CIRCUITS.length : L.pics ? L.pics.length : PROJECTS.length;
+        addEl(c, "div", "ds", "📁 " + cnt);
       });
       const c = addEl(g, "div", "proj folder"); c.onclick = () => { sfx.click(); openSaves(); };
       addEl(c, "div", "big", "📁"); addEl(c, "div", "nm", "Mis circuitos"); addEl(c, "div", "ds", "💾");
@@ -13607,7 +13705,17 @@ function openLibrary(fid) {
     const back = mkBtn("⬅️ " + trn("Biblioteca"), trn("Biblioteca"), () => { sfx.click(); openLibrary(); });
     back.style.width = "auto"; back.style.padding = "0 16px"; back.style.fontSize = "17px"; card.appendChild(back);
     const g = addEl(card, "div", "grid");
-    if (F.id === "ciudades") PROJECTS.forEach(pr => {
+    if (F.id === "circuitos") CIRCUITS.forEach(cr => {
+      const cname = LX(...cr.nm), cdesc = LX(...cr.ds);
+      const c = addEl(g, "div", "proj"); c.title = cname;
+      const cv = addEl(c, "canvas"); cv.width = 340; cv.height = 224; drawThumb(cv, cr.data);
+      addEl(c, "div", "nm", cr.emoji + " " + cname); addEl(c, "div", "ds", cdesc);
+      const best = raceBestGet("circuit:" + cr.id);
+      if (best) addEl(c, "div", "rc-best", "🏆 " + fmtRaceMs(best.ms));
+      const lockd = !isFull() && !cr.free; if (lockd) { c.classList.add("plock"); addEl(c, "div", "plockb", "🔒⭐"); }
+      c.onclick = () => { unlockAudio(); if (lockd) { askGrownUp(); return; } loadCircuitForRace(cr); };
+    });
+    else if (F.id === "ciudades") PROJECTS.forEach(pr => {
       const c = addEl(g, "div", "proj"); c.title = trn("Cargar") + " " + trn(pr.name);
       const cv = addEl(c, "canvas"); cv.width = 340; cv.height = 224; drawThumb(cv, pr.data);
       addEl(c, "div", "nm", pr.emoji + " " + pr.name); addEl(c, "div", "ds", pr.desc);
@@ -14049,7 +14157,7 @@ function hintPlay() {
 }
 function buildProjects() {
   noDraw = true;
-  [...PROJECTS, STARTER].forEach(pr => {
+  [...PROJECTS, ...CIRCUITS, STARTER].forEach(pr => {
     [...pieces.values()].forEach(removePiece); cellP.forEach(a => a.length = 0);
     const marks = {};
     try {
@@ -14458,11 +14566,25 @@ function leaveLevel() {
   lvl = null; setModeUI(); $("lvlbar").classList.remove("show");
 }
 function setModeUI() {
-  const inL = !!lvl; setTimeout(renderDaily, 0);
+  const inL = !!lvl, inRB = typeof raceBuildMode !== "undefined" && raceBuildMode; setTimeout(renderDaily, 0);
   document.body.classList.toggle("lvlmode", inL);
+  document.body.classList.toggle("racebuild", inRB);
   document.body.classList.toggle("noflo", inL && !Object.keys(lvl.inv).some(isSlope));
   ["saveBtn", "clearBtn", "tutBtn"].forEach(id => $(id).style.display = inL ? "none" : "");
-  document.querySelectorAll(".tab").forEach(e => { const subs = subsOf(e.dataset.grp); e.style.display = !inL ? "" : (e.dataset.grp !== "trenes" && subs.some(t => t.items.some(allowedItem))) ? "" : "none"; });
+  document.querySelectorAll(".tab").forEach(e => {
+    const subs = subsOf(e.dataset.grp);
+    if (inL) e.style.display = (e.dataset.grp !== "trenes" && subs.some(t => t.items.some(allowedItem))) ? "" : "none";
+    else if (inRB) e.style.display = (e.dataset.grp !== "trenes" && e.dataset.grp !== "calles" && subs.some(t => t.items.some(allowedItem))) ? "" : "none";
+    else e.style.display = "";
+  });
+  const rb = $("raceBanner");
+  if (rb) {
+    rb.hidden = !inRB;
+    if (inRB) {
+      $("rbLabel").textContent = LX("Modo Circuito", "Race Track Builder", "Mode Circuit", "Rennstrecken-Bau");
+      $("rbStart").textContent = "🏁 " + LX("¡A correr!", "Race!", "Course !", "Rennen!");
+    }
+  }
   renderLvlBar();
 }
 function enterFree() {
@@ -14494,7 +14616,7 @@ function offerTutorial() {
     speak(LX("¡Hola! ¿Te enseño a jugar?", "Hi! Shall I show you how to play?", "Salut ! Je te montre comment jouer ?", "Hallo! Soll ich dir zeigen, wie man spielt?"), { raw: true });
   });
 }
-function goHome() { $("play").classList.remove("hintplay"); setTimeout(maybeAskRate, 600); renderDaily(); if (typeof closeDuel === "function" && $("duel") && !$("duel").hidden) duelStop(), $("duel").hidden = true; if (running) setRunning(false); if (tut) endTutorial(!!tut.stash); closeModal(); $("advmap").hidden = true; $("home").hidden = false; markTutHome(); }
+function goHome() { if (typeof stopCircuitRace === "function") stopCircuitRace(true); if (typeof leaveRaceBuild === "function") leaveRaceBuild(true); $("play").classList.remove("hintplay"); setTimeout(maybeAskRate, 600); renderDaily(); if (typeof closeDuel === "function" && $("duel") && !$("duel").hidden) duelStop(), $("duel").hidden = true; if (running) setRunning(false); if (tut) endTutorial(!!tut.stash); closeModal(); $("advmap").hidden = true; $("home").hidden = false; markTutHome(); }
 $("homeBtn").onclick = () => { unlockAudio(); sfx.click(); goHome(); };
 $("parentBtn").onclick = () => goParents();
 $("goTut").onclick = () => { unlockAudio(); sfx.whistleShort(); startTutorial("basic"); };
@@ -16473,6 +16595,971 @@ document.addEventListener("keyup", e => {
   e.preventDefault(); e.stopPropagation(); duelUp(a[0]);
 }, true);
 // =====================================================================
+//  🏁 CIRCUIT RACING (v1.1) — Twin-lane custom & F1-inspired circuits
+// =====================================================================
+let raceBuildMode = false;
+let curCircuitId = null;
+const RACE_TRACK_ITEMS = ["lapiz", "recta", "corta", "curva", "curvaL", "sesgoI", "sesgoLI", "cruce", "rampa", "rampaC", "subeI", "tunel", "tunelL"];
+const RACE_ALLOWED = new Set([
+  ...RACE_TRACK_ITEMS,
+  ...TABS.filter(t => t.grp === "decor").flatMap(t => t.items),
+]);
+
+// 6 iconic F1-inspired wooden circuits (2 free, 4 full version; trademark-safe names)
+const CIRCUITS = [
+  {
+    id: "speed-temple", emoji: "🇮🇹", free: true, name: "Speed Temple",
+    nm: ["Templo de Velocidad", "Speed Temple", "Temple de la Vitesse", "Tempel der Geschwindigkeit"],
+    ds: ["Rectas larguísimas, dos chicanes y curvas rápidas entre pinos.", "Blistering straights, two chicanes and sweeping banked bends.", "Longues lignes droites, deux chicanes et grandes courbes rapides.", "Lange Geraden, zwei Schikanen und schnelle Kurven."],
+    build(m) {
+      paint("parque", 4, 5, 25, 19); paint("plaza", 8, 9, 13, 14);
+      turtle(8, 8, 1, 0, "@start S2*3 R L S2*3 RR S2*2 RR S2*3 R L S2*3 RR S2*2 RR", m);
+      deco("estadioG", [[10, 5]]);
+      deco("pino", [[5, 6], [4, 10], [4, 15], [24, 7], [24, 12], [24, 17], [16, 6], [19, 18], [12, 18]]);
+      deco("flores", [[9, 11], [11, 12], [17, 12], [19, 11]]);
+      deco("casa", [[16, 12]]);
+      return [];
+    },
+  },
+  {
+    id: "figure-8", emoji: "🇯🇵", free: true, name: "Figure-8 Bridge",
+    nm: ["Puente en Ocho", "Figure-8 Bridge", "Pont en Huit", "Achter-Brücke"],
+    ds: ["¡Un circuito en ocho con puente elevado y curvas en S entre cerezos!", "Figure-8 layout with an overpass bridge and flowing S-curves!", "Circuit en huit avec pont surélevé et virages en S sous les cerisiers !", "Achterbahn-Strecke mit Brücke und S-Kurven unter Kirschblüten!"],
+    build(m) {
+      paint("parque", 5, 5, 24, 20); paint("nieve", 18, 4, 23, 6);
+      turtle(10, 12, 1, 0, "@start S2*5 RR S2 RR S2 S R U S2*2 D L S2*2 L R S2 L S LL", m);
+      deco("montana", [[19, 5], [21, 5], [20, 4]]);
+      deco("torii", [[13, 14], [19, 9]]);
+      deco("cerezo", [[7, 7], [13, 6], [23, 11], [23, 16], [10, 16], [6, 14], [18, 15]]);
+      deco("flores", [[12, 10], [18, 14]]);
+      return [];
+    },
+  },
+  {
+    id: "harbor-gp", emoji: "🇲🇨", free: false, name: "Harbor Hairpins",
+    nm: ["Puerto y Horquillas", "Harbor Hairpins", "Épingles du Port", "Hafen-Haarnadeln"],
+    ds: ["Horquillas cerradas, túnel junto al mar y veleros en el puerto.", "Tight hairpins, a seaside tunnel and sailboats in the harbor.", "Épingles serrées, tunnel au bord de l'eau et voiliers dans le port.", "Enge Haarnadelkurven, Tunnel am Meer und Segelboote im Hafen."],
+    build(m) {
+      paint("plaza", 4, 5, 25, 16); paint("arena", 4, 16, 25, 17);
+      area("agua", 4, 18, 25, 21);
+      turtle(8, 8, 1, 0, "@start S2*3 R S R S L L S2*2 TL S2 RR S RR S2*3 R L S2*3 RR S2 S RR", m);
+      deco("velero", [[8, 19], [16, 19], [22, 19]]); deco("barco", [[12, 20]]); deco("faro", [[24, 16]]);
+      deco("rascacielos", [[6, 5], [10, 5], [16, 6], [20, 6]]);
+      deco("ciudad", [[12, 5], [18, 6], [8, 11]]); deco("palmera", [[6, 16], [11, 16], [19, 16]]);
+      return [];
+    },
+  },
+  {
+    id: "forest-ridge", emoji: "🇧🇪", free: false, name: "Forest Ridge",
+    nm: ["Cuesta del Bosque", "Forest Ridge", "Crête de la Forêt", "Wald-Bergstrecke"],
+    ds: ["Gran subida por rampa a lo alto del bosque y bajada vertiginosa.", "Big uphill ramp climb along the ridge and a rapid downhill plunge.", "Grande montée en rampe sur la crête et descente à toute vitesse.", "Steile Rampe hinauf in den Wald und rasante Abfahrt."],
+    build(m) {
+      paint("parque", 4, 6, 27, 19);
+      turtle(8, 15, 1, 0, "@start S2*2 U L R S2*4 LL S2 LL S2*2 D S2*2 L R S2*2 LL S2 LL", m);
+      deco("pino", [[5, 8], [5, 11], [5, 16], [9, 7], [13, 7], [19, 7], [26, 9], [26, 14], [24, 17], [17, 17], [11, 17], [16, 12], [20, 11]]);
+      deco("casa", [[9, 12]]); deco("flores", [[13, 12], [21, 12]]);
+      return [];
+    },
+  },
+  {
+    id: "fast-sweeper", emoji: "🇬🇧", free: false, name: "Fast Sweeper",
+    nm: ["Curvas Rápidas", "Fast Sweeper", "Grands Virages", "Schnelle Kurven"],
+    ds: ["Curvas amplias enlazadas a todo gas y larga recta de meta.", "Flowing high-speed sweepers linked to a long full-throttle straight.", "Enchaînements de grandes courbes rapides et longue ligne droite.", "Flüssige Hochgeschwindigkeitskurven und lange Gerade."],
+    build(m) {
+      paint("parque", 4, 4, 25, 19); paint("campo", 8, 11, 14, 13);
+      turtle(8, 10, 1, 0, "@start S2*3 LL RR S2*2 RR S2*3 RR S2*2 R L S2*4 RR S2 RR", m);
+      deco("estadioG", [[9, 6]]);
+      deco("arbol", [[5, 8], [5, 15], [19, 4], [24, 8], [24, 14], [19, 18], [10, 18]]);
+      deco("granja", [[11, 12]]); deco("oveja", [[9, 12], [13, 12]]);
+      return [];
+    },
+  },
+  {
+    id: "mountain-twist", emoji: "🇧🇷", free: false, name: "Mountain Twist",
+    nm: ["Circuito de la Sierra", "Mountain Twist", "Virages en Montagne", "Berg-Kurven"],
+    ds: ["Recta de meta en subida y un tramo interior lleno de curvas.", "Uphill start-finish straight and a twisty lakeside infield.", "Ligne droite en montée et virages techniques autour du lac.", "Bergauf-Zielgerade und kurviges Infield am See."],
+    build(m) {
+      paint("parque", 5, 6, 25, 19);
+      area("agua", 11, 12, 14, 14);
+      turtle(10, 16, 1, 0, "@start U S2*3 D LL S2*2 LL S2 L S R S R S L S2*2 S LL S2*2 LL", m);
+      deco("palmera", [[6, 9], [6, 15], [23, 9], [23, 15], [16, 6], [19, 18]]);
+      deco("pato", [[12, 13]]); deco("flores", [[10, 12], [18, 13]]);
+      return [];
+    },
+  },
+];
+
+function fmtRaceMs(ms) {
+  const s = Math.max(0, ms / 1000);
+  const m = Math.floor(s / 60), rem = s - m * 60;
+  return (m > 0 ? m + ":" + (rem < 10 ? "0" : "") : "") + rem.toFixed(1) + "s";
+}
+function raceBestAll() { return sget(KEY + "-rbest") || {}; }
+function raceBestGet(k) { return raceBestAll()[k] || null; }
+function raceBestSet(k, rec) { const all = raceBestAll(); all[k] = rec; sset(KEY + "-rbest", all); }
+function raceTrackKey(laps) {
+  if (curCircuitId) return "circuit:" + curCircuitId + (laps ? ":" + laps : "");
+  const sig = [...pieces.values()]
+    .filter(p => p.geo && p.geo.routes && p.geo.routes.length && !DEFS[p.type].road && !DEFS[p.type].tramst)
+    .map(p => `${p.type},${p.c},${p.r},${p.rot},${p.h}`)
+    .sort().join("|");
+  let h = 2166136261;
+  for (let i = 0; i < sig.length; i++) { h ^= sig.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return "custom:" + (h >>> 0).toString(36) + (laps ? ":" + laps : "");
+}
+
+function enterRaceBuild(clearFirst) {
+  if (!isFull()) { askGrownUp(); return; }
+  if (running) setRunning(false);
+  leaveLevel();
+  $("home").hidden = true; $("advmap").hidden = true; closeModal();
+  if (clearFirst) { clearUndo(); clearBoard(); curName = ""; curCircuitId = null; setFloor(0); }
+  raceBuildMode = true;
+  setModeUI();
+  selectTab("vias"); selectTool("lapiz");
+  fitAll();
+  toast("🏁");
+}
+function leaveRaceBuild(silent) {
+  if (!raceBuildMode) return;
+  raceBuildMode = false;
+  setModeUI();
+  if (!silent && !lvl) selectTab("vias");
+}
+function loadCircuitForRace(cr) {
+  leaveLevel();
+  $("home").hidden = true; $("advmap").hidden = true;
+  raceBuildMode = false;
+  curCircuitId = cr.id;
+  endGuide(); clearUndo(); loadData(cr.data); curName = LX(...cr.nm); userMoved = false; fitAll(); autosave();
+  setModeUI();
+  openRaceSetup(cr);
+}
+
+// ---------- Closed-loop analyzer & dense centerline sampler
+function analyzeRaceLoop() {
+  const tracks = [...pieces.values()].filter(p => p.geo && p.geo.routes && p.geo.routes.length && !DEFS[p.type].road && !DEFS[p.type].tramst);
+  if (tracks.length < 6) return { ok: false, reason: "short", count: tracks.length };
+  if (tracks.some(p => DEFS[p.type].sw)) return { ok: false, reason: "switches" };
+  const le = looseEnds();
+  if (le.length > 0) return { ok: false, reason: "open", loose: le.length };
+
+  // Start on a flat ground straight if available (looks great for the checkered finish arch)
+  const startP = tracks.find(p => (p.type === "recta" || p.type === "corta") && p.h === 0)
+    || tracks.find(p => p.type === "recta" || p.type === "corta")
+    || tracks[0];
+  const startH = { pid: startP.id, ri: 0, dir: 1, s: startP.geo.routes[0].len / 2 };
+  const h = { ...startH };
+  const raw = [];
+  const visited = new Set([h.pid]);
+  const STEP = 4;
+  let total = 0, closed = false;
+
+  for (let guard = 0; guard < 12000; guard++) {
+    const p = pieces.get(h.pid);
+    const pt = posOf(h);
+    raw.push({ x: pt.x, y: pt.y, z: pt.z, s: total, pid: h.pid, type: p.type });
+    const prevS = h.s, prevPid = h.pid, prevRi = h.ri, prevDir = h.dir;
+    const ev = advance(h, STEP);
+    if (ev === "derail" || ev === "end") return { ok: false, reason: "open", loose: 1 };
+    visited.add(h.pid);
+    total += STEP;
+    if (total > 200 && h.pid === startH.pid && h.ri === startH.ri && h.dir === startH.dir) {
+      if ((prevPid !== startH.pid) || (prevS < startH.s && h.s >= startH.s)) {
+        const over = h.s - startH.s;
+        if (over > 0 && over < STEP) total -= over;
+        closed = true;
+        break;
+      }
+    }
+  }
+  if (!closed || raw.length < 40) return { ok: false, reason: "open", loose: 1 };
+  if (visited.size < tracks.length) return { ok: false, reason: "multi", extra: tracks.length - visited.size };
+
+  const N = raw.length, totalLen = total;
+  const samples = raw.map((q, i) => {
+    const a = raw[(i - 2 + N) % N], b = raw[(i + 2) % N];
+    const dx = b.x - a.x, dy = b.y - a.y, l = Math.hypot(dx, dy) || 1;
+    const tx = dx / l, ty = dy / l;
+    const ang = Math.atan2(ty, tx);
+    const pa = raw[(i - 12 + N) % N], pb = raw[(i + 12) % N];
+    const a1 = Math.atan2(q.y - pa.y, q.x - pa.x), a2 = Math.atan2(pb.y - q.y, pb.x - q.x);
+    let da = a2 - a1; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
+    const curv = Math.abs(da) / (24 * STEP);
+    const slope = (b.z - a.z) / (4 * STEP);
+    return { x: q.x, y: q.y, z: q.z, s: q.s, tx, ty, nx: -ty, ny: tx, a: ang * 180 / Math.PI, curv, slope, type: q.type };
+  });
+
+  // Detect longest straight stretch(es) for boost pads
+  const boosts = [];
+  let runStart = -1;
+  for (let i = 0; i < N; i++) {
+    const ok = samples[i].curv < 0.0022 && Math.abs(samples[i].slope) < 0.004 && samples[i].type !== "tunel" && samples[i].type !== "tunelL" && samples[i].s > 160 && samples[i].s < totalLen - 160;
+    if (ok && runStart < 0) runStart = i;
+    if ((!ok || i === N - 1) && runStart >= 0) {
+      const len = (i - runStart) * STEP;
+      if (len >= 220) boosts.push({ s0: samples[runStart].s + len * .28, s1: samples[runStart].s + len * .72, len });
+      runStart = -1;
+    }
+  }
+  boosts.sort((a, b) => b.len - a.len);
+  const topBoosts = boosts.slice(0, 2);
+
+  // Pick 2-3 safe animal crossing spots evenly around the loop
+  const nAnim = totalLen > 2400 ? 3 : 2;
+  const animalS = [];
+  for (let k = 0; k < nAnim; k++) {
+    const target = totalLen * ((k + .55) / nAnim);
+    let bestI = -1, bestD = 1e9;
+    for (let i = 0; i < N; i++) {
+      const q = samples[i];
+      if (q.s < 220 || q.s > totalLen - 220) continue;
+      if (q.type === "tunel" || q.type === "tunelL" || q.type === "cruce") continue;
+      if (Math.abs(q.slope) > 0.004) continue;
+      const d = Math.abs(q.s - target);
+      if (d < bestD) { bestD = d; bestI = i; }
+    }
+    if (bestI >= 0) animalS.push(samples[bestI].s);
+  }
+
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  samples.forEach(q => { x0 = Math.min(x0, q.x); y0 = Math.min(y0, q.y - q.z * E); x1 = Math.max(x1, q.x); y1 = Math.max(y1, q.y - q.z * E); });
+  return { ok: true, samples, totalLen, boosts: topBoosts, animalS, bounds: [x0 - 110, y0 - 110, x1 + 110, y1 + 110] };
+}
+
+function sampleAt(loop, dist) {
+  const N = loop.samples.length, L = loop.totalLen;
+  const m = ((dist % L) + L) % L;
+  const f = (m / L) * N, i0 = Math.floor(f) % N, i1 = (i0 + 1) % N, t = f - Math.floor(f);
+  const a = loop.samples[i0], b = loop.samples[i1];
+  let da = b.a - a.a; while (da > 180) da -= 360; while (da < -180) da += 360;
+  return {
+    x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t,
+    nx: a.nx + (b.nx - a.nx) * t, ny: a.ny + (b.ny - a.ny) * t,
+    a: a.a + da * t, curv: a.curv + (b.curv - a.curv) * t, slope: a.slope + (b.slope - a.slope) * t,
+    type: a.type,
+  };
+}
+
+// ---------- Twin-lane SVG track overlay (layered cleanly by floor z so bridges pass OVER ground track!)
+const RACE_LANE = 16;
+function clearRaceOverlay() {
+  (RACE.ovNodes || []).forEach(n => n.remove());
+  RACE.ovNodes = [];
+}
+function drawRaceOverlay(loop) {
+  clearRaceOverlay();
+  const S = loop.samples, N = S.length;
+  // Split into contiguous floor runs so bridges render cleanly over ground tracks
+  const runs = [];
+  let curZ = Math.round(S[0].z), curPts = [S[0]];
+  for (let i = 1; i <= N; i++) {
+    const q = S[i % N], z = Math.round(q.z);
+    curPts.push(q);
+    if (z !== curZ || i === N) {
+      runs.push({ z: curZ, pts: curPts });
+      curZ = z; curPts = [q];
+    }
+  }
+  const pathStr = (pts, off) => "M" + pts.map(q => `${(q.x + q.nx * off).toFixed(1)},${(q.y + q.ny * off - q.z * E).toFixed(1)}`).join("L");
+  runs.forEach(run => {
+    const g = el("g", { class: "race-ov", "pointer-events": "none" }, lvL(clamp(run.z, -UG, LV - 1)).piece);
+    RACE.ovNodes.push(g);
+    const d0 = pathStr(run.pts, 0);
+    el("path", { d: d0, stroke: "#6b3f17", "stroke-width": 78, "stroke-linecap": "round", "stroke-linejoin": "round", fill: "none" }, g);
+    el("path", { d: d0, stroke: "#e4ba7a", "stroke-width": 70, "stroke-linecap": "round", "stroke-linejoin": "round", fill: "none" }, g);
+    el("path", { d: d0, stroke: "#fff8e8", "stroke-width": 3.5, "stroke-dasharray": "14 14", fill: "none", opacity: .88 }, g);
+    // Twin parallel slot-car lanes: Lane 0 (-RACE_LANE, red tint) & Lane 1 (+RACE_LANE, blue tint)
+    [[-RACE_LANE, "#a63326"], [RACE_LANE, "#235c9c"]].forEach(([off, col]) => {
+      el("path", { d: pathStr(run.pts, off - 5.5), stroke: col, "stroke-width": 4.5, "stroke-linecap": "round", "stroke-linejoin": "round", fill: "none", opacity: .86 }, g);
+      el("path", { d: pathStr(run.pts, off + 5.5), stroke: col, "stroke-width": 4.5, "stroke-linecap": "round", "stroke-linejoin": "round", fill: "none", opacity: .86 }, g);
+    });
+  });
+
+  // Glowing boost chevrons on main straight(s)
+  loop.boosts.forEach(bz => {
+    const q0 = sampleAt(loop, (bz.s0 + bz.s1) / 2);
+    const g = el("g", { class: "race-ov", "pointer-events": "none" }, lvL(clamp(Math.round(q0.z), -UG, LV - 1)).piece);
+    RACE.ovNodes.push(g);
+    for (let s = bz.s0; s <= bz.s1; s += 38) {
+      const q = sampleAt(loop, s);
+      const ch = el("g", { transform: `translate(${q.x.toFixed(1)} ${(q.y - q.z * E).toFixed(1)}) rotate(${q.a.toFixed(1)})` }, g);
+      [-RACE_LANE, RACE_LANE].forEach(ly => {
+        el("path", { d: `M-8 ${ly - 10} L8 ${ly} L-8 ${ly + 10}`, stroke: "#00c2ff", "stroke-width": 5, "stroke-linecap": "round", "stroke-linejoin": "round", fill: "none", opacity: .88 }, ch);
+      });
+    }
+  });
+
+  // Checkered Start / Finish line & festive arch at s = 0
+  const sf = S[0];
+  const gsf = el("g", { class: "race-ov", "pointer-events": "none", transform: `translate(${sf.x.toFixed(1)} ${(sf.y - sf.z * E).toFixed(1)}) rotate(${sf.a.toFixed(1)})` }, lvL(clamp(Math.round(sf.z), -UG, LV - 1)).over);
+  RACE.ovNodes.push(gsf);
+  for (let row = 0; row < 2; row++) {
+    for (let col = -4; col < 4; col++) {
+      el("rect", { x: -10 + row * 10, y: col * 9, width: 10, height: 9, fill: (row + col + 8) % 2 ? "#1e2329" : "#ffffff" }, gsf);
+    }
+  }
+  el("circle", { cx: 0, cy: -42, r: 9, fill: "#d63a2f", stroke: "#fff", "stroke-width": 3 }, gsf);
+  el("circle", { cx: 0, cy: 42, r: 9, fill: "#2b6cb0", stroke: "#fff", "stroke-width": 3 }, gsf);
+  const fl = el("text", { x: 0, y: -56, "font-size": 28, "text-anchor": "middle", transform: `rotate(${(-sf.a).toFixed(1)} 0 -56)` }, gsf);
+  fl.textContent = "🏁";
+}
+
+// ---------- Race State & Engine
+const RACE = {
+  active: false, phase: "idle", mode: "solo", laps: 3, cpuLvl: "normal",
+  kinds: ["vapor", "bala"], loop: null, racers: [], ghost: null, animals: [],
+  ovNodes: [], elapsed: 0, countT: 0, camMode: "fit", hud: null, trackKey: "", circuit: null,
+  prevTrainsVisible: true,
+};
+const RACE_CPU = {
+  easy:   { gasMul: .86, curveCare: .55, hornSkill: .62, turboUse: .45, coins: 5 },
+  normal: { gasMul: .94, curveCare: .78, hornSkill: .82, turboUse: .78, coins: 8 },
+  fast:   { gasMul: 1.00, curveCare: .94, hornSkill: .94, turboUse: .95, coins: 12 },
+};
+const RACE_ANIMALS = ["🐄", "🐑", "🦆"];
+
+function fitRaceBoard() {
+  if (!RACE.loop) return;
+  const [x0, y0, x1, y1] = RACE.loop.bounds;
+  const topPx = 74, botPx = innerHeight < 520 ? 155 : 210;
+  const W = innerWidth - 40, H = Math.max(180, innerHeight - topPx - botPx);
+  view.z = clamp(Math.min(W / (x1 - x0), H / (y1 - y0)), minZ(), 1.25);
+  view.x = innerWidth / 2 - ((x0 + x1) / 2) * view.z;
+  view.y = topPx + H / 2 - ((y0 + y1) / 2) * view.z;
+  applyView();
+}
+
+function openRaceMenu() {
+  if (running) setRunning(false);
+  if (fixPlan) cancelFix();
+  const res = analyzeRaceLoop();
+  if (raceBuildMode) {
+    if (res.ok) { openRaceSetup(); return; }
+    showLoopPrompt(res); return;
+  }
+  openModal(card => {
+    h2(card, "🏁 " + LX("Carreras en circuito", "Circuit Racing", "Courses sur circuit", "Rennstrecken"));
+    addEl(card, "p", "", LX(
+      "Corre en circuitos inspirados en pistas famosas o diseña tu propio circuito cerrado.",
+      "Race on famous wooden circuits or build your own closed loop track!",
+      "Cours sur des circuits célèbres ou construis ta propre boucle de course !",
+      "Rase auf berühmten Holzstrecken oder bau deine eigene Rennstrecke!"
+    ));
+    const g = addEl(card, "div", "rc-pick-row");
+    const mkCard = (em, title, sub, lockd, fn) => {
+      const b = addEl(g, "button", "rc-opt"); b.style.minWidth = "168px"; b.style.padding = "14px 16px";
+      addEl(b, "div", "big", em);
+      addEl(b, "div", "", (lockd ? "🔒 " : "") + title);
+      addEl(b, "small", "", sub);
+      b.onclick = () => { unlockAudio(); sfx.click(); fn(); };
+      return b;
+    };
+    mkCard("🏆", LX("Circuitos famosos", "Famous Circuits", "Circuits célèbres", "Berühmte Strecken"),
+      LX("2 gratis · 6 circuitos", "2 free · 6 circuits", "2 gratuits · 6 circuits", "2 gratis · 6 Strecken"),
+      false, () => openLibrary("circuitos"));
+    const canCustom = isFull();
+    mkCard("🛠️", LX("Crear circuito", "Build a Circuit", "Créer un circuit", "Strecke bauen"),
+      LX("Modo constructor de carreras", "Race Track Builder mode", "Mode constructeur de course", "Rennstrecken-Baukasten"),
+      !canCustom, () => enterRaceBuild(true));
+    if (res.ok) {
+      mkCard("🏁", LX("Correr en esta vía", "Race This Track", "Courir sur cette voie", "Hier fahren"),
+        curName || LX("Circuito actual", "Current loop", "Circuit actuel", "Aktuelle Strecke"),
+        !canCustom && !curCircuitId, () => {
+          if (!canCustom && !curCircuitId) { askGrownUp(); return; }
+          openRaceSetup();
+        });
+    } else if (pieces.size > 0) {
+      mkCard("🔧", LX("Correr en esta vía", "Race This Track", "Courir sur cette voie", "Hier fahren"),
+        LX("Necesita un circuito cerrado", "Needs a closed loop", "Doit former une boucle", "Braucht eine geschlossene Runde"),
+        !canCustom, () => {
+          if (!canCustom) { askGrownUp(); return; }
+          showLoopPrompt(res);
+        });
+    }
+  });
+}
+
+function showLoopPrompt(res) {
+  openModal(card => {
+    h2(card, "🏁 " + LX("Cierra el circuito para correr", "Close the loop to race!", "Ferme la boucle pour courir !", "Schließe die Runde fürs Rennen!"));
+    let msg = "";
+    if (res.reason === "short") msg = LX("Añade al menos 6 piezas de vía formando un círculo cerrado.", "Add at least 6 track pieces joined in a closed loop.", "Ajoute au moins 6 rails formant une boucle fermée.", "Lege mindestens 6 Schienen zu einer geschlossenen Runde.");
+    else if (res.reason === "switches") msg = LX("Para carreras limpias de dos carriles, quita los desvíos (puedes usar cruces y puentes).", "For clean twin-lane racing, remove switches (crossings and bridges are great!).", "Pour une course à deux voies, enlève les aiguillages (les croisements et ponts marchent !).", "Entferne Weichen für faire Rennen (Kreuzungen und Brücken gehen!).");
+    else if (res.reason === "multi") msg = LX("Todas las vías del tablero deben formar una sola pista continua.", "Connect all track pieces into one continuous loop.", "Relie tous les rails en un seul circuit continu.", "Verbinde alle Schienen zu einer einzigen Runde.");
+    else msg = LX(`Hay ${res.loose} punta(s) abierta(s). Únelas para cerrar el circuito.`, `There are ${res.loose} open end(s). Connect them to close the loop!`, `Il y a ${res.loose} bout(s) ouvert(s). Relie-les pour fermer la boucle !`, `Es gibt ${res.loose} offene Ende(n). Verbinde sie zur Runde!`);
+    addEl(card, "p", "", msg);
+    const row = addEl(card, "div", "rc-pick-row");
+    if (res.reason === "open") {
+      const fix = mkBtn("✨ " + LX("Ciérralo por mí", "Close loop for me", "Fermer pour moi", "Für mich schließen"), "", () => {
+        closeModal();
+        planFix();
+        if (fixPlan && fixPlan.ops && fixPlan.ops.length) toast("🔧");
+      });
+      fix.style.width = "auto"; fix.style.padding = "0 18px"; fix.style.fontSize = "17px"; row.appendChild(fix);
+    }
+    const ok = mkBtn("🛠️ " + LX("Seguir construyendo", "Keep building", "Continuer", "Weiterbauen"), "", closeModal);
+    ok.style.width = "auto"; ok.style.padding = "0 18px"; ok.style.fontSize = "17px"; row.appendChild(ok);
+  });
+}
+
+function openRaceSetup(circuitOpt) {
+  const loop = analyzeRaceLoop();
+  if (!loop.ok) { showLoopPrompt(loop); return; }
+  const cr = circuitOpt || (curCircuitId ? CIRCUITS.find(c => c.id === curCircuitId) : null);
+  const availKinds = Object.keys(KINDS).filter(k => (!fullLocked(k)) && (!shopLocked(k)));
+  if (!availKinds.includes(RACE.kinds[0])) RACE.kinds[0] = availKinds[0] || "vapor";
+  if (!availKinds.includes(RACE.kinds[1])) RACE.kinds[1] = availKinds[1] || availKinds[0] || "mercancias";
+
+  openModal(card => {
+    const title = cr ? cr.emoji + " " + LX(...cr.nm) : "🏁 " + (curName || LX("Tu circuito", "Your Circuit", "Ton circuit", "Deine Strecke"));
+    h2(card, title);
+    const bKey = raceTrackKey(RACE.laps), best = raceBestGet(bKey);
+    if (best) addEl(card, "div", "rc-best", "🏆 " + LX("Mejor tiempo", "Best Time", "Meilleur temps", "Bestzeit") + ` (${RACE.laps}): ` + fmtRaceMs(best.ms));
+
+    // Mode selector
+    const modes = addEl(card, "div", "rc-pick-row");
+    [
+      ["solo", "⏱️", LX("Solo + Fantasma", "Solo + Ghost", "Solo + Fantôme", "Solo + Geist"), LX("Supera tu récord", "Beat your best", "Bats ton record", "Schlag deinen Rekord")],
+      ["cpu", "🤖", LX("Contra rival", "vs Computer", "vs Ordi", "vs Computer"), LX("Doble carril", "Twin-lane duel", "Double voie", "Doppelspur-Duell")],
+      ["2p", "👥", LX("2 Jugadores", "2 Players", "2 Joueurs", "2 Spieler"), LX("Misma pantalla", "Same device", "Même écran", "Am selben Gerät")],
+    ].forEach(([m, em, t, s]) => {
+      const b = addEl(modes, "button", "rc-opt" + (RACE.mode === m ? " on" : ""));
+      addEl(b, "div", "big", em); addEl(b, "div", "", t); addEl(b, "small", "", s);
+      b.onclick = () => { sfx.click(); RACE.mode = m; openRaceSetup(cr); };
+    });
+
+    // Laps & CPU difficulty
+    const lapsRow = addEl(card, "div", "rc-laps");
+    [1, 3, 5].forEach(n => {
+      const b = addEl(lapsRow, "button", RACE.laps === n ? "on" : "", n + " " + (n === 1 ? LX("vuelta", "lap", "tour", "Runde") : LX("vueltas", "laps", "tours", "Runden")));
+      b.onclick = () => { sfx.click(); RACE.laps = n; openRaceSetup(cr); };
+    });
+    if (RACE.mode === "cpu") {
+      const diffRow = addEl(card, "div", "rc-laps");
+      [["easy", "🌱 " + LX("Fácil", "Easy", "Facile", "Leicht")], ["normal", "⭐ " + LX("Normal", "Normal", "Normal", "Normal")], ["fast", "🔥 " + LX("Rápido", "Fast", "Rapide", "Schnell")]].forEach(([lv, lb]) => {
+        const b = addEl(diffRow, "button", RACE.cpuLvl === lv ? "on" : "", lb);
+        b.onclick = () => { sfx.click(); RACE.cpuLvl = lv; openRaceSetup(cr); };
+      });
+    }
+
+    // Locomotive picker (locomotive-only racing!)
+    const pickLocos = (idx, label) => {
+      addEl(card, "div", "", label).style.cssText = "font-weight:900;font-size:14px;margin-top:6px;text-align:center;color:#5b3a1a;";
+      const row = addEl(card, "div", "rc-trains");
+      availKinds.forEach(k => {
+        const K = KINDS[k];
+        const b = addEl(row, "button", "rc-tr" + (RACE.kinds[idx] === k ? (idx === 0 ? " on" : " on2") : ""));
+        b.appendChild(trainIcon(k, 0, K.c1[0], K.c2[0]));
+        addEl(b, "small", "", dName(k));
+        b.onclick = () => { sfx.click(); RACE.kinds[idx] = k; openRaceSetup(cr); };
+      });
+    };
+    pickLocos(0, RACE.mode === "2p" ? "🔴 " + LX("Jugador 1 (Carril izquierdo)", "Player 1 (Left lane)", "Joueur 1 (Voie gauche)", "Spieler 1 (Linke Spur)") : "🚂 " + LX("Elige tu locomotora", "Pick your locomotive", "Choisis ta locomotive", "Wähle deine Lok"));
+    if (RACE.mode !== "solo") {
+      pickLocos(1, RACE.mode === "2p" ? "🔵 " + LX("Jugador 2 (Carril derecho)", "Player 2 (Right lane)", "Joueur 2 (Voie droite)", "Spieler 2 (Rechte Spur)") : "🤖 " + LX("Locomotora rival", "Computer locomotive", "Locomotive rivale", "Gegner-Lok"));
+    }
+
+    const go = addEl(card, "button", "rc-go", "🏁 " + LX("¡A correr!", "Start Race!", "C'est parti !", "Rennen starten!"));
+    go.onclick = () => { unlockAudio(); sfx.whistleShort(); closeModal(); startCircuitRace(loop, cr); };
+  });
+}
+
+function makeRaceLocoEl(kind, lane, isGhost) {
+  const K = KINDS[kind] || KINDS.vapor;
+  const c1 = lane === 0 ? K.c1[0] : (K.c1[1] || K.c1[0]), c2 = K.c2[0];
+  const g = el("g", { class: "race-ov", "pointer-events": "none" }, lvL(0).train);
+  drawCar(g, K.loco, c1, c2);
+  if (isGhost) {
+    g.setAttribute("opacity", "0.48");
+    g.style.filter = "drop-shadow(0 0 8px #5ce1ff)";
+    const tag = el("text", { x: 0, y: -24, "font-size": 22, "text-anchor": "middle" }, g); tag.textContent = "👻";
+  } else {
+    const dot = el("circle", { cx: 0, cy: -22, r: 8, fill: lane === 0 ? "#d63a2f" : "#2b6cb0", stroke: "#fff", "stroke-width": 2.5 }, g);
+    void dot;
+  }
+  RACE.ovNodes.push(g);
+  return g;
+}
+
+function spawnRaceAnimalsForRacer(r, loop) {
+  (r.animals || []).forEach(a => a.el && a.el.remove());
+  r.animals = loop.animalS.map((sPos, idx) => {
+    const emoji = RACE_ANIMALS[(idx + r.i) % RACE_ANIMALS.length];
+    const q = sampleAt(loop, sPos);
+    const lx = q.x + q.nx * r.laneOff, ly = q.y + q.ny * r.laneOff - q.z * E;
+    const g = el("g", { class: "race-ov", "pointer-events": "none", transform: `translate(${lx.toFixed(1)} ${ly.toFixed(1)})` }, lvL(clamp(Math.round(q.z), -UG, LV - 1)).over);
+    el("ellipse", { cx: 0, cy: 14, rx: 16, ry: 6, fill: "rgba(0,0,0,.2)" }, g);
+    const tx = el("text", { x: 0, y: 6, "font-size": 34, "text-anchor": "middle", "dominant-baseline": "central" }, g);
+    tx.textContent = emoji;
+    RACE.ovNodes.push(g);
+    return { s: sPos, emoji, el: g, x: lx, y: ly, nx: q.nx, ny: q.ny, gone: false, walk: -1 };
+  });
+}
+
+function startCircuitRace(loop, cr) {
+  stopCircuitRace(true);
+  if (running) setRunning(false);
+  RACE.active = true;
+  RACE.phase = "count";
+  RACE.loop = loop;
+  RACE.circuit = cr || null;
+  RACE.trackKey = raceTrackKey(RACE.laps);
+  RACE.elapsed = 0;
+  RACE.countT = 2.7;
+  RACE.camMode = "fit";
+
+  // Hide normal free-play trains while racing so only racing locomotives appear
+  trains.forEach(t => { t.gs.forEach(g => g.style.display = "none"); if (t.arrow) t.arrow.style.display = "none"; });
+  document.body.classList.add("racing");
+  drawRaceOverlay(loop);
+
+  const mkRacer = (i, isCpu) => {
+    const kind = RACE.kinds[i] || "vapor";
+    const st = DUEL_ST[kind] || DUEL_ST.vapor;
+    const laneOff = i === 0 ? -RACE_LANE : RACE_LANE;
+    const r = {
+      i, isCpu, kind, name: dName(kind), laneOff,
+      dist: 0, lap: 1, v: 0,
+      steamMax: 3.4 + st.h * .28, steam: 3.4 + st.h * .28,
+      topSpeed: 265 + st.s * 10, grip: .78 + st.w * .035, power: .88 + st.p * .025,
+      turbo: 0, turboT: 0, overT: 0, wobT: 0, wobHeat: 0, stunT: 0, tootCd: 0,
+      hold: false, finished: false, finishMs: 0, bestLapMs: 0, lapStartMs: 0,
+      ghostSamples: [[0, 0]], lastGhostT: 0,
+      el: makeRaceLocoEl(kind, i, false),
+      animals: [], ui: null, msgT: 0,
+    };
+    spawnRaceAnimalsForRacer(r, loop);
+    return r;
+  };
+
+  RACE.racers = [mkRacer(0, false)];
+  if (RACE.mode === "cpu") RACE.racers.push(mkRacer(1, true));
+  else if (RACE.mode === "2p") RACE.racers.push(mkRacer(1, false));
+
+  // Ghost train in Solo mode if a previous best exists for this track + lap count
+  RACE.ghost = null;
+  if (RACE.mode === "solo") {
+    const prev = raceBestGet(RACE.trackKey);
+    if (prev && prev.ghost && prev.ghost.length >= 2) {
+      RACE.ghost = { samples: prev.ghost, ms: prev.ms, el: makeRaceLocoEl(prev.kind || "vapor", 1, true), dist: 0 };
+    }
+  }
+
+  buildRaceHud();
+  fitRaceBoard();
+  positionRaceSprites();
+  tone([440], "triangle", 0, .14, .09);
+}
+
+function buildRaceHud() {
+  const hud = $("raceHud"); hud.innerHTML = ""; hud.hidden = false;
+  const top = addEl(hud, "div", "rh-top");
+  const pill = addEl(top, "div", "rh-pill");
+  const lapEl = addEl(pill, "span", "rh-lap", `🏁 1/${RACE.laps}`);
+  const timeEl = addEl(pill, "span", "rh-time", "0.0s");
+  const posEl = addEl(pill, "span", "rh-pos", RACE.mode === "solo" ? (RACE.ghost ? "👻 " + fmtRaceMs(RACE.ghost.ms) : "⏱️") : "1°");
+  const btns = addEl(top, "div", "rh-btns");
+  if (RACE.mode !== "2p") {
+    const camB = addEl(btns, "button", "b", "🎥");
+    camB.title = LX("Cambiar cámara", "Toggle camera", "Changer de caméra", "Kamera wechseln");
+    camB.onclick = () => {
+      sfx.click();
+      RACE.camMode = RACE.camMode === "fit" ? "follow" : "fit";
+      camB.textContent = RACE.camMode === "fit" ? "🎥" : "🗺️";
+      if (RACE.camMode === "fit") fitRaceBoard();
+    };
+  }
+  const rstB = addEl(btns, "button", "b", "🔄");
+  rstB.title = LX("Reiniciar", "Restart", "Recommencer", "Neu starten");
+  rstB.onclick = () => { sfx.click(); startCircuitRace(RACE.loop, RACE.circuit); };
+  const xB = addEl(btns, "button", "b", "✖️");
+  xB.title = LX("Salir de la carrera", "Exit race", "Quitter la course", "Rennen beenden");
+  xB.onclick = () => { sfx.click(); stopCircuitRace(); };
+
+  const lights = addEl(hud, "div", "rh-lights");
+  const bulbs = [addEl(lights, "i"), addEl(lights, "i"), addEl(lights, "i")];
+  const countEl = addEl(hud, "div", "rh-count", "3");
+
+  const bot = addEl(hud, "div", "rh-bot" + (RACE.mode === "2p" ? "" : " solo"));
+  const humanRacers = RACE.racers.filter(r => !r.isCpu);
+  humanRacers.forEach(r => {
+    const pad = addEl(bot, "div", "rp-pad " + (r.i === 0 ? "p1" : "p2"));
+    const hdr = addEl(pad, "div", "rp-hdr");
+    addEl(hdr, "span", "", (r.i === 0 ? "🔴 " : "🔵 ") + r.name);
+    const lapTxt = addEl(hdr, "span", "", `1/${RACE.laps}`);
+    const bars = addEl(pad, "div", "rp-bars");
+    const sBar = addEl(bars, "div", "rp-bar steam"); addEl(sBar, "span", "", "💨"); const sFill = addEl(addEl(sBar, "div", "tr"), "i");
+    const tBar = addEl(bars, "div", "rp-bar turbo"); addEl(tBar, "span", "", "🚀"); const tFill = addEl(addEl(tBar, "div", "tr"), "i"); tFill.style.width = "0%";
+    const msgEl = addEl(pad, "div", "rp-msg", "");
+    const ctrls = addEl(pad, "div", "rp-ctrls");
+
+    const hornB = addEl(ctrls, "button", "rp-btn rp-horn");
+    hornB.innerHTML = `📢<small>${LX("Pito", "Horn", "Klaxon", "Hupe")}</small>`;
+    const gasB = addEl(ctrls, "button", "rp-btn rp-gas");
+    gasB.innerHTML = `⚡<small>${LX("Gas", "Go", "Gaz", "Gas")}</small>`;
+    const turboB = addEl(ctrls, "button", "rp-btn rp-turbo");
+    turboB.innerHTML = `🚀<small>Turbo</small>`;
+
+    const downGas = e => { e.preventDefault(); r.hold = true; gasB.classList.add("down"); };
+    const upGas = e => { if (e) e.preventDefault(); r.hold = false; gasB.classList.remove("down"); };
+    gasB.addEventListener("pointerdown", downGas);
+    gasB.addEventListener("pointerup", upGas);
+    gasB.addEventListener("pointercancel", upGas);
+    gasB.addEventListener("pointerleave", upGas);
+    hornB.addEventListener("pointerdown", e => { e.preventDefault(); raceHorn(r); });
+    turboB.addEventListener("pointerdown", e => { e.preventDefault(); raceTurbo(r); });
+
+    r.ui = { pad, lapTxt, sBar, sFill, tFill, msgEl, gasB, hornB, turboB };
+  });
+
+  RACE.hud = { lapEl, timeEl, posEl, lights, bulbs, countEl, lastBeep: 4 };
+}
+
+function raceMsg(r, txt) {
+  if (!r.ui) return;
+  r.ui.msgEl.textContent = txt;
+  r.msgT = 1.4;
+}
+
+function raceHorn(r) {
+  if (!RACE.active || RACE.phase !== "go" || r.finished || r.stunT > 0 || r.tootCd > 0) return;
+  r.tootCd = .65;
+  try { HORNS[KINDS[r.kind].horn](); } catch (e) {}
+  const L = RACE.loop.totalLen, lapS = r.dist % L;
+  const a = r.animals.find(o => !o.gone && o.s > lapS && o.s - lapS < 420);
+  if (!a) return;
+  const tt = (a.s - lapS) / Math.max(r.v, 60);
+  if (tt >= .25 && tt <= 1.8) {
+    a.gone = true; a.walk = 0;
+    r.turbo = Math.min(1, r.turbo + .38);
+    if (!r.isCpu) raceMsg(r, "✨ " + LX("¡Se aparta! +Turbo", "Clear! +Turbo", "Voie libre ! +Turbo", "Frei! +Turbo"));
+    sfx.bell();
+  } else if (tt > 1.8 && !r.isCpu) {
+    raceMsg(r, LX("Un poco pronto…", "A bit early…", "Un peu tôt…", "Etwas früh…"));
+  }
+}
+
+function raceTurbo(r) {
+  if (!RACE.active || RACE.phase !== "go" || r.finished || r.turbo < .99 || r.turboT > 0) return;
+  r.turbo = 0; r.turboT = 1.9; r.overT = 0; r.wobT = 0;
+  try { sfx.whistleShort(); } catch (e) {}
+  if (!r.isCpu) raceMsg(r, "🚀 TURBO!");
+}
+
+function raceCpuStep(r, dt) {
+  const C = RACE_CPU[RACE.cpuLvl] || RACE_CPU.normal;
+  const L = RACE.loop.totalLen, lapS = r.dist % L;
+  const ahead = sampleAt(RACE.loop, r.dist + 55);
+  const sharp = ahead.curv > 0.0085;
+  // Ease off slightly on sharp bends & when steam gets low
+  if (r.overT > 0) r.hold = false;
+  else if (r.steam < r.steamMax * .18) r.hold = false;
+  else if (sharp && r.v > r.topSpeed * .72 && Math.random() < C.curveCare) r.hold = false;
+  else r.hold = Math.random() < C.gasMul + .08;
+  // Horn for animals
+  const a = r.animals.find(o => !o.gone && o.s > lapS && o.s - lapS < 320);
+  if (a && r.tootCd <= 0) {
+    const tt = (a.s - lapS) / Math.max(r.v, 80);
+    if (tt >= .45 && tt <= 1.25 && Math.random() < C.hornSkill * dt * 8) raceHorn(r);
+  }
+  // Fire turbo on straight
+  if (r.turbo >= .99 && ahead.curv < 0.004 && Math.random() < C.turboUse * dt * 3) raceTurbo(r);
+}
+
+function positionRaceSprites() {
+  const loop = RACE.loop;
+  RACE.racers.forEach(r => {
+    const q = sampleAt(loop, r.dist);
+    const wob = r.wobT > 0 ? Math.sin(RACE.elapsed * 38) * 10 : 0;
+    const x = q.x + q.nx * r.laneOff, y = q.y + q.ny * r.laneOff - q.z * E;
+    const s = 0.88 * (1 + q.z * .045);
+    r.el.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${(q.a + wob).toFixed(1)}) scale(${s.toFixed(3)})`);
+    const layer = lvL(clamp(Math.round(q.z), -UG, LV - 1)).train;
+    if (r.el.parentNode !== layer) layer.appendChild(r.el);
+  });
+  if (RACE.ghost) {
+    const g = RACE.ghost;
+    const q = sampleAt(loop, g.dist);
+    const x = q.x + q.nx * RACE_LANE, y = q.y + q.ny * RACE_LANE - q.z * E;
+    const s = 0.88 * (1 + q.z * .045);
+    g.el.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${q.a.toFixed(1)}) scale(${s.toFixed(3)})`);
+    const layer = lvL(clamp(Math.round(q.z), -UG, LV - 1)).train;
+    if (g.el.parentNode !== layer) layer.appendChild(g.el);
+  }
+}
+
+function raceTick(dt) {
+  const loop = RACE.loop, L = loop.totalLen, totalTarget = L * RACE.laps;
+  const H = RACE.hud;
+
+  // Countdown phase (3 - 2 - 1 - GO!)
+  if (RACE.phase === "count") {
+    RACE.countT -= dt;
+    const sec = Math.ceil(RACE.countT);
+    if (sec < H.lastBeep && sec >= 1) {
+      H.lastBeep = sec;
+      H.countEl.textContent = String(sec);
+      H.bulbs.forEach((b, idx) => b.classList.toggle("red", idx < (4 - sec)));
+      tone([440 + (3 - sec) * 110], "triangle", 0, .14, .1);
+    }
+    if (RACE.countT <= 0) {
+      RACE.phase = "go";
+      H.countEl.textContent = LX("¡YA!", "GO!", "GO !", "LOS!");
+      H.bulbs.forEach(b => { b.classList.remove("red"); b.classList.add("go"); });
+      tone([880, 1175], "triangle", 0, .28, .12);
+    }
+    return;
+  }
+  if (RACE.phase !== "go") return;
+
+  RACE.elapsed += dt;
+  if (RACE.elapsed > .75 && H.lights.style.display !== "none") {
+    H.countEl.textContent = ""; H.lights.style.display = "none";
+  }
+  const nowMs = RACE.elapsed * 1000;
+
+  // Update Ghost replay
+  if (RACE.ghost) {
+    const gs = RACE.ghost.samples, t = RACE.elapsed;
+    if (t >= gs[gs.length - 1][0]) RACE.ghost.dist = gs[gs.length - 1][1];
+    else {
+      let i = 0; while (i < gs.length - 2 && gs[i + 1][0] < t) i++;
+      const [t0, d0] = gs[i], [t1, d1] = gs[i + 1], f = (t - t0) / Math.max(.001, t1 - t0);
+      RACE.ghost.dist = d0 + (d1 - d0) * f;
+    }
+  }
+
+  // Update each racer
+  RACE.racers.forEach(r => {
+    if (r.msgT > 0) { r.msgT -= dt; if (r.msgT <= 0 && r.ui) r.ui.msgEl.textContent = ""; }
+    if (r.tootCd > 0) r.tootCd -= dt;
+    if (r.turboT > 0) r.turboT -= dt;
+    if (r.overT > 0) r.overT -= dt;
+    if (r.wobT > 0) r.wobT -= dt;
+
+    // Animate departing animals
+    r.animals.forEach(a => {
+      if (a.walk >= 0 && a.walk < 1) {
+        a.walk += dt * 2.2;
+        const side = r.i === 0 ? -1 : 1;
+        const ox = a.x + a.nx * side * a.walk * 58, oy = a.y + a.ny * side * a.walk * 58;
+        a.el.setAttribute("transform", `translate(${ox.toFixed(1)} ${oy.toFixed(1)})`);
+        a.el.setAttribute("opacity", Math.max(0, 1 - a.walk).toFixed(2));
+        if (a.walk >= 1) a.el.setAttribute("display", "none");
+      }
+    });
+
+    if (r.finished) { r.v *= Math.max(0, 1 - 3 * dt); r.dist += r.v * dt; return; }
+    if (r.isCpu) raceCpuStep(r, dt);
+
+    if (r.stunT > 0) {
+      r.stunT -= dt; r.v = 0;
+    } else {
+      const q = sampleAt(loop, r.dist);
+      const sharp = q.curv > 0.0082;
+      const onBoost = loop.boosts.some(bz => { const m = r.dist % L; return m >= bz.s0 && m <= bz.s1; });
+
+      const pushing = r.hold && r.overT <= 0;
+      if (pushing && r.turboT <= 0) {
+        r.steam -= dt;
+        if (r.steam <= 0) {
+          r.steam = 0; r.overT = 1.15; sfx.no();
+          if (!r.isCpu) raceMsg(r, "💨 " + LX("¡Sin vapor! Suelta un segundo", "Out of steam! Ease off briefly", "Plus de vapeur ! Relâche un peu", "Kein Dampf! Kurz loslassen"));
+        }
+      } else {
+        r.steam = Math.min(r.steamMax, r.steam + (r.turboT > 0 ? .8 : 1.75) * dt);
+      }
+
+      // Curve grip physics: full gas into tight hairpins triggers cartoon wobble & speed scrub
+      if (sharp && pushing && r.v > r.topSpeed * .72 * r.grip) {
+        r.wobHeat += dt * 1.9;
+        if (r.wobHeat >= .48) {
+          r.wobHeat = 0; r.wobT = .65; r.v *= .62;
+          sfx.toc();
+          if (!r.isCpu) raceMsg(r, "〰️ " + LX("¡Curva cerrada! Suelta un poco", "Tight curve! Ease off slightly", "Virage serré ! Ralentis un peu", "Enge Kurve! Kurz Gas weg"));
+        }
+      } else {
+        r.wobHeat = Math.max(0, r.wobHeat - dt * 2.5);
+      }
+
+      // Target speed: base + slope momentum + boost pad + turbo
+      const slopeMul = q.slope > 0.008 ? (r.turboT > 0 ? .95 : .74 * r.power) : q.slope < -0.008 ? 1.28 : 1;
+      const boostMul = onBoost ? 1.18 : 1;
+      const modeMul = r.turboT > 0 ? 1.38 : pushing ? 1.0 : r.overT > 0 ? .38 : .52;
+      const wobMul = r.wobT > 0 ? .65 : 1;
+      const tgt = r.topSpeed * slopeMul * boostMul * modeMul * wobMul;
+      r.v += (tgt - r.v) * Math.min(1, 3.6 * dt);
+
+      // Slowly build turbo from clean driving
+      if (r.v > 140 && r.wobT <= 0 && r.turboT <= 0) r.turbo = Math.min(1, r.turbo + dt * .075);
+
+      const oldDist = r.dist;
+      r.dist += r.v * dt;
+
+      // Record ghost trace every 0.2s for Player 1
+      if (r.i === 0 && RACE.elapsed - r.lastGhostT >= .2) {
+        r.lastGhostT = RACE.elapsed;
+        r.ghostSamples.push([+RACE.elapsed.toFixed(2), Math.round(r.dist)]);
+      }
+
+      // Check animal collision on this racer's lane
+      const oldLapS = oldDist % L, newLapS = r.dist % L;
+      for (const a of r.animals) {
+        if (a.gone) continue;
+        const crossed = oldLapS < newLapS ? (oldLapS < a.s && newLapS >= a.s) : (oldLapS < a.s || newLapS >= a.s);
+        if (crossed) {
+          a.gone = true; a.walk = 0;
+          r.stunT = 1.1; r.v = 0; sfx.bump();
+          if (!r.isCpu) raceMsg(r, a.emoji + " " + LX("¡Uy! Pita con 📢 antes", "Oops! Toot 📢 sooner", "Oups ! Klaxonne 📢 avant", "Hoppla! Hup 📢 früher"));
+          break;
+        }
+      }
+
+      // Lap & Finish check
+      const newLap = Math.floor(r.dist / L) + 1;
+      if (newLap > r.lap) {
+        const lapMs = nowMs - r.lapStartMs;
+        if (!r.bestLapMs || lapMs < r.bestLapMs) r.bestLapMs = lapMs;
+        r.lapStartMs = nowMs;
+        r.lap = newLap;
+        if (r.dist >= totalTarget) {
+          r.finished = true; r.finishMs = nowMs;
+          if (r.i === 0) r.ghostSamples.push([+RACE.elapsed.toFixed(2), Math.round(totalTarget)]);
+          sfx.bell();
+        } else {
+          spawnRaceAnimalsForRacer(r, loop);
+          if (!r.isCpu) { tone([660, 880], "triangle", 0, .14, .09); raceMsg(r, `🏁 ${LX("Vuelta", "Lap", "Tour", "Runde")} ${r.lap}/${RACE.laps}!`); }
+        }
+      }
+    }
+
+    // Update this player's HUD
+    if (r.ui) {
+      const lapS = r.dist % L;
+      const nextA = r.animals.find(o => !o.gone && o.s > lapS && o.s - lapS < 440);
+      const tt = nextA ? (nextA.s - lapS) / Math.max(r.v, 60) : 99;
+      r.ui.hornB.classList.toggle("now", tt >= .25 && tt <= 1.8);
+      r.ui.hornB.classList.toggle("soon", tt > 1.8 && tt <= 3.0);
+      r.ui.sFill.style.width = Math.round((r.steam / r.steamMax) * 100) + "%";
+      r.ui.sBar.classList.toggle("low", r.steam < r.steamMax * .25 || r.overT > 0);
+      r.ui.tFill.style.width = Math.round(r.turbo * 100) + "%";
+      r.ui.turboB.classList.toggle("ready", r.turbo >= .99);
+      r.ui.gasB.classList.toggle("hot", r.wobHeat > .22 || r.wobT > 0);
+      r.ui.lapTxt.textContent = `${Math.min(r.lap, RACE.laps)}/${RACE.laps}`;
+    }
+  });
+
+  // Update top HUD
+  const p1 = RACE.racers[0];
+  H.lapEl.textContent = `🏁 ${Math.min(p1.lap, RACE.laps)}/${RACE.laps}`;
+  H.timeEl.textContent = fmtRaceMs(nowMs);
+  if (RACE.racers.length > 1) {
+    H.posEl.textContent = p1.dist >= RACE.racers[1].dist ? "🥇 1°" : "🥈 2°";
+  }
+
+  positionRaceSprites();
+
+  // Follow camera in 1P mode
+  if (RACE.mode !== "2p" && RACE.camMode === "follow") {
+    const q = sampleAt(loop, p1.dist);
+    const x = q.x + q.nx * p1.laneOff, y = q.y + q.ny * p1.laneOff - q.z * E;
+    const k = 1 - Math.exp(-dt * 5);
+    view.z += (1.12 - view.z) * k;
+    view.x += (innerWidth / 2 - x * view.z - view.x) * k;
+    view.y += (innerHeight * .44 - y * view.z - view.y) * k;
+    applyView();
+  }
+
+  // Check if race is finished (solo: P1 done; 2P/CPU: all done or 3.5s after winner)
+  const doneCount = RACE.racers.filter(r => r.finished).length;
+  if (doneCount === RACE.racers.length) finishCircuitRace();
+  else if (doneCount > 0) {
+    const firstMs = Math.min(...RACE.racers.filter(r => r.finished).map(r => r.finishMs));
+    if (nowMs - firstMs > 4000) {
+      RACE.racers.forEach(r => { if (!r.finished) { r.finished = true; r.finishMs = nowMs; } });
+      finishCircuitRace();
+    }
+  }
+}
+
+function finishCircuitRace() {
+  RACE.phase = "done";
+  const sorted = [...RACE.racers].sort((a, b) => a.finishMs - b.finishMs);
+  const p1 = RACE.racers[0];
+  const prevBest = raceBestGet(RACE.trackKey);
+  const isNewBest = !prevBest || p1.finishMs < prevBest.ms;
+  if (isNewBest) {
+    raceBestSet(RACE.trackKey, { ms: Math.round(p1.finishMs), laps: RACE.laps, kind: p1.kind, ghost: p1.ghostSamples });
+  }
+  const reward = RACE.mode === "cpu" ? (sorted[0].i === 0 ? RACE_CPU[RACE.cpuLvl].coins : 4) : (isNewBest ? 8 : 5);
+  coins = wallet() + reward; sset(KEY + "-coins", coins);
+  try { tone([523, 659, 784, 1047], "triangle", 0, .18, .12); } catch (e) {}
+
+  openModal(card => {
+    const winTitle = RACE.mode === "solo"
+      ? (isNewBest ? "🏆 " + LX("¡Nuevo récord!", "New Personal Best!", "Nouveau record !", "Neue Bestzeit!") : "🏁 " + LX("¡Meta!", "Finish!", "Arrivée !", "Ziel!"))
+      : (sorted[0].i === 0 ? "🏆 " + LX("¡Gran carrera!", "Great Race!", "Super course !", "Tolles Rennen!") : "🌟 " + LX("¡Qué cerca! ¡Buena carrera!", "So close! Great race!", "Si près ! Belle course !", "So knapp! Tolles Rennen!"));
+    h2(card, winTitle);
+
+    const rows = addEl(card, "div", "");
+    rows.style.cssText = "display:flex;flex-direction:column;gap:8px;margin:10px 0;";
+    sorted.forEach((r, idx) => {
+      const row = addEl(rows, "div", "");
+      row.style.cssText = "display:flex;align-items:center;justify-content:space-between;background:#fffaf0;border:3px solid #d5bfa0;border-radius:16px;padding:8px 14px;font-weight:900;font-size:17px;";
+      const who = (idx === 0 ? "🥇 " : "🥈 ") + (r.isCpu ? "🤖 " : r.i === 0 ? "🔴 " : "🔵 ") + r.name;
+      addEl(row, "span", "", who);
+      addEl(row, "span", "", fmtRaceMs(r.finishMs));
+    });
+    if (RACE.mode === "solo" && prevBest && !isNewBest) {
+      addEl(card, "div", "rc-best", "👻 " + LX("Mejor", "Best", "Record", "Bestzeit") + ": " + fmtRaceMs(prevBest.ms));
+    }
+    const rew = addEl(card, "div", "rc-best", `+${reward} 🪙`);
+    rew.style.fontSize = "18px"; rew.style.margin = "8px auto";
+
+    const act = addEl(card, "div", "rc-pick-row");
+    const again = mkBtn("🔄 " + LX("Otra vez", "Race Again", "Rejouer", "Nochmal"), "", () => { closeModal(); startCircuitRace(RACE.loop, RACE.circuit); });
+    again.style.width = "auto"; again.style.padding = "0 18px"; again.style.fontSize = "18px"; act.appendChild(again);
+    const setup = mkBtn("⚙️ " + LX("Opciones", "Setup", "Options", "Optionen"), "", () => { stopCircuitRace(true); openRaceSetup(RACE.circuit); });
+    setup.style.width = "auto"; setup.style.padding = "0 18px"; setup.style.fontSize = "18px"; act.appendChild(setup);
+    const back = mkBtn("🛠️ " + LX("Al tablero", "Back to Track", "Au circuit", "Zur Strecke"), "", () => { closeModal(); stopCircuitRace(); });
+    back.style.width = "auto"; back.style.padding = "0 18px"; back.style.fontSize = "18px"; act.appendChild(back);
+  });
+}
+
+function stopCircuitRace(quiet) {
+  if (!RACE.active && !RACE.ovNodes.length) return;
+  RACE.active = false; RACE.phase = "idle";
+  clearRaceOverlay();
+  RACE.racers = []; RACE.ghost = null; RACE.hud = null;
+  const hud = $("raceHud"); if (hud) { hud.hidden = true; hud.innerHTML = ""; }
+  document.body.classList.remove("racing");
+  trains.forEach(t => { t.gs.forEach(g => g.style.display = ""); if (t.arrow) t.arrow.style.display = ""; });
+  if (!quiet) fitAll();
+}
+
+// Wire toolbar & banner buttons + keyboard shortcuts for Circuit Racing
+$("raceBtn").onclick = () => { unlockAudio(); sfx.click(); openRaceMenu(); };
+$("rbStart").onclick = () => { unlockAudio(); sfx.click(); openRaceSetup(); };
+$("rbExit").onclick = () => { unlockAudio(); sfx.click(); leaveRaceBuild(); };
+document.addEventListener("keydown", e => {
+  if (!RACE.active || RACE.phase !== "go") return;
+  const k = e.key.toLowerCase(), p1 = RACE.racers[0], p2 = RACE.mode === "2p" ? RACE.racers[1] : null;
+  if (k === " " || k === "w") { e.preventDefault(); e.stopPropagation(); if (p1) { p1.hold = true; p1.ui?.gasB.classList.add("down"); } }
+  else if (k === "e") { e.preventDefault(); e.stopPropagation(); if (p1) raceHorn(p1); }
+  else if (k === "q") { e.preventDefault(); e.stopPropagation(); if (p1) raceTurbo(p1); }
+  else if (p2 && k === "arrowup") { e.preventDefault(); e.stopPropagation(); p2.hold = true; p2.ui?.gasB.classList.add("down"); }
+  else if (p2 && k === "arrowright") { e.preventDefault(); e.stopPropagation(); raceHorn(p2); }
+  else if (p2 && k === "arrowdown") { e.preventDefault(); e.stopPropagation(); raceTurbo(p2); }
+}, true);
+document.addEventListener("keyup", e => {
+  if (!RACE.active) return;
+  const k = e.key.toLowerCase(), p1 = RACE.racers[0], p2 = RACE.mode === "2p" ? RACE.racers[1] : null;
+  if (k === " " || k === "w") { if (p1) { p1.hold = false; p1.ui?.gasB.classList.remove("down"); } }
+  else if (p2 && k === "arrowup") { p2.hold = false; p2.ui?.gasB.classList.remove("down"); }
+}, true);
+
+// =====================================================================
 //  START
 // =====================================================================
 { const cfg = sget(KEY + "-cfg"); const nl = (navigator.language || "es").slice(0, 2); LANG = cfg && cfg.lang || "en"; void nl; if (cfg) { hzOn = cfg.hz !== false; hzRnd = !!cfg.rnd; if (cfg.rk) Object.assign(rndKinds, cfg.rk); else if (hzRnd) { rndKinds.vaca = rndKinds.rocas = true; } voiceOn = cfg.voice !== false; if (cfg.sfx === false) { sfxOn = false; $("mute").classList.add("off"); } proMode = !!cfg.pro; } }
@@ -16490,6 +17577,7 @@ requestAnimationFrame(frame);
 
 // small hook for automated tests
 window.CT = { pieces, get trains() { return trains; }, addPiece, addTrain, placePiece, handleTap, step, setRunning, loadData, serialize, clearBoard,
+  CIRCUITS, RACE, analyzeRaceLoop, enterRaceBuild, leaveRaceBuild, openRaceMenu, openRaceSetup, startCircuitRace, stopCircuitRace, loadCircuitForRace, openLibrary,
   pieceAtLevel, piecesIn, PROJECTS, planFix, acceptFix, cancelFix, get fixPlan() { return fixPlan; }, looseEnds, slopeBtnLayout, continueSlope, morphSlope, get slopeSel() { return slopeSel; }, smartTarget, openParents, parentGate, get voiceOn() { return voiceOn; }, toggleSide, refreshSide, get profSel() { return profSel; }, set profSel(v) { profSel = v; }, removePiece, LEVELS, startLevel, openMap, enterFree, turtle, get lvl() { return lvl; }, get adv() { return adv; }, usedPieces, flipSlope, setSlopeMode, get slopeSel() { return slopeSel; }, startTutorial, get tut() { return tut; }, get tool() { return tool; }, get curTab() { return curTab; }, commitDraw, get cars() { return cars; }, carPose, addCar, carPoses, view, applyView, setFloor, portOpen, selectTab, selectTool, get running() { return running; }, get floor() { return floor; }, set speed(v) { speed = v; } };
 </script>
 </body>
