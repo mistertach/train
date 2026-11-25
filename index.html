@@ -195,7 +195,7 @@
   #sideview .svtop { display: flex; align-items: center; gap: 10px; padding: 6px 10px; font-size: 15px; }
   #sideview .svtop b { font-size: 17px; white-space: nowrap; }
   #sideview .svtop .b { width: 40px; height: 40px; font-size: 18px; margin-left: auto; }
-  #sideview svg { display: block; width: 100%; height: 210px; }
+  #sideview > svg { display: block; width: 100%; height: 210px; }
   body.playing #sideview { display: none !important; }
   #sideBtn.on { background: #ffd34d; border-color: #b8860b; }
   .sep { flex: 0 0 6px; height: 60px; border-radius: 3px; background: rgba(255,255,255,.3); }
@@ -8082,7 +8082,7 @@ function refreshSide() {
   if (!sideOn) { box.hidden = true; return; }
   box.hidden = false;
   const p = profSel && pieces.get(profSel);
-  const svgS = box.querySelector("svg"), msg = box.querySelector(".svmsg");
+  const svgS = box.querySelector(":scope > svg"), msg = box.querySelector(".svmsg");
   svgS.innerHTML = "";
   if (!p) { msg.textContent = "Toca una vía con ✋ para ver su fila de frente."; return; }
   msg.textContent = "Así se ve de frente la franja amarilla del tablero. Los números son los pisos. La 🚂 es el tamaño del tren.";
@@ -10651,7 +10651,7 @@ function drvRefresh() {
   dial.style.setProperty("--p", (pp * 270).toFixed(1) + "deg"); dial.querySelector(".knob").style.transform = `rotate(${(225 + pp * 270).toFixed(1)}deg)`;
   dial.classList.toggle("stopped", !(tr.thr > 0));
   const t = drv.querySelector(".turbo"), k = tr.turbo > 0 ? 1 : (tr.tm || 0);
-  t.querySelector("i").style.width = Math.round(k * 100) + "%"; t.style.setProperty("--tb", Math.round(k * 100) + "%");
+  t.querySelector(":scope > i").style.width = Math.round(k * 100) + "%"; t.style.setProperty("--tb", Math.round(k * 100) + "%");
   t.classList.toggle("ready", k >= .3 && !(tr.turbo > 0)); t.classList.toggle("on", tr.turbo > 0);
 }
 function drvTick() {
