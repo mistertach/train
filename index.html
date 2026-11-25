@@ -1026,6 +1026,10 @@ body.cab.boardable #cabBoard { display: flex; }
 #drive.dr2 > [data-a="horn"], #drive.dr2 > [data-a="turbo"], #drive.dr2 > [data-a="jump"], #drive.dr2 > [data-a="rev"] { display: none !important; }
 #top .ico, #speed { display: none !important; }
 #spdBtn { font-size: 26px; padding: 0; }
+#addTrainBtn { position: relative; }
+#addTrainBtn .plus { position: absolute; right: -3px; bottom: -3px; width: 21px; height: 21px; border-radius: 50%; background: #2ecc40; color: #fff; border: 2px solid #fff; font: 800 18px/17px system-ui, sans-serif; text-align: center; pointer-events: none; }
+/* speed only means something while the trains are running; "add a train" only while building */
+body:not(.playing) #spdBtn, body.playing #addTrainBtn, body.lvlmode #addTrainBtn, body.cab #addTrainBtn { display: none !important; }
 #cats { position: fixed; left: calc(10px + env(safe-area-inset-left)); bottom: calc(10px + env(safe-area-inset-bottom)); width: 172px; height: 172px; z-index: 9; pointer-events: none; display: none; transform-origin: 0 100%; }
 body.playing #cats { display: block; }
 #cats .cat { position: absolute; width: 50px; height: 50px; border-radius: 50%; border: 0; padding: 0; font-size: 25px; background: #fff; pointer-events: auto; cursor: pointer;
@@ -1166,7 +1170,8 @@ body.racebuild #raceBtn { background: linear-gradient(180deg, #7be895, #2fb858);
   <div class="grp">
     <button class="b" id="play" title="Arrancar / parar">▶️</button>
     <button class="b" id="raceBtn" title="Carrera en circuito">🏁</button>
-    <button class="b" id="spdBtn" title="Velocidad">🚂</button>
+    <button class="b" id="addTrainBtn" title="Añadir un tren">🚂<span class="plus">+</span></button>
+    <button class="b" id="spdBtn" title="Velocidad">⏱️</button>
     <button class="b" id="resetAll" title="Volver a poner los trenes en su sitio">🔄</button>
     <button class="b off" id="undoBtn" title="Deshacer">↩️</button>
     <button class="b" id="fixBtn" title="Arreglar: busca dónde se caería el tren">🔧</button>
@@ -12015,11 +12020,33 @@ addEventListener("resize", () => catPlace());
 { const r0 = refreshHzPlay; refreshHzPlay = function () { r0(); catLayout(); }; }
 setInterval(() => { if (document.body.classList.contains("playing")) catLayout(); else if (catSel) catClose(); }, 700);
 // 🐢 🚂 🐇 the game speed: one small button that cycles
-{ const SP = [[.5, "🐢"], [1, "🚂"], [1.8, "🐇"]], b = $("spdBtn");
+{ const SP = [[.5, "🐢"], [1, "⏱️"], [1.8, "🐇"]], b = $("spdBtn");
   const show = () => { const i = SP.findIndex(x => x[0] === speed); b.textContent = (SP[i] || SP[1])[1]; };
   b.onclick = e => { e.stopPropagation(); unlockAudio(); const i = SP.findIndex(x => x[0] === speed); const n = SP[(i + 1) % SP.length]; speed = n[0]; $("speed").value = speed; show(); sfx.click(); };
   show();
 }
+// ➕🚂 one tap puts a train on the track nearest the middle of the screen (building mode only)
+$("addTrainBtn").onclick = e => {
+  e.stopPropagation(); unlockAudio(); if (running) return;
+  if (tut && trains.length) { sfx.no(); toast("☝️ 🚂"); return; }
+  const wx = (innerWidth / 2 - view.x) / view.z, wy = (innerHeight / 2 - view.y) / view.z;
+  let best = null;
+  pieces.forEach(p => {
+    if (!p.geo || !p.geo.routes.length || DEFS[p.type].road) return;
+    const busy = trains.some(t => t.start.pid === p.id);
+    p.geo.routes.forEach((R, ri) => R.pp.forEach((pt, i) => {
+      const sc = Math.hypot(pt[0] - wx, pt[1] - wy) + (busy ? 4000 : 0);
+      if (!best || sc < best.sc) best = { sc, p, ri, d: R.cum[i], x: pt[0], y: pt[1] };
+    }));
+  });
+  if (!best) { sfx.no(); toast("🛤️ " + LX("Pon primero unas vías", "Put some track down first", "Pose d'abord des rails", "Leg zuerst ein paar Schienen")); return; }
+  const kind = trainKind && !fullLocked(trainKind) ? trainKind : "vapor";
+  const t = addTrain(kind, trainCars, best.p.id, best.ri, 1, best.d, owns("pintura") ? trainPaint : null);
+  if (!t) { toast("🚂 × " + MAXT + " ✋"); sfx.no(); return; }
+  try { burst(best.x, best.y, ["🚂", "✨"], 8); } catch (err) {}
+  if (!lvl) dailyProg("trains", trains.filter(x => !x.ambient).length);
+  sfx.whistleShort(); autosave();
+};
 
 
 // =====================================================================
@@ -15692,6 +15719,8 @@ I18N_ROWS.push(
   ["Elegir qué lanza", "Choose what to throw", "Choisir ce qu'il lance", "Auswählen, was er wirft"],
   ["Mostrar las piezas", "Show the pieces", "Montrer les pièces", "Teile anzeigen"],
   ["Esconder las piezas", "Hide the pieces", "Cacher les pièces", "Teile verstecken"],
+  ["Añadir un tren", "Add a train", "Ajouter un train", "Zug hinzufügen"],
+  ["Pon primero unas vías", "Put some track down first", "Pose d'abord des rails", "Leg zuerst ein paar Schienen"],
   ["Salir del modo circuito", "Leave circuit mode", "Quitter le mode circuit", "Rennstrecken-Modus verlassen"],
   ["Velocidad: gira la rueda. Toca el centro para parar o arrancar.", "Speed: turn the wheel. Tap the middle to stop or start.", "Vitesse : tourne la roue. Touche le centre pour arrêter ou démarrer.", "Tempo: Dreh am Rad. Tippe in die Mitte zum Stoppen oder Starten."],
 );
