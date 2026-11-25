@@ -12660,7 +12660,11 @@ function artify(root) {
     EMO_RE.lastIndex = 0; return EMO_RE.test(n.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT; } });
   const list = []; while (w.nextNode()) list.push(w.currentNode);
   list.forEach(n => {
-    const f = document.createDocumentFragment(), s = n.nodeValue; let last = 0; EMO_RE.lastIndex = 0; let m;
+    // translate the WHOLE sentence before the emoji split it into pieces (a sentence in fragments can't be looked up)
+    let s = n.nodeValue; const s0 = s;
+    try { if (LANG !== "es") s = trn(s0); } catch (e) { /* the language tables are not defined yet at the very first call */ }
+    if (s !== s0 && n.parentNode && n.parentNode.childNodes.length === 1) n.parentNode.__trm = { src: s0, out: s };
+    const f = document.createDocumentFragment(); let last = 0; EMO_RE.lastIndex = 0; let m;
     while ((m = EMO_RE.exec(s))) {
       if (m.index > last) f.appendChild(document.createTextNode(s.slice(last, m.index)));
       const sp = document.createElement("span"); sp.className = "emo"; sp.innerHTML = emoSvg(m[1]);
@@ -15679,6 +15683,18 @@ I18N_ROWS.push(["Sube o baja", "Up-or-down switch", "Aiguillage monte-descend", 
   ["Perro de la estación", "Station dog", "Chien de la gare", "Bahnhofshund"], ["Un perrito que espera los trenes en el andén.", "A little dog that waits for the trains on the platform.", "Un petit chien qui attend les trains sur le quai.", "Ein kleiner Hund, der am Bahnsteig auf die Züge wartet."],
   ["Tejado de oro", "Golden roof", "Toit en or", "Goldenes Dach"], ["¡El tejado más brillante de la ciudad!", "The shiniest roof in town!", "Le toit le plus brillant de la ville !", "Das glänzendste Dach der Stadt!"],
   ["¡Que suban!", "All aboard!", "En voiture !", "Einsteigen!"]);
+// v1.1 racing + toolbar tooltips (these were missing, so they stayed in Spanish)
+I18N_ROWS.push(
+  ["Modo Circuito", "Circuit Mode", "Mode Circuit", "Rennstrecken-Modus"],
+  ["🏁 ¡A correr!", "🏁 Race!", "🏁 Course !", "🏁 Rennen!"], ["¡A correr!", "Race!", "Course !", "Rennen!"],
+  ["Carrera en circuito", "Circuit race", "Course sur circuit", "Rennen auf der Strecke"],
+  ["¡Lanza cosas!", "Throw things!", "Lance des choses !", "Wirf Sachen!"],
+  ["Elegir qué lanza", "Choose what to throw", "Choisir ce qu'il lance", "Auswählen, was er wirft"],
+  ["Mostrar las piezas", "Show the pieces", "Montrer les pièces", "Teile anzeigen"],
+  ["Esconder las piezas", "Hide the pieces", "Cacher les pièces", "Teile verstecken"],
+  ["Salir del modo circuito", "Leave circuit mode", "Quitter le mode circuit", "Rennstrecken-Modus verlassen"],
+  ["Velocidad: gira la rueda. Toca el centro para parar o arrancar.", "Speed: turn the wheel. Tap the middle to stop or start.", "Vitesse : tourne la roue. Touche le centre pour arrêter ou démarrer.", "Tempo: Dreh am Rad. Tippe in die Mitte zum Stoppen oder Starten."],
+);
 I18N_ROWS.forEach(([es, en, fr, de]) => I18N.set(es.trim(), { en, fr, de: de || I18N_DE[es.trim()] || en }));
 const LX = (es, en, fr, de) => LANG === "en" ? en : LANG === "fr" ? fr : LANG === "de" ? (de || deOf(es) || en) : es;
 const I18N_PAT = [
@@ -15727,12 +15743,24 @@ const trObs = new MutationObserver(list => {
 });
 trObs.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: TR_ATTRS });
 const TITLES = { es: "Little Loco", en: "Little Loco", fr: "Little Loco", de: "Little Loco" }; // the brand name stays the same in every language
+// text that holds emoji drawings is split in pieces (text + drawing + text): put the pieces back together to translate the whole sentence
+function trEmoHost(p) {
+  const kids = [...p.childNodes];
+  if (!kids.length || !kids.every(k => k.nodeType === 3 || (k.nodeType === 1 && k.classList.contains("emo")))) return;
+  const cur = kids.map(k => k.nodeType === 3 ? k.data : ((k.querySelector("i") || {}).textContent || "")).join("");
+  const m = p.__trm, src = m && cur === m.out ? m.src : cur, out = trn(src);
+  p.__trm = { src, out };
+  if (out === cur) return;
+  p.replaceChildren(document.createTextNode(out)); artify(p);
+  p.__trm = { src, out };
+}
+function trEmoAll() { const hs = new Set(); document.querySelectorAll(".emo").forEach(e => e.parentNode && hs.add(e.parentNode)); hs.forEach(trEmoHost); }
 function setLang(l, save) {
   LANG = LANGS[l] ? l : "es"; try { loadClipIndex(LANG); } catch (e) {}
   try { const N = window.__NATIVE__; if (N && N.post) N.post({ t: "voices", lang: LANG }); } catch (e) {}
   document.documentElement.lang = LANG;
   document.title = TITLES[LANG];
-  trTree(document.body);
+  trTree(document.body); try { trEmoAll(); } catch (e) {}
   document.querySelectorAll(".langpick b").forEach(b => b.classList.toggle("on", b.dataset.l === LANG));
   document.querySelectorAll(".langdd").forEach(w => w.refresh && w.refresh());
   try { if (tool && !running) showInfo(tool); } catch (e) {}
