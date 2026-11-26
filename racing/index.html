@@ -8523,7 +8523,7 @@ const VOICE_OF = { Coco: "Puck", Rufo: "Orus", Pancho: "Umbriel", Lila: "Kore", 
   Pip: "Alnilam", Mia: "Callirrhoe", Leo: "Schedar", Tina: "Despina", Dora: "Vindemiatrix", Bimba: "Erinome", Toto: "Sadaltager", Rosi: "Autonoe",
   Goldi: "Pulcherrima", Iris: "Achernar", Draco: "Fenrir", Rocco: "Algieba" };
 const voiceOf = name => VOICE_OF[String(name || "").replace(/\s+\d+$/, "")] || NARR_VOICE;
-const AUDIO_BASE = /(^|\.)fspal\.com$/.test(location.hostname) ? "audio/" : "https://train.fspal.com/audio/";
+const AUDIO_BASE = /(^|\.)fspal\.com$/.test(location.hostname) ? "/audio/" : "https://train.fspal.com/audio/";
 function speechFinal(text, raw) {
   let t = raw ? text : trn(text); for (const [k, v] of Object.entries(SAYS[LANG] || {})) t = t.split(k).join(v);
   return t.replace(/\p{Extended_Pictographic}|️|⃣/gu, " ").replace(/\s+/g, " ").trim();
