@@ -8161,10 +8161,10 @@ function refreshSide() {
   if (!sideOn) { box.hidden = true; return; }
   box.hidden = false;
   const p = profSel && pieces.get(profSel);
-  const svgS = box.querySelector("svg"), msg = box.querySelector(".svmsg");
+  const svgS = box.querySelector(":scope > svg"), msg = box.querySelector(".svmsg");
   svgS.innerHTML = "";
-  if (!p) { msg.textContent = "Toca una vía con ✋ para ver su fila de frente."; return; }
-  msg.textContent = "Así se ve de frente la franja amarilla del tablero. Los números son los pisos. La 🚂 es el tamaño del tren.";
+  if (!p) { msg.textContent = LX("Toca una vía con ✋ para ver su fila de frente.", "Tap a track with ✋ to see its row from the side.", "Touche une voie avec ✋ pour voir sa rangée de profil.", "Tipp mit ✋ auf ein Gleis, um seine Reihe von der Seite zu sehen."); return; }
+  msg.textContent = LX("Así se ve de frente la franja amarilla del tablero. Los números son los pisos. La 🚂 es el tamaño del tren.", "This is the yellow strip of the board seen from the side. The numbers are floors. The 🚂 shows the size of a train.", "Voici la bande jaune du plateau vue de profil. Les chiffres sont les étages. La 🚂 montre la taille d'un train.", "So sieht der gelbe Streifen des Brettes von der Seite aus. Die Zahlen sind die Stockwerke. Die 🚂 zeigt die Größe eines Zuges.");
   // the slice: three rows around the selected piece, about 9 squares to each side
   const rows = p.geo.cells.map(([, r]) => r), r0 = Math.min(...rows) - 1, r1 = Math.max(...rows) + 1;
   const cs = p.geo.cells.map(([c]) => c), c0 = Math.max(0, Math.min(...cs) - 9), c1 = Math.min(COLS - 1, Math.max(...cs) + 9);
