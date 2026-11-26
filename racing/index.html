@@ -17516,6 +17516,9 @@ function buildRaceHud() {
   const rstB = addEl(btns, "button", "b", "🔄");
   rstB.title = LX("Reiniciar", "Restart", "Recommencer", "Neu starten");
   rstB.onclick = () => { sfx.click(); startCircuitRace(RACE.loop, RACE.circuit); };
+  const mnB = addEl(btns, "button", "b", "📋");
+  mnB.title = LX("Menú de carreras", "Race menu", "Menu des courses", "Rennmenü");
+  mnB.onclick = () => { sfx.click(); stopCircuitRace(true); openRaceScreen(); };
   const xB = addEl(btns, "button", "b", "✖️");
   xB.title = LX("Salir de la carrera", "Exit race", "Quitter la course", "Rennen beenden");
   xB.onclick = () => { sfx.click(); stopCircuitRace(); };
