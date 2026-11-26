@@ -13907,7 +13907,7 @@ const TUT_BASIC = [
   { em: "🧽", tx: "Para borrar una pieza: elige la goma 🧽 (la rosa, arriba) y toca la pieza. ¡Prueba! Borra una de las que acabas de dibujar. Si te arrepientes, ↩️ lo deshace.",
     onEnter: () => { tut.pc = pieces.size; },
     hi: () => tool === "erase" ? null : '.it[data-id="erase"]', done: () => pieces.size < tut.pc, doneSay: "¡Borrada!" },
-  { em: "🗑️", tx: "Para borrarlo todo y empezar de cero: abre ⚙️ y toca 🗑️. Te preguntará antes, ¡no pasa nada si lo tocas sin querer!", hi: () => "#menuBtn", btn: "¡Entendido!" },
+  { em: "🗑️", tx: "Para borrarlo todo y empezar de cero: mantén pulsada la goma 🧽 hasta que se llene. ¡Se borra todo el circuito! Si te arrepientes, ↩️ lo deshace.", hi: () => '.it[data-id="erase"]', btn: "¡Entendido!" },
   { em: "🏆", tx: "¡Ya sabes lo básico! En ⚙️ tienes la ayuda y tus circuitos, y en 🏠 la biblioteca con ciudades listas para jugar. Cuando seas mayor, aprende a subir y bajar con el tutorial ⛰️.", hi: () => ["#menuBtn", "#homeBtn"], end: true, next: "alto" },
 ];
 const TUT_HIGH = [
@@ -15838,7 +15838,7 @@ I18N_ROWS.push(
   ["Juegos", "Games", "Jeux", "Spiele"], ["Atrás", "Back", "Retour", "Zurück"],
   ["Para borrar una pieza: elige la goma 🧽 (la rosa, arriba) y toca la pieza. ¡Prueba! Borra una de las que acabas de dibujar. Si te arrepientes, ↩️ lo deshace.", "To delete one piece: pick the eraser 🧽 (the pink one, at the top) and tap the piece. Try it! Erase one you just drew. If you change your mind, ↩️ undoes it.", "Pour effacer une pièce : choisis la gomme 🧽 (la rose, en haut) et touche la pièce. Essaie ! Efface une de celles que tu viens de dessiner. Si tu changes d'avis, ↩️ annule.", "Um ein Teil zu löschen: Wähle den Radierer 🧽 (den rosa, oben) und tippe das Teil an. Probier es aus! Lösche eins, das du gerade gezeichnet hast. Mit ↩️ machst du es rückgängig."],
   ["¡Borrada!", "Erased!", "Effacée !", "Gelöscht!"],
-  ["Para borrarlo todo y empezar de cero: abre ⚙️ y toca 🗑️. Te preguntará antes, ¡no pasa nada si lo tocas sin querer!", "To erase everything and start fresh: open ⚙️ and tap 🗑️. It asks first, so don't worry if you tap it by accident!", "Pour tout effacer et recommencer : ouvre ⚙️ et touche 🗑️. Il te demande avant, pas de souci si tu appuies par erreur !", "Um alles zu löschen und neu anzufangen: Öffne ⚙️ und tippe auf 🗑️. Es fragt vorher nach, keine Sorge, wenn du aus Versehen tippst!"],
+  ["Para borrarlo todo y empezar de cero: mantén pulsada la goma 🧽 hasta que se llene. ¡Se borra todo el circuito! Si te arrepientes, ↩️ lo deshace.", "To erase everything and start fresh: press and hold the eraser 🧽 until it fills up. The whole layout disappears! If you change your mind, ↩️ undoes it.", "Pour tout effacer et recommencer : maintiens la gomme 🧽 appuyée jusqu'à ce qu'elle se remplisse. Tout le circuit disparaît ! Si tu changes d'avis, ↩️ annule.", "Um alles zu löschen und neu anzufangen: Halte den Radierer 🧽 gedrückt, bis er sich füllt. Die ganze Strecke verschwindet! Mit ↩️ machst du es rückgängig."],
   ["¡Entendido!", "Got it!", "Compris !", "Verstanden!"],
   ["¿Te enseño a subir y bajar con rampas?", "Shall I show you how to go up and down with ramps?", "Je te montre comment monter et descendre avec des rampes ?", "Soll ich dir zeigen, wie man mit Rampen hinauf- und hinunterfährt?"]);
 I18N_ROWS.forEach(([es, en, fr, de]) => I18N.set(es.trim(), { en, fr, de: de || I18N_DE[es.trim()] || en }));
