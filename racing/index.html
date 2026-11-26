@@ -17494,7 +17494,7 @@ function startCircuitRace(loop, cr) {
   RACE.trackKey = raceTrackKey(RACE.laps);
   RACE.elapsed = 0;
   RACE.countT = 2.7;
-  RACE.camMode = "fit";
+  RACE.camMode = "fit"; RACE.camTz = 0;
 
   // Hide normal free-play trains while racing so only racing locomotives appear
   trains.forEach(t => { t.gs.forEach(g => g.style.display = "none"); if (t.arrow) t.arrow.style.display = "none"; });
@@ -17550,7 +17550,7 @@ function buildRaceHud() {
   const timeEl = addEl(pill, "span", "rh-time", "0.0s");
   const posEl = addEl(pill, "span", "rh-pos", RACE.mode === "solo" ? (RACE.ghost ? "👻 " + fmtRaceMs(RACE.ghost.ms) : "⏱️") : "1°");
   const btns = addEl(top, "div", "rh-btns");
-  {
+  if (RACE.mode === "2p") { // auto-zoom only makes sense with two human players
     const camB = addEl(btns, "button", "b");
     const camSync = () => {
       camB.textContent = RACE.camMode === "fit" ? "🎥" : "🗺️";
@@ -17558,7 +17558,7 @@ function buildRaceHud() {
     };
     camB.onclick = () => {
       sfx.click();
-      RACE.camMode = RACE.camMode === "fit" ? "auto" : "fit";
+      RACE.camMode = RACE.camMode === "fit" ? "auto" : "fit"; RACE.camTz = 0;
       camSync();
       if (RACE.camMode === "fit") fitRaceBoard();
     };
@@ -17897,20 +17897,23 @@ function raceTick(dt) {
   positionRaceSprites();
 
   // Auto camera: keeps every train (and the ghost) in view but as close as it can
-  if (RACE.camMode === "auto") {
+  if (RACE.camMode === "auto" && RACE.mode === "2p") {
     const pts = RACE.racers.map(r => { const q = sampleAt(loop, r.dist); return [q.x + q.nx * r.laneOff, q.y + q.ny * r.laneOff - q.z * E]; });
-    if (RACE.ghost) { const q = sampleAt(loop, RACE.ghost.dist); pts.push([q.x, q.y - q.z * E]); }
     // an animal coming up on a human racer's lane widens the view to include it (never beyond the whole-track fit)
     RACE.racers.forEach(r => { const w = raceWarnAnimal(r); if (w) pts.push([w.x, w.y]); });
     const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
-    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), pad = 190;
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), pad = 240;
     const topPx = 62, botPx = innerHeight < 520 ? 104 : 128, AW = innerWidth - 24, AH = Math.max(180, innerHeight - topPx - botPx);
     const [bx0, by0, bx1, by1] = loop.bounds, fitZ = clamp(Math.min(AW / (bx1 - bx0), AH / (by1 - by0)), minZ(), 2);
-    const wantZ = clamp(Math.min(AW / Math.max(x1 - x0 + pad * 2, 520), AH / Math.max(y1 - y0 + pad * 2, 380)), fitZ, 1.6);
-    const k = 1 - Math.exp(-dt * 3.2);
-    view.z += (wantZ - view.z) * k;
-    view.x += (innerWidth / 2 - ((x0 + x1) / 2) * view.z - view.x) * k;
-    view.y += (topPx + AH / 2 - ((y0 + y1) / 2) * view.z - view.y) * k;
+    let wantZ = clamp(Math.min(AW / Math.max(x1 - x0 + pad * 2, 560), AH / Math.max(y1 - y0 + pad * 2, 420)), fitZ, 1.2);
+    // steady zoom: only change the target when it moved a good deal, and ease to it slowly (the centre still follows the trains smoothly)
+    if (!RACE.camTz) RACE.camTz = view.z;
+    if (Math.abs(wantZ / RACE.camTz - 1) > .12) RACE.camTz = wantZ;
+    RACE.camTz = clamp(RACE.camTz, fitZ, 1.2);
+    const kz = 1 - Math.exp(-dt * .9), kc = 1 - Math.exp(-dt * 2.4);
+    view.z += (RACE.camTz - view.z) * kz;
+    view.x += (innerWidth / 2 - ((x0 + x1) / 2) * view.z - view.x) * kc;
+    view.y += (topPx + AH / 2 - ((y0 + y1) / 2) * view.z - view.y) * kc;
     applyView();
   }
   raceUpdateWarnings();
