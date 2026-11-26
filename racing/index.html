@@ -416,6 +416,7 @@
   #toast { position: fixed; left: 50%; top: 24%; transform: translate(-50%, -50%) scale(.5); font-size: 84px; opacity: 0; pointer-events: none; z-index: 40;
     transition: opacity .25s, transform .25s; text-shadow: 0 4px 10px rgba(0,0,0,.3); white-space: nowrap; }
   #toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  #toast.long { font-size: 19px; font-weight: 800; background: rgba(255,255,255,.97); color: #1f2a37; padding: 12px 22px; border-radius: 18px; box-shadow: 0 8px 28px rgba(30,60,90,.28); max-width: min(560px, 88vw); text-align: center; line-height: 1.3; width: max-content; top: 22%; white-space: normal; text-shadow: none; }
   #modal { position: fixed; inset: 0; background: rgba(40, 25, 10, .55); display: flex; align-items: center; justify-content: center; z-index: 30; }
   #modal[hidden] { display: none; }
   .card { background: #fff8e8; border-radius: 28px; padding: 18px 20px; border: 6px solid #a8743d; width: min(900px, 94vw); max-height: 90vh; overflow: auto; box-shadow: 0 10px 30px rgba(0,0,0,.4);
@@ -1025,7 +1026,11 @@ body.cab.boardable #cabBoard { display: flex; }
 #hzPlay, #drive .funMore, #drive .funPick { display: none !important; }
 #drive.dr2 > [data-a="horn"], #drive.dr2 > [data-a="turbo"], #drive.dr2 > [data-a="jump"], #drive.dr2 > [data-a="rev"] { display: none !important; }
 #top .ico, #speed { display: none !important; }
-#spdBtn { font-size: 26px; padding: 0; }
+#spdBtn { font-size: 26px; padding: 0; display: none; }
+body.playing #spdBtn { display: inline-flex; }
+.tplus { position: relative; display: inline-block; line-height: 1; }
+.tplus i { position: absolute; right: -9px; bottom: -6px; width: 17px; height: 17px; border-radius: 50%; background: #2fb34f; color: #fff; font: 900 15px/17px system-ui, sans-serif; text-align: center; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+body.lvlmode #addTrainBtn { display: none !important; }
 #cats { position: fixed; left: calc(10px + env(safe-area-inset-left)); bottom: calc(10px + env(safe-area-inset-bottom)); width: 172px; height: 172px; z-index: 9; pointer-events: none; display: none; transform-origin: 0 100%; }
 body.playing #cats { display: block; }
 #cats .cat { position: absolute; width: 50px; height: 50px; border-radius: 50%; border: 0; padding: 0; font-size: 25px; background: #fff; pointer-events: auto; cursor: pointer;
@@ -1058,7 +1063,7 @@ body.racing .tdeco { display: none !important; }
 body.lvlmode #raceBtn, body.lvlmode #raceModeBtn, body.racing #top, body.racing #bottom, body.racing #side, body.racing #playHint, body.racing #toolsShow, body.racing #daily, body.racing #mini, body.racing #raceBanner { display: none !important; }
 body.racebuild #raceModeBtn { background: linear-gradient(180deg, #7be895, #2fb858); border-color: #1c7c3a; color: #fff; box-shadow: 0 4px 14px rgba(47,184,88,.35); }
 #raceBanner {
-  position: fixed; top: calc(10px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+  position: fixed; top: calc(88px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
   z-index: 9; display: flex; align-items: center; gap: 10px;
   background: rgba(255,250,235,.96); border: 4px solid #e09f1f; border-radius: 999px;
   padding: 6px 10px 6px 16px; box-shadow: 0 8px 24px rgba(30,60,90,.22); font-weight: 900; color: #3b2a18;
@@ -1068,10 +1073,55 @@ body.racebuild #raceModeBtn { background: linear-gradient(180deg, #7be895, #2fb8
 #raceBanner #rbStatus { font-size: 14px; color: #b3261e; white-space: nowrap; }
 #raceBanner.ok #rbStatus { color: #1c7c3a; }
 #raceBanner .rb-go:disabled { opacity: .45; }
-#raceBanner .rb-flag { background: #f2e5cf; color: #5b3a1a; width: 32px; height: 32px; font-size: 16px; }
+#raceBanner .rb-flag { background: #f2e5cf; color: #5b3a1a; width: auto; height: 34px; padding: 0 14px; font-size: 14px; font-weight: 800; border-radius: 999px; white-space: nowrap; }
+#raceBanner .rb-fix { background: #fff; color: #7a2a8a; height: 34px; padding: 0 14px; font-size: 14px; font-weight: 800; border-radius: 999px; border: 3px solid #b86ad0; white-space: nowrap; cursor: pointer; }
+#raceBanner .rb-fix[hidden] { display: none; }
 #raceBanner .rb-flag.on { background: #ffd34d; box-shadow: 0 0 0 3px #c98a00; }
 .rc-name input { font: inherit; font-weight: 800; font-size: 16px; padding: 8px 12px; border: 3px solid #c9ab81; border-radius: 14px; text-align: center; width: 70%; max-width: 260px; }
 .rc-name { text-align: center; margin: 6px 0; }
+
+/* 🏁 race screen: three clean cards */
+#duel.drace { gap: 14px; padding: 66px 4vw 26px; justify-content: safe center; }
+#duel.drace h1 { font-size: clamp(26px, 3.6vw, 44px); margin: 0 0 2px; }
+.rgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: min(1040px, 94vw); align-items: stretch; }
+.rsec { background: #fff; border-radius: 24px; box-shadow: var(--ll-shadow); padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.rsec.wide { width: min(1040px, 94vw); }
+.rsec > .rlab { font-size: 12px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; color: #7b8ea3; }
+.rseg { display: flex; background: #edf2f7; border-radius: 999px; padding: 4px; gap: 4px; }
+.rseg > div { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: center; padding: 10px 8px; border-radius: 999px; font-weight: 800; font-size: clamp(13px, 1.6vw, 17px); cursor: pointer; color: var(--ll-ink); white-space: nowrap; user-select: none; }
+.rseg > div.on { background: var(--ll-pink); color: #fff; box-shadow: 0 3px 0 #8e0f40; }
+.rseg > div.lk { opacity: .65; }
+.rseg.sm { display: inline-flex; flex: 0 1 auto; } .rseg.sm > div { padding: 7px 16px; font-size: 15px; }
+.rrow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; } .rrow .rl { font-weight: 800; color: #5b6b7d; min-width: 64px; }
+.rtrk { display: flex; align-items: center; gap: 12px; background: #f4f8fb; border-radius: 16px; padding: 12px 16px; }
+.rtrk .tn { flex: 1; font-weight: 800; font-size: 18px; color: var(--ll-ink); } .rtrk .tb { font-weight: 800; color: #b57a00; white-space: nowrap; }
+.rsub { font-size: 14px; color: #6b7a8c; font-weight: 600; }
+.rnote { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border-radius: 16px; padding: 10px 14px; font-size: 15px; font-weight: 700; background: #e9f8ec; color: #1d6b33; }
+.rnote.bad { background: #ffeceb; color: #9a2f25; } .rnote span { flex: 1 1 180px; }
+.rbtns { display: flex; gap: 10px; flex-wrap: wrap; }
+.rbtn { font: inherit; font-weight: 800; font-size: 15px; border: 0; border-radius: 999px; padding: 9px 18px; background: var(--ll-pink); color: #fff; cursor: pointer; box-shadow: 0 3px 0 #8e0f40; }
+.rbtn.alt, .rnote .rbtn { background: #fff; color: var(--ll-ink); box-shadow: 0 2px 0 #cfdbe6, 0 3px 10px rgba(30,60,90,.12); }
+.rsec .dcols { width: 100%; gap: 12px; }
+.rsec .dcol { flex: 1 1 340px; background: #f4f8fb; box-shadow: none; padding: 10px 12px; }
+.rsec .dtr { background: #fff; }
+#duel.drace .dhint.sm { margin: 2px 0 0; }
+@media (max-width: 760px) { .rgrid { grid-template-columns: 1fr; } .rseg > div { font-size: 15px; padding: 9px 8px; } }
+@media (max-height: 560px) { #duel.drace { gap: 8px; padding: 44px 3vw 12px; } .rsec { padding: 8px 14px 12px; gap: 8px; border-radius: 18px; } .rseg > div { padding: 6px 8px; font-size: 14px; } .rtrk { padding: 8px 12px; } .rtrk .tn { font-size: 15px; } .rnote { font-size: 13px; padding: 6px 10px; } }
+/* race results */
+#card.rcard { width: min(520px, 92vw); max-width: 520px; padding: 22px 24px 24px; }
+.rcard h2 { font-size: 24px; margin: 0 0 14px; }
+.rres { display: flex; flex-direction: column; gap: 8px; margin: 0 0 12px; }
+.rres .rr { display: flex; align-items: center; gap: 12px; background: #f4f8fb; border-radius: 16px; padding: 12px 16px; font-weight: 800; font-size: 18px; color: var(--ll-ink); }
+.rres .rr.win { background: #fff6d6; box-shadow: inset 0 0 0 2px #f2c94c; }
+.rres .rr .md { font-size: 22px; } .rres .rr .nm { flex: 1; } .rres .rr .tm { font-variant-numeric: tabular-nums; }
+.rres .rr .dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
+.rcard .rinfo { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin: 4px 0 14px; }
+.rcard .coinpill { background: #fff3c4; color: #8a5a00; font-weight: 900; border-radius: 999px; padding: 6px 14px; font-size: 16px; }
+.rcard .rc-best { color: #6b7a8c; font-weight: 700; font-size: 15px; margin: 0; }
+.rcard .rc-name { margin: 0; flex: 1 1 200px; } .rcard .rc-name input { width: 100%; max-width: none; border: 0; background: #f4f8fb; border-radius: 999px; font-size: 16px; padding: 9px 16px; }
+.rcard .ract { display: flex; flex-direction: column; gap: 10px; }
+.rcard .ract .pri { font: inherit; font-weight: 900; font-size: 20px; border: 0; border-radius: 999px; padding: 13px 20px; background: var(--ll-green); color: #fff; cursor: pointer; box-shadow: 0 5px 0 #17652b; }
+.rcard .ract .sec { display: flex; gap: 10px; } .rcard .ract .sec button { flex: 1; font: inherit; font-weight: 800; font-size: 16px; border: 0; border-radius: 999px; padding: 11px 12px; background: #edf2f7; color: var(--ll-ink); cursor: pointer; box-shadow: 0 3px 0 #cfdbe6; }
 .hcard.race { background: linear-gradient(165deg, #5fd68a, #1f9d55); }
 .hcard.race .big { animation-delay: -3s; }
 .dgo.off { opacity: .5; filter: grayscale(.5); }
@@ -1191,8 +1241,9 @@ body.racebuild #raceModeBtn { background: linear-gradient(180deg, #7be895, #2fb8
   <div class="grp">
     <button class="b" id="play" title="Arrancar / parar">▶️</button>
     <button class="b" id="raceBtn" title="Carrera en circuito">🏁</button>
-    <button class="b" id="raceModeBtn" title="Modo carrera: marca las piezas que no sirven para correr">🚦</button>
-    <button class="b" id="spdBtn" title="Velocidad">🚂</button>
+    <button class="b" id="raceModeBtn" title="Modo pista de carreras: revisa tu vía y cambia las piezas que no valen">🏎️</button>
+    <button class="b" id="addTrainBtn" title="Añadir un tren"><span class="tplus">🚂<i>+</i></span></button>
+    <button class="b" id="spdBtn" title="Velocidad">⏱️</button>
     <button class="b" id="resetAll" title="Volver a poner los trenes en su sitio">🔄</button>
     <button class="b off" id="undoBtn" title="Deshacer">↩️</button>
     <button class="b" id="fixBtn" title="Arreglar: busca dónde se caería el tren">🔧</button>
@@ -1243,7 +1294,8 @@ body.racebuild #raceModeBtn { background: linear-gradient(180deg, #7be895, #2fb8
 <div id="raceBanner" hidden>
   <span class="rb-title">🚦 <span id="rbLabel">Modo carrera</span></span>
   <span id="rbStatus"></span>
-  <button class="rb-flag" id="rbFlag" title="Mover la salida">🚩</button>
+  <button class="rb-fix" id="rbFix" hidden>✨ Cambiar desvíos</button>
+  <button class="rb-flag" id="rbFlag" title="Mover la salida">🚩 Mover la salida</button>
   <button class="rb-go" id="rbStart">🏁 ¡A correr!</button>
   <button class="rb-x" id="rbExit" title="Salir del modo circuito">✖️</button>
 </div>
@@ -12045,8 +12097,25 @@ addEventListener("resize", () => catPlace());
 { const r0 = drvRefresh; drvRefresh = function () { r0(); catRefresh(); }; }
 { const r0 = refreshHzPlay; refreshHzPlay = function () { r0(); catLayout(); }; }
 setInterval(() => { if (document.body.classList.contains("playing")) catLayout(); else if (catSel) catClose(); }, 700);
-// 🐢 🚂 🐇 the game speed: one small button that cycles
-{ const SP = [[.5, "🐢"], [1, "🚂"], [1.8, "🐇"]], b = $("spdBtn");
+// 🚂➕ add a train in one tap: it goes on a free piece of track
+function quickAddTrain() {
+  unlockAudio();
+  if (lvl) return;
+  const tk = [...pieces.values()].filter(p => p.geo && p.geo.routes.length && !DEFS[p.type].road && !DEFS[p.type].tramst && !DEFS[p.type].sw);
+  if (!tk.length) { sfx.no(); toast("🛤️ " + LX("Pon primero unas vías", "Lay some track first", "Pose d'abord des rails", "Leg zuerst Gleise")); return; }
+  const used = new Set(trains.map(t => t.start.pid));
+  const free = tk.filter(p => !used.has(p.id) && p.h === 0), pool = free.length ? free : tk.filter(p => !used.has(p.id)).length ? tk.filter(p => !used.has(p.id)) : tk;
+  const flat = pool.filter(p => p.type === "recta" || p.type === "corta"), pick = (flat.length ? flat : pool);
+  const p = pick[Math.floor(Math.random() * pick.length)];
+  const kind = trainKind && !fullLocked(trainKind) && !shopLocked(trainKind) ? trainKind : "vapor";
+  const t = addTrain(kind, trainCars, p.id, 0, 1, p.geo.routes[0].len / 2, owns("pintura") ? trainPaint : null);
+  if (!t) { toast("🚂 × " + MAXT + " ✋"); sfx.no(); return; }
+  if (!lvl) dailyProg("trains", trains.filter(x => !x.ambient).length);
+  sfx.whistleShort(); autosave();
+}
+$("addTrainBtn").onclick = e => { e.stopPropagation(); quickAddTrain(); };
+// 🐢 ⏱️ 🐇 the game speed: one small button that cycles (only while the trains run)
+{ const SP = [[.5, "🐢"], [1, "⏱️"], [1.8, "🐇"]], b = $("spdBtn");
   const show = () => { const i = SP.findIndex(x => x[0] === speed); b.textContent = (SP[i] || SP[1])[1]; };
   b.onclick = e => { e.stopPropagation(); unlockAudio(); const i = SP.findIndex(x => x[0] === speed); const n = SP[(i + 1) % SP.length]; speed = n[0]; $("speed").value = speed; show(); sfx.click(); };
   show();
@@ -13075,7 +13144,7 @@ addEventListener("keydown", e => {
 });
 let toastT = 0;
 function wobble(e) { if (!e) return; e.classList.remove("wob"); void e.offsetWidth; e.classList.add("wob"); }
-function toast(s) { const t = $("toast"); t.textContent = s; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 1300); }
+function toast(s) { const t = $("toast"); t.classList.remove("long"); t.textContent = s; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 1300); }
 
 function pieceIcon(type) {
   const s = el("svg", { xmlns: NS });
@@ -15241,6 +15310,13 @@ function openMap(opts) {
 
 // [Spanish, English, French]
 const I18N_ROWS = [
+["Carrera en circuito", "Race on this track", "Course sur circuit", "Rennen auf der Strecke"],
+["Modo pista de carreras: revisa tu vía y cambia las piezas que no valen", "Race-track mode: check your track and swap pieces that can't be raced", "Mode piste de course : vérifie ta voie et change les pièces interdites", "Rennstrecken-Modus: Strecke prüfen und ungeeignete Teile ersetzen"],
+["Añadir un tren", "Add a train", "Ajouter un train", "Zug hinzufügen"],
+["✨ Cambiar desvíos", "✨ Swap switches", "✨ Changer les aiguillages", "✨ Weichen ersetzen"],
+["🚩 Mover la salida", "🚩 Move the start", "🚩 Déplacer le départ", "🚩 Start verschieben"],
+["Mover la salida", "Move the start", "Déplacer le départ", "Start verschieben"],
+["Salir del modo circuito", "Leave race-track mode", "Quitter le mode piste", "Rennstrecken-Modus verlassen"],
 ["Constructor de trenes", "Train Builder", "Constructeur de trains"],
 ["🚂 Constructor de trenes", "🚂 Train Builder", "🚂 Constructeur de trains"],
 ["Aventura", "Adventure", "Aventure"],
@@ -16754,6 +16830,7 @@ function enterRaceBuild() {
   if (lvl || RACE.active) return;
   raceBuildMode = true; RACE.flagSig = "";
   setModeUI(); refreshRaceFlags(true);
+  if (!curCircuitId && raceBlockers().length) { const r = raceAutoFix(); if (r) toastLong(raceFixMsg(r) + (r.ok ? "  ↩️" : "")); }
 }
 function leaveRaceBuild() {
   if (!raceBuildMode) return;
@@ -16767,7 +16844,7 @@ function raceBlockers() { return [...pieces.values()].filter(p => p.geo && p.geo
 function raceStatusText(res) {
   if (res.ok) return "✅ " + LX("Listo para correr", "Ready to race", "Prêt à courir", "Startklar");
   if (res.reason === "short") return LX("Faltan piezas (mín. 6)", "Needs 6+ pieces", "Il faut 6 rails ou plus", "Mind. 6 Teile");
-  if (res.reason === "switches") return "🚫 " + LX("Hay desvíos: no valen", "Switches don't race", "Aiguillages interdits", "Weichen gehen nicht");
+  if (res.reason === "switches") return "🚫 " + LX("Hay desvíos", "Switches found", "Aiguillages présents", "Weichen gefunden");
   if (res.reason === "multi") return LX("Vías separadas", "Track is in pieces", "Rails séparés", "Getrennte Gleise");
   return LX(`${res.loose} punta(s) abierta(s)`, `${res.loose} open end(s)`, `${res.loose} bout(s) ouvert(s)`, `${res.loose} offene Ende(n)`);
 }
@@ -16794,6 +16871,7 @@ function refreshRaceFlags(force) {
   }
   syncRaceFlagBtn();
   const st = $("rbStatus"); if (st) st.textContent = raceStatusText(res);
+  const fx = $("rbFix"); if (fx) fx.hidden = !(res.reason === "switches" && !curCircuitId);
   const rb = $("raceBanner"); if (rb) rb.classList.toggle("ok", !!res.ok);
   $("rbStart").disabled = !res.ok;
 }
@@ -16840,6 +16918,74 @@ function toggleRacePickStart() {
   RACE.pickStart = !RACE.pickStart; syncRaceFlagBtn();
   if (RACE.pickStart) toast("🚩 " + LX("Toca una vía para poner la salida", "Tap a track piece to put the start there", "Touche un rail pour placer le départ", "Tippe ein Gleis für den Start an"));
 }
+
+
+// ---------- ✨ swap switches for plain track, so any layout can be raced on
+const isRaceTrack = p => p.geo && p.geo.routes && p.geo.routes.length && !DEFS[p.type].road && !DEFS[p.type].tramst;
+function racePrune() {   // takes away spurs and dead ends that a swapped switch leaves behind
+  let n = 0;
+  for (;;) {
+    const t = [...pieces.values()].find(p => !p.proposed && isRaceTrack(p) && !DEFS[p.type].sw && p.geo.ports.some(portOpen));
+    if (!t) return n;
+    removePiece(t); n++;
+  }
+}
+function raceAutoFix() {
+  if (!raceBlockers().length) return null;
+  if (running) setRunning(false);
+  const orig = JSON.stringify(serialize()), nTrack0 = [...pieces.values()].filter(isRaceTrack).length;
+  const key = o => o.c + "," + o.r + "," + o.e + "," + o.z;
+  let state = orig, swapped = 0, ok = false;
+  noDraw = true;
+  try {
+    for (let guard = 0; guard < 60 && state; guard++) {
+      loadData(JSON.parse(state));
+      const p0 = raceBlockers()[0]; if (!p0) { ok = true; break; }
+      const P = p0.geo.ports, rts = p0.geo.routes, act = p0.state % rts.length;
+      const sets = [], seen = new Set(), add = a => { const k = a.slice().sort().join("|"); if (!seen.has(k)) { seen.add(k); sets.push(a); } };
+      if (P.length >= 4) add(P.map(key));
+      [act, ...rts.map((_, i) => i).filter(i => i !== act)].forEach(i => add([key(P[rts[i].a]), key(P[rts[i].b])]));
+      for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) add([key(P[i]), key(P[j])]);
+      const specs = [];
+      sets.forEach(st => ["corta", "curva", "rampaC", "cruce"].forEach(type => [0, 1, 2, 3].forEach(rot => [p0.h, p0.h - 1, p0.h + 1].forEach(h => {
+        const pk = portsFor(type, p0.c, p0.r, rot, h).map(key);
+        if (pk.length === st.length && st.every(k => pk.includes(k))) specs.push({ type, rot, h });
+      }))));
+      const at = { type: p0.type, c: p0.c, r: p0.r, rot: p0.rot, h: p0.h };
+      let best = null;
+      for (const sp of specs) {
+        loadData(JSON.parse(state));
+        const q = piecesIn(at.c, at.r).find(x => x.type === at.type && x.c === at.c && x.r === at.r && x.rot === at.rot && x.h === at.h); if (!q) continue;
+        removePiece(q);
+        if (!addPiece(sp.type, at.c, at.r, sp.rot, sp.h, 0)) continue;
+        racePrune();
+        const score = [...pieces.values()].filter(isRaceTrack).length;
+        if (!best || score > best.score) best = { score, snap: JSON.stringify(serialize()) };
+      }
+      if (!best) { state = null; break; }
+      state = best.snap; swapped++;
+    }
+    if (state) { loadData(JSON.parse(state)); ok = ok || (!raceBlockers().length); ok = ok && analyzeRaceLoop().ok; }
+  } finally { noDraw = false; }
+  const final = ok ? state : orig;
+  loadData(JSON.parse(final));
+  if (!ok) { fitAll(); return { ok: false, swapped: 0, removed: 0 }; }
+  const removed = Math.max(0, nTrack0 - [...pieces.values()].filter(isRaceTrack).length);
+  undoStack.push(orig); if (undoStack.length > 60) undoStack.shift(); updUndo();
+  autosave(); refreshHints(); sfx.bell();
+  if (raceBuildMode) refreshRaceFlags(true);
+  return { ok: true, swapped, removed };
+}
+function raceFixMsg(r) {
+  if (!r) return "";
+  if (!r.ok) return "🔧 " + LX("No he podido cambiar los desvíos solo: cierra bien el circuito y vuelve a probar.", "I couldn't swap the switches automatically: close the loop and try again.", "Je n'ai pas pu changer les aiguillages : ferme bien la boucle et réessaie.", "Die Weichen ließen sich nicht automatisch ersetzen: Schließe die Strecke und versuch es noch mal.");
+  const a = r.swapped === 1 ? LX("1 desvío cambiado por vía normal", "1 switch swapped for plain track", "1 aiguillage remplacé par un rail normal", "1 Weiche durch ein normales Gleis ersetzt")
+    : LX(`${r.swapped} desvíos cambiados por vía normal`, `${r.swapped} switches swapped for plain track`, `${r.swapped} aiguillages remplacés par des rails normaux`, `${r.swapped} Weichen durch normale Gleise ersetzt`);
+  const b = r.removed ? LX(` y ${r.removed} pieza(s) sobrante(s) quitada(s)`, ` and ${r.removed} leftover piece(s) removed`, ` et ${r.removed} pièce(s) en trop retirée(s)`, ` und ${r.removed} übrige(s) Teil(e) entfernt`) : "";
+  return "✨ " + a + b + ".";
+}
+function toastLong(s, ms) { const t = $("toast"); t.textContent = s; t.classList.add("long", "show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), ms || 3600); }
+$("rbFix").onclick = () => { unlockAudio(); sfx.click(); const r = raceAutoFix(); if (r) toastLong(raceFixMsg(r) + (r.ok ? "  ↩️" : "")); };
 
 // ---------- Closed-loop analyzer & dense centerline sampler
 function analyzeRaceLoop() {
@@ -17024,7 +17170,7 @@ const RACE = {
   ovNodes: [], elapsed: 0, countT: 0, camMode: "fit", hud: null, trackKey: "", circuit: null,
   prevTrainsVisible: true,
   startAt: null, pickStart: false, pickups: [], pickT: 3,
-  sel: null, origin: "board", mineStash: null, flagEls: [], flagSig: "", flagRes: null,
+  fixNote: null, sel: null, origin: "board", mineStash: null, flagEls: [], flagSig: "", flagRes: null,
 };
 const RACE_CPU = {
   easy:   { gasMul: .86, curveCare: .55, hornSkill: .62, turboUse: .45, coins: 5 },
@@ -17063,7 +17209,7 @@ function drawRaceAnimal(parent, kind) {
   }
   return g;
 }
-const RACE_HIDE_TYPES = new Set(["recta", "corta", "curva", "curvaL", "sesgoI", "sesgoLI", "cruce", "rampa", "rampaC", "subeI"]);
+const RACE_HIDE_TYPES = new Set(["recta", "corta", "curva", "curvaL", "sesgoI", "sesgoD", "sesgoLI", "sesgoLD", "cruce", "rampa", "rampaC", "subeI", "subeD"]);
 
 function fitRaceBoard() {
   if (!RACE.loop) return;
@@ -17122,6 +17268,8 @@ function openRaceScreen(origin) {
   unlockAudio(); closeModal();
   if (running) setRunning(false);
   if (origin) RACE.origin = origin;
+  RACE.fixNote = null;
+  if (!lvl && isFull() && !curCircuitId && (!RACE.sel || RACE.sel === "mine") && raceBlockers().length) RACE.fixNote = raceAutoFix();
   const d = raceScreenEl(); d.hidden = false; $("home").hidden = true; $("advmap").hidden = true;
   raceScreen();
 }
@@ -17140,7 +17288,7 @@ function raceToBoard() {
   RACE.origin = "board";
 }
 function raceScreen() {
-  const d = raceScreenEl(); d.innerHTML = ""; d.className = "screen dpick";
+  const d = raceScreenEl(); d.innerHTML = ""; d.className = "screen dpick drace";
   const full = isFull();
   if (!RACE.sel || (RACE.sel === "mine" && !full)) RACE.sel = curCircuitId || (full ? "mine" : "speed-temple");
   raceSelectTrack(RACE.sel);
@@ -17153,55 +17301,68 @@ function raceScreen() {
   const x = addEl(d, "button", "b dx"); x.innerHTML = ic("home"); x.title = LX("Atrás", "Back", "Retour", "Zurück");
   x.onclick = () => { sfx.click(); closeRaceScreen(); };
   addEl(d, "h1", "", "🏁 " + LX("Carreras en circuito", "Circuit Racing", "Courses sur circuit", "Rennstrecken"));
+  const grid = addEl(d, "div", "rgrid");
+  const sec = (parent, label, cls) => { const c = addEl(parent, "div", "rsec" + (cls ? " " + cls : "")); addEl(c, "div", "rlab", label); return c; };
 
-  // which track
-  const trk = addEl(d, "div", "dmodes");
-  const mine = addEl(trk, "div", "dchip ev" + (!cr ? " on" : "") + (!full ? " lk" : ""));
-  addEl(mine, "span", "dem", "🧱"); addEl(mine, "b", "", LX("Mi vía", "My track", "Ma voie", "Meine Strecke")); if (!full) addEl(mine, "span", "dlk", "🔒");
+  // ── track
+  const tc = sec(grid, LX("Pista", "Track", "Piste", "Strecke"));
+  const seg = addEl(tc, "div", "rseg");
+  const mine = addEl(seg, "div", (!cr ? "on" : "") + (!full ? " lk" : ""));
+  mine.textContent = "🧱 " + LX("Mi vía", "My track", "Ma voie", "Meine Strecke") + (!full ? " 🔒" : "");
   mine.onclick = () => { if (!full) { askGrownUp(); return; } sfx.click(); RACE.sel = "mine"; raceScreen(); };
-  const fam = addEl(trk, "div", "dchip ev" + (cr ? " on" : ""));
-  addEl(fam, "span", "dem", cr ? cr.emoji : "🏆"); addEl(fam, "b", "", cr ? LX(...cr.nm) : LX("Circuitos famosos", "Famous circuits", "Circuits célèbres", "Berühmte Strecken"));
+  const fam = addEl(seg, "div", cr ? "on" : "", (cr ? cr.emoji : "🏆") + " " + LX("Circuitos famosos", "Famous circuits", "Circuits célèbres", "Berühmte Strecken"));
   fam.onclick = () => { sfx.click(); openLibrary("circuitos"); };
-
+  if (RACE.fixNote) {
+    const n = addEl(tc, "div", "rnote" + (RACE.fixNote.ok ? "" : " bad")); addEl(n, "span", "", raceFixMsg(RACE.fixNote));
+    if (RACE.fixNote.ok) { const u = addEl(n, "button", "rbtn", "↩️ " + LX("Deshacer", "Undo", "Annuler", "Rückgängig")); u.onclick = () => { sfx.click(); undo(); RACE.fixNote = null; raceScreen(); }; }
+  }
   if (loop.ok) {
     const best = raceBestGet(raceTrackKey(RACE.laps));
-    addEl(d, "div", "dhint", (cr ? LX(...cr.ds) : (curName || LX("Tu vía actual", "Your current track", "Ta voie actuelle", "Deine aktuelle Strecke"))) + (best ? "   🏆 " + fmtRaceMs(best.ms) + (best.who ? " · " + best.who : "") : ""));
-    if (!cr) {
-      const mv = addEl(d, "div", "dmodes").appendChild(document.createElement("div"));
-      mv.className = "dchip sm"; mv.textContent = "🚩 " + LX("Mover la salida", "Move the start", "Déplacer le départ", "Start verschieben");
-      mv.onclick = () => { sfx.click(); raceToBoard(); enterRaceBuild(); RACE.pickStart = true; syncRaceFlagBtn(); toast("🚩 " + LX("Toca una vía para poner la salida", "Tap a track piece to put the start there", "Touche un rail pour placer le départ", "Tippe ein Gleis für den Start an")); };
-    }
+    const tr = addEl(tc, "div", "rtrk");
+    addEl(tr, "span", "tn", cr ? LX(...cr.nm) : (curName || LX("Tu vía actual", "Your current track", "Ta voie actuelle", "Deine aktuelle Strecke")));
+    if (best) addEl(tr, "span", "tb", "🏆 " + fmtRaceMs(best.ms) + (best.who ? " · " + best.who : ""));
+    if (cr) addEl(tc, "div", "rsub", LX(...cr.ds));
   } else {
-    addEl(d, "div", "dhint", "🔧 " + raceLoopMsg(loop));
-    const fx = addEl(d, "div", "dmodes");
+    const n = addEl(tc, "div", "rnote bad"); addEl(n, "span", "", "🔧 " + raceLoopMsg(loop));
+    const fx = addEl(tc, "div", "rbtns");
     if (loop.reason === "open") {
-      const f = addEl(fx, "div", "dchip", "✨ " + LX("Ciérralo por mí", "Close loop for me", "Fermer pour moi", "Für mich schließen"));
+      const f = addEl(fx, "button", "rbtn", "✨ " + LX("Ciérralo por mí", "Close loop for me", "Fermer pour moi", "Für mich schließen"));
       f.onclick = () => { sfx.click(); raceToBoard(); planFix(); if (fixPlan && fixPlan.ops && fixPlan.ops.length) toast("🔧"); };
     }
-    const kb = addEl(fx, "div", "dchip", "🛠️ " + LX("Seguir construyendo", "Keep building", "Continuer", "Weiterbauen"));
+    if (loop.reason === "switches" && !cr) {
+      const f = addEl(fx, "button", "rbtn", "✨ " + LX("Cambiar los desvíos", "Swap the switches", "Changer les aiguillages", "Weichen ersetzen"));
+      f.onclick = () => { sfx.click(); RACE.fixNote = raceAutoFix(); raceScreen(); };
+    }
+    const kb = addEl(fx, "button", "rbtn alt", "🛠️ " + LX("Seguir construyendo", "Keep building", "Continuer", "Weiterbauen"));
     kb.onclick = () => { sfx.click(); raceToBoard(); enterRaceBuild(); };
   }
 
-  // how
-  const modes = addEl(d, "div", "dmodes");
+  // ── how to race
+  const hc = sec(grid, LX("Cómo correr", "How to race", "Comment courir", "Rennmodus"));
+  const modes = addEl(hc, "div", "rseg");
   [["solo", "⏱️ " + LX("Solo + fantasma", "Solo + ghost", "Solo + fantôme", "Solo + Geist")],
-   ["cpu", "🤖 " + LX("Contra el ordenador", "Against the computer", "Contre l'ordinateur", "Gegen den Computer")],
+   ["cpu", "🤖 " + LX("Contra el ordenador", "Vs computer", "Contre l'ordi", "Gegen Computer")],
    ["2p", "👫 " + LX("Dos jugadores", "Two players", "Deux joueurs", "Zwei Spieler")]].forEach(([m, t]) => {
-    const b = addEl(modes, "div", "dchip" + (RACE.mode === m ? " on" : ""), t);
+    const b = addEl(modes, "div", RACE.mode === m ? "on" : "", t);
     b.onclick = () => { sfx.click(); RACE.mode = m; raceScreen(); };
   });
-  const opts = addEl(d, "div", "dmodes");
-  [1, 3, 5].forEach(n => {
-    const b = addEl(opts, "div", "dchip sm" + (RACE.laps === n ? " on" : ""), n + " " + (n === 1 ? LX("vuelta", "lap", "tour", "Runde") : LX("vueltas", "laps", "tours", "Runden")));
-    b.onclick = () => { sfx.click(); RACE.laps = n; raceScreen(); };
-  });
-  if (RACE.mode === "cpu") [["easy", LX("Fácil", "Easy", "Facile", "Leicht")], ["normal", LX("Normal", "Normal", "Normal", "Normal")], ["fast", LX("Rápido", "Fast", "Rapide", "Schnell")]].forEach(([lv, t]) => {
-    const b = addEl(opts, "div", "dchip sm" + (RACE.cpuLvl === lv ? " on" : ""), t + "  +" + RACE_CPU[lv].coins + "🪙");
-    b.onclick = () => { sfx.click(); RACE.cpuLvl = lv; raceScreen(); };
-  });
+  const row2 = addEl(hc, "div", "rrow");
+  const lapsL = addEl(row2, "span", "rl", LX("Vueltas", "Laps", "Tours", "Runden"));
+  const laps = addEl(row2, "div", "rseg sm");
+  [1, 3, 5].forEach(n => { const b = addEl(laps, "div", RACE.laps === n ? "on" : "", String(n)); b.onclick = () => { sfx.click(); RACE.laps = n; raceScreen(); }; });
+  if (RACE.mode === "cpu") {
+    const row3 = addEl(hc, "div", "rrow");
+    addEl(row3, "span", "rl", LX("Rival", "Rival", "Adversaire", "Gegner"));
+    const lv = addEl(row3, "div", "rseg sm");
+    [["easy", LX("Fácil", "Easy", "Facile", "Leicht")], ["normal", LX("Normal", "Normal", "Normal", "Normal")], ["fast", LX("Rápido", "Fast", "Rapide", "Schnell")]].forEach(([k, t]) => {
+      const b = addEl(lv, "div", RACE.cpuLvl === k ? "on" : "", t + " +" + RACE_CPU[k].coins + "🪙");
+      b.onclick = () => { sfx.click(); RACE.cpuLvl = k; raceScreen(); };
+    });
+  }
 
-  // who
-  const cols = addEl(d, "div", "dcols");
+  // ── trains
+  const wc = sec(d, LX("Trenes", "Trains", "Trains", "Züge"), "wide");
+  const cols = addEl(wc, "div", "dcols");
   (RACE.mode === "solo" ? [0] : [0, 1]).forEach(i => {
     const col = addEl(cols, "div", "dcol p" + (i + 1));
     addEl(col, "h2", "", i === 0
@@ -17442,7 +17603,7 @@ function positionRaceSprites() {
     const x = q.x + q.nx * r.laneOff, y = q.y + q.ny * r.laneOff - q.z * E;
     const s = 0.88 * (1 + q.z * .045);
     r.el.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${(q.a + wob).toFixed(1)}) scale(${s.toFixed(3)})`);
-    const layer = lvL(clamp(Math.round(q.z), -UG, LV - 1)).train;
+    const layer = lvL(clamp(Math.ceil(q.z - .02), -UG, LV - 1)).train;
     if (r.el.parentNode !== layer) layer.appendChild(r.el);
   });
   if (RACE.ghost) {
@@ -17451,7 +17612,7 @@ function positionRaceSprites() {
     const x = q.x + q.nx * RACE_LANE, y = q.y + q.ny * RACE_LANE - q.z * E;
     const s = 0.88 * (1 + q.z * .045);
     g.el.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${q.a.toFixed(1)}) scale(${s.toFixed(3)})`);
-    const layer = lvL(clamp(Math.round(q.z), -UG, LV - 1)).train;
+    const layer = lvL(clamp(Math.ceil(q.z - .02), -UG, LV - 1)).train;
     if (g.el.parentNode !== layer) layer.appendChild(g.el);
   }
 }
@@ -17716,41 +17877,41 @@ function finishCircuitRace() {
   try { tone([523, 659, 784, 1047], "triangle", 0, .18, .12); } catch (e) {}
 
   openModal(card => {
+    card.classList.add("rcard");
     const winTitle = RACE.mode === "solo"
       ? (isNewBest ? "🏆 " + LX("¡Nuevo récord!", "New Personal Best!", "Nouveau record !", "Neue Bestzeit!") : "🏁 " + LX("¡Meta!", "Finish!", "Arrivée !", "Ziel!"))
       : (sorted[0].i === 0 ? "🏆 " + LX("¡Gran carrera!", "Great Race!", "Super course !", "Tolles Rennen!") : "🌟 " + LX("¡Qué cerca! ¡Buena carrera!", "So close! Great race!", "Si près ! Belle course !", "So knapp! Tolles Rennen!"));
     h2(card, winTitle);
     const xb = card.querySelector("h2 .x"); if (xb) xb.onclick = () => { closeModal(); stopCircuitRace(); };
 
-    const rows = addEl(card, "div", "");
-    rows.style.cssText = "display:flex;flex-direction:column;gap:8px;margin:10px 0;";
+    const rows = addEl(card, "div", "rres");
     sorted.forEach((r, idx) => {
-      const row = addEl(rows, "div", "");
-      row.style.cssText = "display:flex;align-items:center;justify-content:space-between;background:#fffaf0;border:3px solid #d5bfa0;border-radius:16px;padding:8px 14px;font-weight:900;font-size:17px;";
-      const who = (idx === 0 ? "🥇 " : "🥈 ") + (r.isCpu ? "🤖 " : r.i === 0 ? "🔴 " : "🔵 ") + r.name;
-      addEl(row, "span", "", who);
-      addEl(row, "span", "", fmtRaceMs(r.finishMs));
+      const row = addEl(rows, "div", "rr" + (idx === 0 && sorted.length > 1 ? " win" : ""));
+      addEl(row, "span", "md", sorted.length > 1 ? (idx === 0 ? "🥇" : "🥈") : "⏱️");
+      const dot = addEl(row, "span", "dot"); dot.style.background = r.isCpu ? "#7b8ea3" : r.i === 0 ? "#d63a2f" : "#2f6fd1";
+      addEl(row, "span", "nm", (r.isCpu ? "🤖 " : "") + r.name);
+      addEl(row, "span", "tm", fmtRaceMs(r.finishMs));
     });
-    if (RACE.mode === "solo" && prevBest && !isNewBest) {
-      addEl(card, "div", "rc-best", "👻 " + LX("Mejor", "Best", "Record", "Bestzeit") + ": " + fmtRaceMs(prevBest.ms) + (prevBest.who ? " · " + prevBest.who : ""));
-    }
+    const info = addEl(card, "div", "rinfo");
     if (isNewBest) {   // who set the record (kept on this device only)
-      const nr = addEl(card, "div", "rc-name"), inp = addEl(nr, "input");
+      const nr = addEl(info, "div", "rc-name"), inp = addEl(nr, "input");
       inp.type = "text"; inp.maxLength = 16; inp.value = sget(KEY + "-rname") || "";
       inp.placeholder = "✏️ " + LX("Tu nombre", "Your name", "Ton nom", "Dein Name");
       inp.addEventListener("keydown", e => e.stopPropagation());
       inp.addEventListener("input", () => { const nm = inp.value.trim().slice(0, 16); sset(KEY + "-rname", nm); const b = raceBestGet(RACE.trackKey); if (b) { b.who = nm; raceBestSet(RACE.trackKey, b); } });
-    }
-    const rew = addEl(card, "div", "rc-best", `+${reward} 🪙`);
-    rew.style.fontSize = "18px"; rew.style.margin = "8px auto";
+    } else if (RACE.mode === "solo" && prevBest) {
+      addEl(info, "div", "rc-best", "👻 " + LX("Mejor", "Best", "Record", "Bestzeit") + ": " + fmtRaceMs(prevBest.ms) + (prevBest.who ? " · " + prevBest.who : ""));
+    } else addEl(info, "span");
+    addEl(info, "span", "coinpill", `+${reward} 🪙`);
 
-    const act = addEl(card, "div", "rc-pick-row");
-    const again = mkBtn("🔄 " + LX("Otra vez", "Race Again", "Rejouer", "Nochmal"), "", () => { closeModal(); startCircuitRace(RACE.loop, RACE.circuit); });
-    again.style.width = "auto"; again.style.padding = "0 18px"; again.style.fontSize = "18px"; act.appendChild(again);
-    const setup = mkBtn("⚙️ " + LX("Opciones", "Setup", "Options", "Optionen"), "", () => { stopCircuitRace(true); openRaceScreen("board"); });
-    setup.style.width = "auto"; setup.style.padding = "0 18px"; setup.style.fontSize = "18px"; act.appendChild(setup);
-    const back = mkBtn("🛠️ " + LX("Al tablero", "Back to Track", "Au circuit", "Zur Strecke"), "", () => { closeModal(); stopCircuitRace(); });
-    back.style.width = "auto"; back.style.padding = "0 18px"; back.style.fontSize = "18px"; act.appendChild(back);
+    const act = addEl(card, "div", "ract");
+    const again = addEl(act, "button", "pri", "🔄 " + LX("Otra vez", "Race again", "Rejouer", "Nochmal"));
+    again.onclick = () => { closeModal(); startCircuitRace(RACE.loop, RACE.circuit); };
+    const sc = addEl(act, "div", "sec");
+    const setup = addEl(sc, "button", "", "⚙️ " + LX("Opciones", "Setup", "Options", "Optionen"));
+    setup.onclick = () => { stopCircuitRace(true); openRaceScreen("board"); };
+    const back = addEl(sc, "button", "", "🛠️ " + LX("Al tablero", "Back to track", "Au circuit", "Zur Strecke"));
+    back.onclick = () => { closeModal(); stopCircuitRace(); };
   });
 }
 
