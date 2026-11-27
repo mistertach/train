@@ -1091,7 +1091,7 @@ body.racebuild #raceBtn { background: linear-gradient(180deg, #7be895, #2fb858);
 .rseg > div { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: center; padding: 10px 8px; border-radius: 999px; font-weight: 800; font-size: clamp(13px, 1.6vw, 17px); cursor: pointer; color: var(--ll-ink); white-space: nowrap; user-select: none; }
 .rseg > div.on { background: var(--ll-pink); color: #fff; box-shadow: 0 3px 0 #8e0f40; }
 .rseg > div.lk { opacity: .65; }
-.rseg.sm { display: inline-flex; flex: 0 1 auto; } .rseg.sm > div { padding: 7px 16px; font-size: 15px; }
+.rseg.sm { display: inline-flex; flex: 0 1 auto; } .rseg.sm > div { padding: 7px 14px; font-size: 15px; overflow: visible; }
 .rrow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; } .rrow .rl { font-weight: 800; color: #5b6b7d; min-width: 64px; }
 .rtrk { display: flex; align-items: center; gap: 12px; background: #f4f8fb; border-radius: 16px; padding: 12px 16px; }
 .rtrk .tn { flex: 1; font-weight: 800; font-size: 18px; color: var(--ll-ink); } .rtrk .tb { font-weight: 800; color: #b57a00; white-space: nowrap; }
@@ -1121,6 +1121,13 @@ body.racebuild #raceBtn { background: linear-gradient(180deg, #7be895, #2fb858);
 .rcard .coinpill { background: #fff3c4; color: #8a5a00; font-weight: 900; border-radius: 999px; padding: 6px 14px; font-size: 16px; }
 .rcard .rc-best { color: #6b7a8c; font-weight: 700; font-size: 15px; margin: 0; }
 .rcard .rc-name { margin: 0; flex: 1 1 200px; } .rcard .rc-name input { width: 100%; max-width: none; border: 0; background: #f4f8fb; border-radius: 999px; font-size: 16px; padding: 9px 16px; }
+
+#modal.kbtop { align-items: flex-start; padding-top: 6px; }
+#modal.kbtop .rcard { max-height: 46vh; overflow-y: auto; }
+.rcard .rc-name { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.rcard .rc-name input { flex: 1 1 140px; width: auto; }
+.rcard .rc-ok { border: 0; background: #2fa84f; color: #fff; font: inherit; font-weight: 900; font-size: 15px; border-radius: 999px; padding: 9px 16px; cursor: pointer; }
+.rcard .rc-saved { flex: 1 0 100%; color: #2a8a45; font-weight: 800; font-size: 14px; }
 .rcard .ract { display: flex; flex-direction: column; gap: 10px; }
 .rcard .ract .pri { font: inherit; font-weight: 900; font-size: 20px; border: 0; border-radius: 999px; padding: 13px 20px; background: var(--ll-green); color: #fff; cursor: pointer; box-shadow: 0 5px 0 #17652b; }
 .rcard .ract .sec { display: flex; gap: 10px; } .rcard .ract .sec button { flex: 1; font: inherit; font-weight: 800; font-size: 16px; border: 0; border-radius: 999px; padding: 11px 12px; background: #edf2f7; color: var(--ll-ink); cursor: pointer; box-shadow: 0 3px 0 #cfdbe6; }
@@ -17410,7 +17417,7 @@ function raceScreen() {
   const row2 = addEl(hc, "div", "rrow");
   const lapsL = addEl(row2, "span", "rl", LX("Vueltas", "Laps", "Tours", "Runden"));
   const laps = addEl(row2, "div", "rseg sm");
-  [1, 3, 5].forEach(n => { const b = addEl(laps, "div", RACE.laps === n ? "on" : "", String(n)); b.onclick = () => { sfx.click(); RACE.laps = n; raceScreen(); }; });
+  [1, 3, 5].forEach(n => { const b = addEl(laps, "div", RACE.laps === n ? "on" : "", n + " " + (n === 1 ? LX("vuelta", "lap", "tour", "Runde") : LX("vueltas", "laps", "tours", "Runden"))); b.onclick = () => { sfx.click(); RACE.laps = n; raceScreen(); }; });
   if (RACE.mode === "cpu") {
     const row3 = addEl(hc, "div", "rrow");
     addEl(row3, "span", "rl", LX("Rival", "Rival", "Adversaire", "Gegner"));
@@ -18016,12 +18023,22 @@ function finishCircuitRace() {
       const nr = addEl(info, "div", "rc-name"), inp = addEl(nr, "input");
       inp.type = "text"; inp.maxLength = 16; inp.value = sget(KEY + "-rname") || "";
       inp.placeholder = LX("Tu nombre", "Your name", "Ton nom", "Dein Name");
-      inp.addEventListener("keydown", e => e.stopPropagation());
-      inp.addEventListener("input", () => {
+      inp.enterKeyHint = "done"; inp.autocomplete = "off"; inp.autocapitalize = "words";
+      const ok = addEl(nr, "button", "rc-ok", "✔️ " + LX("Guardar", "Save", "Enregistrer", "Speichern"));
+      const saved = addEl(nr, "div", "rc-saved");
+      const saveName = (say) => {
         const nm = inp.value.trim().slice(0, 16); sset(KEY + "-rname", nm);
         if (isNewBest) { const b = raceBestGet(RACE.trackKey); if (b) { b.who = nm; raceBestSet(RACE.trackKey, b); } }
         if (isNewLap) { const l = raceLapGet(lapBase); if (l) { l.who = nm; raceLapSet(lapBase, l); } }
-      });
+        if (say) saved.textContent = nm ? "✅ " + LX("Guardado", "Saved", "Enregistré", "Gespeichert") + ": " + nm : "";
+      };
+      const modal = $("modal");
+      inp.addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Enter") { saveName(true); inp.blur(); } });
+      inp.addEventListener("input", () => saveName(false));
+      inp.addEventListener("change", () => saveName(true));
+      inp.addEventListener("focus", () => { modal.classList.add("kbtop"); setTimeout(() => { $("card").scrollTop = 0; }, 50); });
+      inp.addEventListener("blur", () => { saveName(true); modal.classList.remove("kbtop"); });
+      ok.onclick = () => { sfx.click(); saveName(true); inp.blur(); };
     } else if (RACE.mode === "solo" && prevBest) {
       addEl(info, "div", "rc-best", "👻 " + LX("Mejor", "Best", "Record", "Bestzeit") + ": " + fmtRaceMs(prevBest.ms) + (prevBest.who ? " · " + prevBest.who : ""));
     } else addEl(info, "span");
