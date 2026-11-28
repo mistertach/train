@@ -11500,7 +11500,13 @@ function fullSection(card) {
       const rs = document.createElement("button"); rs.className = "flink"; rs.textContent = LX("Restaurar compra", "Restore purchase", "Restaurer l'achat"); rs.onclick = () => { if (storeBusy) return; sfx.click(); N.post({ t: "restore" }); }; cta.appendChild(rs);
       const msg = addEl(cta, "div", "fmsg"); msg.id = "fmsg"; msg.hidden = true;
       if (storeBusy) setBuyBusy(true);
-    } else addEl(cta, "p", "", "📱 " + LX("La versión completa está en la app para iPad, iPhone y Android (muy pronto).", "The full version is in the app for iPad, iPhone and Android (coming soon).", "La version complète est dans l'application pour iPad, iPhone et Android (bientôt)."));
+    } else {
+      addEl(cta, "p", "", "📱 " + LX("La versión completa está en la app para iPad y iPhone.", "The full version is in the app for iPad and iPhone.", "La version complète est dans l'application pour iPad et iPhone.", "Die Vollversion gibt es in der App für iPad und iPhone."));
+      const store = document.createElement("a"); store.className = "buyfull"; store.target = "_blank"; store.rel = "noopener";
+      store.href = "https://apps.apple.com/app/apple-store/id6837696522?pt=129132423&ct=web-game&mt=8";
+      store.textContent = "⭐ " + LX("Conseguir Little Loco en App Store", "Get Little Loco on the App Store", "Télécharger Little Loco sur l'App Store", "Little Loco im App Store holen");
+      store.style.cssText = "display:flex;align-items:center;justify-content:center;text-decoration:none;margin:0 auto;padding:0 18px;text-align:center"; cta.appendChild(store);
+    }
     addEl(sec, "p", "ffree", LX("Gratis para siempre: vías en el suelo, el campo, 3 trenes, la aventura del pueblo, un nivel en cada continente, una prueba diaria de un tren especial, 2 ciudades y el desafío de empujar.", "Free forever: track on the ground, the countryside, 3 trains, the village adventure, one level on every continent, a daily test ride on a special train, 2 cities and the Push-off challenge.", "Gratuit pour toujours : voies au sol, la campagne, 3 trains, l'aventure du village, un niveau sur chaque continent, un essai quotidien d'un train spécial, 2 villes et le défi de poussée.", "Für immer kostenlos: Gleise auf dem Boden, das Land, 3 Züge, das Dorf-Abenteuer, ein Level auf jedem Kontinent, eine tägliche Probefahrt mit einem besonderen Zug, 2 Städte und der Schiebe-Wettkampf."));
   }
 }

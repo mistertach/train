@@ -8,4 +8,4 @@ Build track, ramps, spirals, switches, streets and monuments, then press ▶️ 
 - **Tutorial:** step by step, read aloud.
 - **Languages:** Español, English, Français (flags on the home screen).
 
-Play it at https://train.fspal.com, or open `index.html` in any browser. Progress is saved in the browser.
+Marketing page: https://train.fspal.com (`index.html`, assets in `site/`). Play the web game at https://train.fspal.com/racing/ (the old v1.0 build is in `play/`), or open its `index.html` in any browser. Progress is saved in the browser.
